@@ -6,7 +6,7 @@
    There is NO global "affiliates on" switch. Status unknown = off. Nothing here is read from localStorage.
    Public affiliate URLs are public campaign assets; never put passwords, API keys, tokens, payment/tax details here.
    To switch the whole shopping layer off in one reviewed change: set SHOPPING_LAYER:false below. */
-window.FLOSS_FOX_ENV='production';   // 'production' on the live site; only the dev preview build says 'preview'
+window.FLOSS_FOX_ENV='preview';   // DEV PREVIEW ONLY (production says 'production')
 window.FLOSS_FOX_SHOP={
  version:'1.5A',
  SHOPPING_LAYER:true,                // global kill switch (true = allowed, but each merchant still needs its own approval)
