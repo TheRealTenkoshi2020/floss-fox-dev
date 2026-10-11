@@ -1,3 +1,4 @@
+/* DEV PREVIEW ONLY: both retailers enabled with TEST-UNTRACKED ids (plain store links, no tracking). Never merge into production. */
 /* Floss Fox retailer links: the ONE place to configure store links.
    Production default: every retailer disabled, so no store links and no disclosure are shown.
    To go live with a retailer after approval:
@@ -7,12 +8,12 @@
         Leave wrap '' to link straight to the store (untracked).
    Links never claim stock, price or availability: they open a store search for the thread. */
 window.FLOSS_FOX_RETAILERS=[
- {id:'michaels',name:'Michaels',enabled:false,brands:['dmc'],network:'CJ Affiliate',
-  affiliateId:'AFFILIATE_ID_PLACEHOLDER',wrap:'',
+ {id:'michaels',name:'Michaels',enabled:true,brands:['dmc'],network:'CJ Affiliate',
+  affiliateId:'TEST-UNTRACKED',wrap:'',
   // Product pages exist per DMC colour (e.g. /product/dmc-6-strand-embroidery-floss-dark-10031295 for 310) but IDs can't be derived from the colour number, so use search.
   template:'https://www.michaels.com/search?q={q}'},
- {id:'hobbylobby',name:'Hobby Lobby',enabled:false,brands:['dmc'],network:'CJ Affiliate',
-  affiliateId:'AFFILIATE_ID_PLACEHOLDER',wrap:'',
+ {id:'hobbylobby',name:'Hobby Lobby',enabled:true,brands:['dmc'],network:'CJ Affiliate',
+  affiliateId:'TEST-UNTRACKED',wrap:'',
   template:'https://www.hobbylobby.com/search?query={q}'}
 ];
-window.FLOSS_FOX_TEST_LINKS=false; // true only in the dev preview: labels links as untracked test links
+window.FLOSS_FOX_TEST_LINKS=true; // DEV PREVIEW ONLY // true only in the dev preview: labels links as untracked test links
