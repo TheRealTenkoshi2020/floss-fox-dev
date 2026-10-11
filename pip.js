@@ -1,6 +1,6 @@
 /* Pip, the Floss Fox companion. Deterministic: reads the converter's existing parse result. No network, no AI. */
 (()=>{'use strict';
-const PIP_KEY='flossfox.pip.v1';           // stores only "shown"/"hidden"
+const PIP_KEY='flossfox-dev.pip.v1'; // DEV PREVIEW ONLY           // stores only "shown"/"hidden"
 const SIZES=[160,320,480];
 // Poses that have real artwork. Future poses fall back to an existing one until art exists.
 const ART={greeting:'greeting',curious:'curious',puzzled:'puzzled',duplicates:'duplicates'};

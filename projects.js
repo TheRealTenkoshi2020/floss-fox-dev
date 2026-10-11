@@ -2,7 +2,7 @@
 // conversions, plans and price estimates are always recomputed and never stored.
 (function(){
 'use strict';
-const KEY='flossfox.v1',SCHEMA=2,STATUSES=['have','check','buy'];
+const KEY='flossfox-dev.v1' /* DEV PREVIEW ONLY: separate from production 'flossfox.v1' */,SCHEMA=2,STATUSES=['have','check','buy'];
 let store={schema:SCHEMA,projects:[]},canSave=true,openId=null,pendingRestore=null;
 const nowISO=()=>new Date().toISOString();
 const newId=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);

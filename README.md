@@ -1,3 +1,5 @@
+> **DEV PREVIEW REPO (floss-fox-dev).** The top commit "DEV ONLY" adds a preview banner, noindex, robots disallow, removes canonical/OG URLs, and switches storage to `flossfox-dev.v1` (Pip preference: `flossfox-dev.pip.v1`). **Never merge or cherry-pick that commit into production (`floss-fox`).** Promote features from the `milestone-*` branch of the production repo instead.
+
 # Floss Fox
 Static DMC → Anchor floss converter. No build step: open `index.html`.
 
