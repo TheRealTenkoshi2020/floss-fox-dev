@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v1.8-2';
+const CACHE = 'flossfox-dev-v1.9-1';
 const CORE = [
   './',
   "about.html",
@@ -10,6 +10,9 @@ const CORE = [
   "fabric/ui.js",
   "favicon.svg",
   "index.html",
+  "skeins/calc.js",
+  "skeins/ui.css",
+  "skeins/ui.js",
   "parse.js",
   "pip.js",
   "privacy.html",
