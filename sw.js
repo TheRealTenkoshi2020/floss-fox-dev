@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v1.9-3';
+const CACHE = 'flossfox-dev-v1.9-4';
 const CORE = [
   './',
   "about.html",
@@ -16,6 +16,7 @@ const CORE = [
   "skeins/ui.css",
   "skeins/ui.js",
   "parse.js",
+  "confirm.js",
   "pip.js",
   "privacy.html",
   "projects.js",
@@ -48,6 +49,8 @@ const CORE = [
   "assets/pip/pip-presenting-160.png",
   "assets/pip/pip-saved-160.png",
   "assets/pip/pip-saved-160.webp",
+  "assets/pip/pip-thinking-160.png",
+  "assets/pip/pip-thinking-160.webp",
   'manifest.webmanifest'
 ];
 self.addEventListener('install', e => {

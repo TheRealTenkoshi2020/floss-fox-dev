@@ -31,7 +31,7 @@ with sync_playwright() as p:
         if w in (390, 1280):
             os.makedirs('/workspace/floss-converter/feedback-shots/cf', exist_ok=True); g.screenshot(path=f'/workspace/floss-converter/feedback-shots/cf/demo-project-{w}.png')
         ok(f'{w}px no sideways scrolling', g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
-        g.click('#tabThreads'); g.click('#thRemoveDemo'); g.wait_for_timeout(150)
+        g.click('#tabThreads'); g.click('#thRemoveDemo'); g.wait_for_selector('#ffConfirm:not([hidden])'); g.click('#ffConfirmGo'); g.wait_for_timeout(150)
         ok(f'{w}px Remove demo data leaves my real threads and project exactly as they were', g.evaluate(f"localStorage.getItem('{TK}')") == realT and [(x['id'], x['name'], [(i['code'], i['qty'], i['assumed']) for i in x['items']]) for x in json.loads(g.evaluate(f"localStorage.getItem('{KEY}')"))['projects']] == [('mine', 'My own', [('310', 2, 0)])], g.evaluate(f"localStorage.getItem('{TK}')"))
         ctx.close()
     ok('no JS errors', not errs, errs); br.close()
