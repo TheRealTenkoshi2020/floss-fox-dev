@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v1.9-8';
+const CACHE = 'flossfox-dev-v1.9-9-v2b1';
 const CORE = [
   './',
   "about.html",
@@ -25,6 +25,8 @@ const CORE = [
   "shop/offers.js",
   "shop/ui.js",
   "threads.js",
+  "bulk-paste-review.js",
+  "bulk-review.js",
   "tour.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",
