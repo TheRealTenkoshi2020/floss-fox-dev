@@ -295,6 +295,10 @@ function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxP
  <div class="row noprint"><button type="button" class="pri" id="pPrint">Print</button><button type="button" class="sec" id="pCopy">Copy as text</button><button type="button" class="sec" id="pCsv">Download spreadsheet (CSV)</button></div>
  <p id="pMsg" class="hint" role="status" aria-live="polite"></p><textarea id="pFallback" class="noprint" hidden readonly aria-label="Project text to copy" style="width:100%;min-height:120px"></textarea>`;
  {const w=document.createElement('div');w.id='pWtb';w.hidden=true;$('pPlan').appendChild(w);if(window.FlossFoxShop)FlossFoxShop.render(w,FlossFoxShop.fromProject(p,P),{context:'project'})}   // read-only consumer of the plan
+ if(window.FLOSS_FOX_ENV==='preview'&&window.FlossFoxSkeinPreviewUI&&window.FlossFoxShop){   // 2.0A: inline store pills on each Need to buy row
+  const nd=FlossFoxShop.fromProject(p,P).needs,ul=$('pPlan').querySelector('ul');
+  if(ul){const lis=[...ul.children].filter(x=>{const c=x.querySelector(':scope > label > [data-bought]');return c&&!c.checked});
+   if(lis.length===nd.length)FlossFoxSkeinPreviewUI.inline(lis.map((li,i)=>({li,need:nd[i]})))}}
  const el=$('pPlan'),re=msg=>{renderEditor();renderList();if(msg)$('pMsg').textContent=msg};
  $('pSum').querySelectorAll('[data-ns]').forEach(b=>b.onclick=()=>{if(b.dataset.ns==='shop')openShop(p);else{filt='att';query='';renderEditor();$('pThreads').scrollIntoView();const f=$('f-att');if(f)f.focus({preventScroll:true})}});
  el.querySelectorAll('[data-bought]').forEach(cb=>cb.onchange=()=>{if(cb.checked)p.purchased[cb.dataset.bought]=true;else delete p.purchased[cb.dataset.bought];touch(p);re(cb.checked?'Marked as bought. Check it in when you have it.':'Moved back to Need to buy.')});

@@ -35,5 +35,28 @@
   }
   return rows.length;
  }
- root.FlossFoxSkeinPreviewUI=Object.freeze({render});
+ // 2.0A inline: compact pill buttons attached directly to each Need to buy row.
+ // items: [{li, need}] in the same order as the list. Returns number of rows that got buttons.
+ function inline(items){
+  if(root.FLOSS_FOX_ENV!=='preview'||!get()||!Array.isArray(items))return 0;
+  items.forEach(x=>{if(x&&x.li)x.li.querySelectorAll(':scope > .ff-skein-inline').forEach(e=>e.remove())});
+  const rows=get().rowsFor(items.map(x=>x&&x.need),'preview');
+  const by=new Map(rows.map(r=>[r.code,r]));let n=0;
+  const offline=typeof navigator!=='undefined'&&navigator.onLine===false;
+  for(const x of items){
+   if(!x||!x.li||!x.need)continue;const code=get().normalize(x.need.code);const row=code&&by.get(code);
+   if(!row||!row.links.length||!get().eligible(x.need,'preview'))continue;
+   const w=add(x.li,'div','ff-skein-inline noprint');w.dataset.dmc=row.code;
+   w.setAttribute('role','group');w.setAttribute('aria-label','Store links for DMC '+row.code+' (untracked test links)');
+   if(offline){add(w,'span','ff-skein-off','Store links need a connection');n++;continue}
+   for(const l of row.links){
+    const a=add(w,'a','ff-skein-pill',(l.exact?'View skein':'Find color')+' · '+l.storeName);
+    a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.dataset.store=l.storeId;a.dataset.match=l.type;
+    a.setAttribute('aria-label',l.label+' (opens in new tab)');a.title=l.hint;
+   }
+   n++;
+  }
+  return n;
+ }
+ root.FlossFoxSkeinPreviewUI=Object.freeze({render,inline});
 })(typeof window!=='undefined'?window:null);

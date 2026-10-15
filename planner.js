@@ -32,7 +32,7 @@ ${projs.length?`<fieldset class="bkmode"><legend>Projects</legend>${projs.map(p=
  $('planGo').onclick=()=>{const ids=[...C.querySelectorAll('[data-plan]:checked')].map(i=>i.dataset.plan);if(!ids.length){$('planOut').innerHTML='<p class="hint">Pick at least one project.</p>';return}last=compute(ids);show(last)};
  $('planClose').onclick=()=>{C.hidden=true;C.innerHTML='';$('planOpen').focus()}}
 function show(r){const buy=r.rows.filter(x=>x.status==='buy'),rev=r.rows.filter(x=>x.status==='review'),O=$('planOut');
- const li=(x,b)=>`<li><b>${esc(lab(x.code))}</b>: ${b?`buy <b>${x.maximumWholeSkeinsToBuy}</b>`:esc(range(x))}<br><span class="hint">${b?'':esc(why(x))+'. '}${esc(per(x))}. ${esc(haveTxt(x))}.</span></li>`;
+ const li=(x,b)=>`<li${b?` data-code="${esc(x.code)}"`:''}><b>${esc(lab(x.code))}</b>: ${b?`buy <b>${x.maximumWholeSkeinsToBuy}</b>`:esc(range(x))}<br><span class="hint">${b?'':esc(why(x))+'. '}${esc(per(x))}. ${esc(haveTxt(x))}.</span></li>`;
  O.innerHTML=`<h3 id="planBuyH">Need to buy${r.summary.canFinalize?` (${r.summary.exactBuyTotal} skein${r.summary.exactBuyTotal===1?'':'s'})`:''}</h3><ul id="planBuy">${buy.map(x=>li(x,true)).join('')||'<li>Nothing.</li>'}</ul>
 <h3>Check first</h3><ul id="planCheck">${rev.map(x=>li(x,false)).join('')||'<li>Nothing.</li>'}</ul>
 ${r.issues.length?`<div class="errbox" id="planIssues"><ul>${r.issues.map(i=>`<li>${esc(r.names[i.projectId]||'A project')}${i.code?' (DMC '+esc(i.code)+')':''}: ${esc(ISS[i.kind]||i.kind)}.</li>`).join('')}</ul></div>`:''}
@@ -40,11 +40,11 @@ ${r.issues.length?`<div class="errbox" id="planIssues"><ul>${r.issues.map(i=>`<l
 <div class="row"><button type="button" class="sec" id="planCopy">Copy list</button><button type="button" class="ghost" id="planPrint">Print</button></div><p class="hint" id="planMsg" role="status"></p>`;
  // FF-SKEIN-DEV-PLANNER: use only confirmed final Need to buy rows, never Check first.
  if(window.FLOSS_FOX_ENV==='preview'&&window.FlossFoxSkeinPreviewUI){
-  const mount=document.createElement('div');mount.id='planSkeinPreview';
   const needs=buy.map(x=>({brand:'dmc',code:x.code,
     family:typeof fam==='function'&&fam(x.code)==='solid'?'six-strand-cotton':'specialty',pack:'single-skein',
     qty:x.maximumWholeSkeinsToBuy,assumed:false,disputed:false}));
-  if(FlossFoxSkeinPreviewUI.render(mount,needs))O.appendChild(mount);
+  const lis=[...O.querySelectorAll('#planBuy > li[data-code]')];
+  if(lis.length===needs.length)FlossFoxSkeinPreviewUI.inline(lis.map((li,i)=>({li,need:needs[i]})));
  }
  $('planCopy').onclick=()=>{const t=text(r);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>$('planMsg').textContent='Copied.',()=>$('planMsg').textContent='Copy failed. Select the list and copy it.')};
  $('planPrint').onclick=()=>{const w=window.open('','_blank');if(!w){$('planMsg').textContent='Printing was blocked by the browser.';return}w.document.write('<!doctype html><title>Floss Fox shopping plan</title><pre style="white-space:pre-wrap;font:14px/1.4 sans-serif"></pre>');w.document.querySelector('pre').textContent=text(r);w.document.close();w.focus();w.print()}}
