@@ -163,9 +163,9 @@ async function delProject(id){const p=proj(id);if(!p)return;
  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:`Wave goodbye to "${p.name}"?`,
   body:"Pip tilts their head. Are you sure? This can't be undone unless you have a backup.",go:'Delete'});
  if(!ok)return;
- store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}renderList();pstatus(`Deleted "${p.name}".`)}
+ store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
 function openProject(id,m){if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}openId=id;mode=m||'edit';renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Opened "${proj(id).name}".`)}
-function closeProject(){if(window.FlossFoxThreadsUI)FlossFoxThreadsUI.tipDone('compare');openId=null;mode='edit';$('projEdit').hidden=true;$('projListCard').hidden=false;renderList()}
+function closeProject(){setTimeout(ensureShop);if(window.FlossFoxThreadsUI)FlossFoxThreadsUI.tipDone('compare');openId=null;mode='edit';$('projEdit').hidden=true;$('projListCard').hidden=false;renderList()}
 function destCell(p,it){const d=p.decisions[it.code],dest=p.buyBrand,c=it.code,f=fam(c),L=esc(lab(c));
  if(dest==='anchor'&&f==='solid'&&DMC[c].anchor.length>1||dest==='anchor'&&(c==='WHITE'||c==='B5200')&&DMC[c].anchor.length){const disputed=c==='WHITE'||c==='B5200';
   return`<label class="flbl" for="anc-${esc(c)}">Choose the Anchor match</label><select id="anc-${esc(c)}" data-anc="${esc(c)}"><option value=""${d.anchor?'':' selected'}>Choose a match…</option>${DMC[c].anchor.map(a=>`<option value="${esc(a)}"${d.anchor===a?' selected':''}>Anchor ${esc(a)}</option>`).join('')}</select><p class="hint">${disputed?esc(WHITE_DISPUTE):'The chart lists more than one Anchor match for this color. Pick the one you want to use.'}</p>`}
@@ -244,7 +244,7 @@ function renderCmp(p){const el=$('pCmp'),T=window.FlossFoxThreadsUI;if(!el||!T)r
  bindUndo(p)}
 function bindUndo(p){const b=$('pUndoColl');if(!b)return;b.onclick=()=>{const U=undoBy[p.id];if(!U)return;
  U.forEach(x=>{const d=p.decisions[x.code];if(d)Object.assign(d,x.from)});delete undoBy[p.id];touch(p);renderEditor();renderList();const u=$('pUseColl');if(u)u.focus();pstatus(`Undone: ${s2(U.length)} put back as they were.`)}}
-function renderEditor(){if(mode==='shop')return renderShop();const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
+function renderEditor(){if(mode==='shop')return renderShop();{const sb=$('shopBody');if(sb)sb.textContent=''}const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
  const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
  const unchecked=p.items.filter(it=>!p.decisions[it.code].status).length;
  E.innerHTML=`<div class="noprint"><div class="ptitle"><button type="button" class="ghost" id="pClose">← All projects</button><button type="button" class="pri" id="pShop"><span aria-hidden="true">🛒</span> Shop my list</button></div>
@@ -265,7 +265,7 @@ function renderEditor(){if(mode==='shop')return renderShop();const p=proj(openId
  <details class="pmore" id="pAddBox"><summary>Add more colors</summary><label for="pAdd" class="flbl">Paste colors to add (same format as the Add colors box)</label><textarea id="pAdd" rows="2" style="width:100%;min-height:72px" placeholder="e.g. 3865 x2, 762"></textarea>
  <div class="row"><button type="button" class="sec" id="pAddBtn">Add to project</button></div><div id="pAddErr"></div></details></section>
  <div class="plan" id="pPlan"></div>`;
- bindEditor(p);window.FlossFoxSkeinsUI.bind(E,p,x=>{edited(x);touch(x)},message=>{renderEditor();renderList();pstatus(message);const se=$('pSkein');if(se)se.open=true;const b=$('seSave');if(b)b.focus({preventScroll:true})});renderCmp(p);renderPlan(p,P);applyFilter(P);window.scrollTo(0,y);if(focusId){const f=document.getElementById(focusId);if(f)f.focus({preventScroll:true})}}
+ bindEditor(p);window.FlossFoxSkeinsUI.bind(E,p,x=>{edited(x);touch(x)},message=>{renderEditor();renderList();pstatus(message);const se=$('pSkein');if(se)se.open=true;const b=$('seSave');if(b)b.focus({preventScroll:true})});renderCmp(p);renderPlan(p,P);mountShop(p);applyFilter(P);window.scrollTo(0,y);if(focusId){const f=document.getElementById(focusId);if(f)f.focus({preventScroll:true})}}
 function applyFilter(P){const cards=[...document.querySelectorAll('#pCards .tcard')],q=query.trim().toLowerCase();let n=0;const map={};P.threads.forEach(t=>map[t.it.code]=t);
  cards.forEach(c=>{const t=map[c.dataset.code],show=inFilter(t,filt)&&(!q||c.dataset.search.includes(q));c.hidden=!show;if(show)n++});
  const nr=$('pNoRes');if(nr){nr.hidden=!!n||!cards.length;nr.innerHTML=n?'':`${q?`No colors match “${esc(query)}”${filt!=='all'?' in this view':''}.`:'Nothing here right now.'} <button type="button" class="sec small" id="pNoResClear">Show all colors</button>`;const b=$('pNoResClear');if(b)b.onclick=()=>{query='';filt='all';renderEditor()}}
@@ -308,6 +308,12 @@ function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxP
  bindOut(p,'p')}
 function bindOut(p,pre){$(pre+'Print').onclick=()=>print();$(pre+'Copy').onclick=async()=>{const t=planText(p),m=$(pre+'Msg'),f=$(pre+'Fallback');try{if(!navigator.clipboard)throw 0;await navigator.clipboard.writeText(t);m.textContent='✓ Copied. Paste it into a note or message.';f.hidden=true;if(window.FlossFoxPip)FlossFoxPip.saved(m)}catch(e){m.textContent="Couldn't copy automatically. Select the text below and copy it.";f.value=t;f.hidden=false;f.focus();f.select()}};
  $(pre+'Csv').onclick=()=>{download(csv(p),safe(p.name)+'.csv','text/csv');$(pre+'Msg').textContent='Spreadsheet file downloaded.'}}
+// Shopping list tab: the project's #pPlan (shopping list and everything after it) lives in #shopView, not in the Projects view.
+function mountShop(p){const sb=$('shopBody'),pl=$('pPlan');if(!sb)return;if(pl&&p){sb.appendChild(pl);$('shopProj').textContent='For project: '+p.name}
+ document.querySelectorAll('#projEdit nav.jump a[href^="#"]').forEach(x=>{const id=x.getAttribute('href').slice(1);if(sb.querySelector('#'+id))x.onclick=e=>{e.preventDefault();showView('shop');const t=$(id);if(t){t.scrollIntoView();t.focus({preventScroll:true})}}});shopState()}
+function shopState(){const sb=$('shopBody'),p=openId&&proj(openId),has=!!(p&&sb&&sb.querySelector('#pPlan'));$('shopEmpty').hidden=has;sb.hidden=!has;$('shopProj').hidden=!has;
+ const n=has?sb.querySelectorAll('#pPlan > ul:first-of-type [data-bought]:not(:checked)').length:0;$('shopCount').textContent=n?`(${n})`:''}
+function ensureShop(){const p=openId&&proj(openId);if(!p){const sb=$('shopBody');if(sb)sb.textContent='';shopState();return}if(!$('shopBody').querySelector('#pPlan')||mode==='shop'){const m=mode;mode='edit';renderEditor();mode=m;if(m==='shop')renderEditor()}shopState()}
 function openShop(p){mode='shop';shopPanel=null;query='';renderEditor();window.scrollTo(0,0);const h=$('shH');if(h)h.focus({preventScroll:true})}
 function renderShop(){const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
  const tb=P.lines.filter(l=>!l.bought),aw=P.lines.filter(l=>l.bought),co=P.threads.filter(t=>t.kind==='amount'&&t.d.status==='buy'),done=P.have.filter(t=>!t.cf),need=P.sum.toBuy+co.length;
@@ -440,11 +446,11 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
   .catch(()=>{R.hidden=false;R.innerHTML='<b class="warn">Couldn\'t read that file. Nothing was changed.</b>'})}
 
 // ---- Wiring ----
-function showView(v){const V={convert:['convertView','tabConvert'],threads:['threadsView','tabThreads'],projects:['projectsView','tabProjects'],help:['helpView','tabHelp']};
+function showView(v){const V={convert:['convertView','tabConvert'],threads:['threadsView','tabThreads'],projects:['projectsView','tabProjects'],help:['helpView','tabHelp'],shop:['shopView','tabShop']};
  const T=window.FlossFoxThreadsUI;if(T&&!$('threadsView').hidden&&v!=='threads')T.leaveView();if(T&&!$('projectsView').hidden&&v!=='projects')T.tipDone('compare');
  for(const k in V){const on=k===v;$(V[k][0]).hidden=!on;const t=$(V[k][1]);t.setAttribute('aria-pressed',String(on));if(on)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current')}
- if(v==='threads'&&T)T.render();if(v==='projects'){renderList();if(openId&&proj(openId)){renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true}else{$('projEdit').hidden=true;$('projListCard').hidden=false}}window.scrollTo(0,0)}
-$('tabConvert').onclick=()=>showView('convert');$('tabProjects').onclick=()=>showView('projects');$('tabThreads').onclick=()=>showView('threads');$('tabHelp').onclick=()=>showView('help');
+ if(v==='threads'&&T)T.render();if(v==='shop')ensureShop();if(v==='projects'){renderList();if(openId&&proj(openId)){renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true}else{$('projEdit').hidden=true;$('projListCard').hidden=false}}window.scrollTo(0,0)}
+$('tabConvert').onclick=()=>showView('convert');$('tabProjects').onclick=()=>showView('projects');$('tabThreads').onclick=()=>showView('threads');$('tabHelp').onclick=()=>showView('help');$('tabShop').onclick=()=>showView('shop');$('shopGoProj').onclick=()=>showView('projects');
 $('newEmpty').onclick=()=>{if($('newEmpty').disabled)return;$('newEmpty').disabled=true;setTimeout(()=>$('newEmpty').disabled=false,600);const p={id:newId(),name:'Untitled project',notes:'',buyBrand:'dmc',status:'planning',items:[],decisions:{},purchased:{},created:nowISO(),updated:nowISO()};store.projects.push(p);save();renderList();openProject(p.id)};
 $('backupBtn').onclick=backup;undoImportRow();$('restoreFile').onchange=e=>{restoreFile(e.target.files[0]);e.target.value=''};
 let saving=false;
