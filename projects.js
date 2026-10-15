@@ -164,7 +164,7 @@ async function delProject(id){const p=proj(id);if(!p)return;
   body:"Pip tilts their head. Are you sure? This can't be undone unless you have a backup.",go:'Delete'});
  if(!ok)return;
  store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
-function openProject(id,m){if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}openId=id;mode=m||'edit';renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Opened "${proj(id).name}".`)}
+function openProject(id,m){{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}openId=id;mode=m||'edit';renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Opened "${proj(id).name}".`)}
 function closeProject(){setTimeout(ensureShop);if(window.FlossFoxThreadsUI)FlossFoxThreadsUI.tipDone('compare');openId=null;mode='edit';$('projEdit').hidden=true;$('projListCard').hidden=false;renderList()}
 function destCell(p,it){const d=p.decisions[it.code],dest=p.buyBrand,c=it.code,f=fam(c),L=esc(lab(c));
  if(dest==='anchor'&&f==='solid'&&DMC[c].anchor.length>1||dest==='anchor'&&(c==='WHITE'||c==='B5200')&&DMC[c].anchor.length){const disputed=c==='WHITE'||c==='B5200';
@@ -300,7 +300,7 @@ function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxP
   if(ul){const lis=[...ul.children].filter(x=>{const c=x.querySelector(':scope > label > [data-bought]');return c&&!c.checked});
    if(lis.length===nd.length)FlossFoxSkeinPreviewUI.inline(lis.map((li,i)=>({li,need:nd[i]})))}}
  const el=$('pPlan'),re=msg=>{renderEditor();renderList();if(msg)$('pMsg').textContent=msg};
- $('pSum').querySelectorAll('[data-ns]').forEach(b=>b.onclick=()=>{if(b.dataset.ns==='shop')openShop(p);else{filt='att';query='';renderEditor();$('pThreads').scrollIntoView();const f=$('f-att');if(f)f.focus({preventScroll:true})}});
+ $('pSum').querySelectorAll('[data-ns]').forEach(b=>b.onclick=()=>{if(b.dataset.ns==='shop')showView('shop');else{filt='att';query='';renderEditor();$('pThreads').scrollIntoView();const f=$('f-att');if(f)f.focus({preventScroll:true})}});
  el.querySelectorAll('[data-bought]').forEach(cb=>cb.onchange=()=>{if(cb.checked)p.purchased[cb.dataset.bought]=true;else delete p.purchased[cb.dataset.bought];touch(p);re(cb.checked?'Marked as bought. Check it in when you have it.':'Moved back to Need to buy.')});
  el.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{const k=sid(b.dataset.rb);$('rf-'+k).hidden=false;$('rq-'+k).focus()});
  el.querySelectorAll('[data-rx]').forEach(b=>b.onclick=()=>{$('rf-'+b.dataset.rx).hidden=true});
@@ -351,7 +351,7 @@ function renderShop(){const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;
  const ss=$('shSearch');if(ss){const run=()=>{const q=ss.value.trim().toLowerCase();let n=0;E.querySelectorAll('#shList .scard').forEach(c=>{const sh=!q||c.dataset.q.includes(q);c.hidden=!sh;if(sh)n++});const nr=$('shNoRes');nr.hidden=!q||!!n;nr.textContent=`Nothing on your list matches “${ss.value}”.`;$('shSearchClear').hidden=!q};ss.oninput=run;$('shSearchClear').onclick=()=>{ss.value='';run();ss.focus()}}
  bindOut(p,'s');window.scrollTo(0,y);if(focusId){const f=document.getElementById(focusId);if(f)f.focus({preventScroll:true})}}
 function bindEditor(p){const E=$('projEdit'),re=()=>{edited(p);touch(p);renderEditor();renderList()};
- $('pClose').onclick=closeProject;$('pShop').onclick=()=>openShop(p);$('pDelete').onclick=()=>delProject(p.id);
+ $('pClose').onclick=closeProject;$('pShop').onclick=()=>showView('shop');$('pDelete').onclick=()=>delProject(p.id);
  $('pName').onchange=()=>{p.name=$('pName').value.trim().slice(0,100)||'Untitled project';touch(p);renderList();renderPlan(p)};
  $('pNotes').onchange=()=>{p.notes=$('pNotes').value.slice(0,2000);touch(p);renderPlan(p)};
  $('pDest').onchange=()=>{p.buyBrand=$('pDest').value;re()};
@@ -446,11 +446,11 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
   .catch(()=>{R.hidden=false;R.innerHTML='<b class="warn">Couldn\'t read that file. Nothing was changed.</b>'})}
 
 // ---- Wiring ----
-function showView(v){const V={convert:['convertView','tabConvert'],threads:['threadsView','tabThreads'],projects:['projectsView','tabProjects'],help:['helpView','tabHelp'],shop:['shopView','tabShop']};
+function showView(v,fromHash){{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(!fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);const V={convert:['convertView','tabConvert'],threads:['threadsView','tabThreads'],projects:['projectsView','tabProjects'],help:['helpView','tabHelp'],shop:['shopView','tabShop']};
  const T=window.FlossFoxThreadsUI;if(T&&!$('threadsView').hidden&&v!=='threads')T.leaveView();if(T&&!$('projectsView').hidden&&v!=='projects')T.tipDone('compare');
  for(const k in V){const on=k===v;$(V[k][0]).hidden=!on;const t=$(V[k][1]);t.setAttribute('aria-pressed',String(on));if(on)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current')}
  if(v==='threads'&&T)T.render();if(v==='shop')ensureShop();if(v==='projects'){renderList();if(openId&&proj(openId)){renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true}else{$('projEdit').hidden=true;$('projListCard').hidden=false}}window.scrollTo(0,0)}
-$('tabConvert').onclick=()=>showView('convert');$('tabProjects').onclick=()=>showView('projects');$('tabThreads').onclick=()=>showView('threads');$('tabHelp').onclick=()=>showView('help');$('tabShop').onclick=()=>showView('shop');$('shopGoProj').onclick=()=>showView('projects');
+$('tabConvert').onclick=()=>showView('convert');$('tabProjects').onclick=()=>showView('projects');$('tabThreads').onclick=()=>showView('threads');$('tabHelp').onclick=()=>showView('help');addEventListener('hashchange',()=>{const v=location.hash.slice(1);if(['convert','threads','projects','shop','help'].includes(v))showView(v,true)});addEventListener('popstate',()=>{const v=location.hash.slice(1)||'convert';if(['convert','threads','projects','shop','help'].includes(v))showView(v,true)});$('tabShop').onclick=()=>showView('shop');$('shopGoProj').onclick=()=>showView('projects');
 $('newEmpty').onclick=()=>{if($('newEmpty').disabled)return;$('newEmpty').disabled=true;setTimeout(()=>$('newEmpty').disabled=false,600);const p={id:newId(),name:'Untitled project',notes:'',buyBrand:'dmc',status:'planning',items:[],decisions:{},purchased:{},created:nowISO(),updated:nowISO()};store.projects.push(p);save();renderList();openProject(p.id)};
 $('backupBtn').onclick=backup;undoImportRow();$('restoreFile').onchange=e=>{restoreFile(e.target.files[0]);e.target.value=''};
 let saving=false;
