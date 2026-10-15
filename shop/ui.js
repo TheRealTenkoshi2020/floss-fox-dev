@@ -54,7 +54,13 @@ function render(box,src,opts){
  if(!box)return null;box.textContent='';box.hidden=true;opts=opts||{};LIVE.set(box,[src,opts]);
  if(!O()||!CFG())return null;
  let r;try{r=O().select(src.needs,CFG(),ENV())}catch(e){return null}       // malformed config: shopping layer just stays off
- if(!r.layer)return r;                                                     // no eligible merchant: render nothing at all
+ if(!r.layer){ // FF-SKEIN-DEV-UI: independent, untracked links may be shown in preview only.
+  if(ENV()==='preview'&&window.FlossFoxSkeinPreviewUI){
+   const mount=el('div',{class:'ff-skein-preview-mount'});
+   if(FlossFoxSkeinPreviewUI.render(mount,src.needs)){box.hidden=false;box.appendChild(mount)}
+  }
+  return r;
+ }
  const offline=typeof navigator!=='undefined'&&navigator.onLine===false;
  box.hidden=false;const s=el('section',{class:'wtb noprint','aria-labelledby':box.id+'-h','data-links':String(offline?0:r.linkCount)});
  s.appendChild(el('p',{class:'wtbeyebrow'},'Optional'));const h3=el('h3',{id:box.id+'-h'},'Where to buy your missing supplies');s.appendChild(h3);
@@ -86,7 +92,12 @@ function render(box,src,opts){
  if(rv.length){const h=el('div',{class:'wtbreview',role:'group','aria-labelledby':box.id+'-rv'});h.appendChild(el('h4',{id:box.id+'-rv'},'Check these items before shopping'));const ul=el('ul');
   rv.forEach(x=>ul.appendChild(el('li',null,`${x.label}: ${x.kind?x.kind+', ':''}${REASON[x.reason]||'needs a check in your list first'}`)));h.appendChild(ul);s.appendChild(h)}
  altRow(s,opts.context);
- box.appendChild(s);return r}
+ box.appendChild(s);
+ if(ENV()==='preview'&&window.FlossFoxSkeinPreviewUI){
+  const mount=el('div',{class:'ff-skein-preview-mount'});
+  if(FlossFoxSkeinPreviewUI.render(mount,src.needs))box.prepend(mount);
+ }
+ return r}
 function redraw(){LIVE.forEach((a,box)=>{if(!box.isConnected){LIVE.delete(box);return}render(box,a[0],a[1])})}
 if(typeof window!=='undefined'){window.addEventListener('online',redraw);window.addEventListener('offline',redraw)}
 window.FlossFoxShop={render,fromConverter,fromProject,

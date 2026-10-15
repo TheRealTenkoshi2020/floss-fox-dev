@@ -38,6 +38,14 @@ function show(r){const buy=r.rows.filter(x=>x.status==='buy'),rev=r.rows.filter(
 ${r.issues.length?`<div class="errbox" id="planIssues"><ul>${r.issues.map(i=>`<li>${esc(r.names[i.projectId]||'A project')}${i.code?' (DMC '+esc(i.code)+')':''}: ${esc(ISS[i.kind]||i.kind)}.</li>`).join('')}</ul></div>`:''}
 <p class="hint" id="planNote">${r.summary.canFinalize?'Every color is checked.':'<b>Not a final total</b>: check the colors under Check first.'} ${r.summary.covered} color${r.summary.covered===1?'':'s'} covered by confirmed skeins. Estimates are approximate. Bought or received thread is not subtracted until it's in your collection.</p>
 <div class="row"><button type="button" class="sec" id="planCopy">Copy list</button><button type="button" class="ghost" id="planPrint">Print</button></div><p class="hint" id="planMsg" role="status"></p>`;
+ // FF-SKEIN-DEV-PLANNER: use only confirmed final Need to buy rows, never Check first.
+ if(window.FLOSS_FOX_ENV==='preview'&&window.FlossFoxSkeinPreviewUI){
+  const mount=document.createElement('div');mount.id='planSkeinPreview';
+  const needs=buy.map(x=>({brand:'dmc',code:x.code,
+    family:typeof fam==='function'&&fam(x.code)==='solid'?'six-strand-cotton':'specialty',pack:'single-skein',
+    qty:x.maximumWholeSkeinsToBuy,assumed:false,disputed:false}));
+  if(FlossFoxSkeinPreviewUI.render(mount,needs))O.appendChild(mount);
+ }
  $('planCopy').onclick=()=>{const t=text(r);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>$('planMsg').textContent='Copied.',()=>$('planMsg').textContent='Copy failed. Select the list and copy it.')};
  $('planPrint').onclick=()=>{const w=window.open('','_blank');if(!w){$('planMsg').textContent='Printing was blocked by the browser.';return}w.document.write('<!doctype html><title>Floss Fox shopping plan</title><pre style="white-space:pre-wrap;font:14px/1.4 sans-serif"></pre>');w.document.querySelector('pre').textContent=text(r);w.document.close();w.focus();w.print()}}
 $('planOpen').onclick=()=>{const C=$('planCard');C.hidden=false;draw();C.focus()};
