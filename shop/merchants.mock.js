@@ -1,7 +1,8 @@
 /* DEV PREVIEW ONLY: synthetic, noncommissionable sample merchants for demonstrating the 1.5A shopping section.
    Hosts use the reserved .example domain (RFC 2606): they resolve nowhere, track nothing, earn nothing.
    offers.js accepts mock merchants only when FLOSS_FOX_ENV==='preview' and only on .example hosts. Never ship this file to production. */
-window.FLOSS_FOX_SHOP.mockMerchants=[
+/* Test fixtures only: loaded into the UI only with ?fixtures=1 (or window.FLOSS_FOX_FIXTURES=true set before this script). */
+if(window.FLOSS_FOX_FIXTURES===true||/[?&]fixtures=1\b/.test(location.search))window.FLOSS_FOX_SHOP.mockMerchants=[
  {mock:true,merchantId:'sample-floss-shop',displayName:'Sample Floss Shop (demo)',approvalState:'approved',rel:'sponsored noopener',
   allowedDomains:['floss-shop.example'],trackingHosts:['track.network.example'],destinationParam:'ued',
   categoryLandings:[{offerType:'category',family:'six-strand-cotton',brands:['dmc'],url:'https://floss-shop.example/embroidery-floss/dmc'}],

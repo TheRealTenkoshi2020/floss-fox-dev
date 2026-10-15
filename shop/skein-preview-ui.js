@@ -48,14 +48,18 @@
    if(!row||!row.links.length||!get().eligible(x.need,'preview'))continue;
    const w=add(x.li,'div','ff-skein-inline noprint');w.dataset.dmc=row.code;
    w.setAttribute('role','group');w.setAttribute('aria-label','Store links for DMC '+row.code+' (untracked test links)');
-   if(offline){add(w,'span','ff-skein-off','Store links need a connection');n++;continue}
    for(const l of row.links){
     const a=add(w,'a','ff-skein-pill',(l.exact?'View skein':'Find color')+' · '+l.storeName);
-    a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.dataset.store=l.storeId;a.dataset.match=l.type;
+    a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.dataset.store=l.storeId;a.dataset.match=l.type;a.dataset.kind='direct';a.dataset.tracked='false';
     a.setAttribute('aria-label',l.label+' (opens in new tab)');a.title=l.hint;
    }
    n++;
   }
+  // One short disclosure per list: these are direct (untracked) links, kept apart from any future affiliate path.
+  const first=items.find(x=>x&&x.li&&x.li.querySelector(':scope > .ff-skein-inline'));
+  const list=first&&first.li.parentElement;
+  if(list&&list.parentElement){const prev=list.previousElementSibling;
+   if(!(prev&&prev.classList.contains('ff-skein-direct'))){const p=document.createElement('p');p.className='ff-skein-direct noprint';p.textContent='Direct store links. Floss Fox earns nothing from these.'+(offline?' Store pages need a connection.':'');list.parentElement.insertBefore(p,list)}}
   return n;
  }
  root.FlossFoxSkeinPreviewUI=Object.freeze({render,inline});

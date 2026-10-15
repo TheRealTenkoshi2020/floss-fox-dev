@@ -64,7 +64,7 @@
       const url = direct ? exact : s.fallback;
       if (!validUrl(url,s.host)) return null;
       return Object.freeze({storeId:s.id, storeName:s.name, code, url,
-        type:direct?'exact-product':'catalog', exact:direct, untracked:true,
+        type:direct?'exact-product':'catalog', exact:direct, untracked:true, tracked:false, kind:'direct',
         label:(direct?'View DMC '+code+' skein':'Find DMC '+code+' in catalog')+' at '+s.name,
         hint:direct?'Individual DMC 6-strand cotton listing; confirm options and availability at store.':s.help,
         identityChecked:direct?LAST_CHECKED:null});
