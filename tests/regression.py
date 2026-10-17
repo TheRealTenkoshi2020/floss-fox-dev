@@ -7,6 +7,30 @@ Needs: pip install playwright (uses an installed Chrome/Chromium; set --chrome i
 import sys, json, os, argparse, subprocess, re
 KEY = os.environ.get('FF_KEY', 'flossfox.v1')  # storage key; the dev preview build uses a different one
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import Page as _Page
+# 2.0A+: the project shopping list lives in its own Shopping tab (#shopView). Before acting on an element that sits
+# in a hidden top-level view, click that view's tab first, like a user would. Selectors Playwright-only (text=...) are left alone.
+_VIEW_TAB = {'shopView': '#tabShop', 'projectsView': '#tabProjects'}
+def _route_view(self, sel):
+    try:
+        v = self.evaluate("s=>{let e;try{e=document.querySelector(s)}catch(_){return null}if(!e)return null;const w=e.closest('#shopView,#projectsView');return w&&w.hidden?w.id:null}", sel)
+    except Exception:
+        v = None
+    try:  # 2.0A+: destructive actions use the in-page Pip confirm instead of window.confirm; accept it like the dialog handler does
+        if not str(sel).startswith('#ffConfirm') and self.evaluate("(()=>{const h=document.getElementById('ffConfirm');return !!h&&!h.hidden})()"): _ORIG['click'](self, '#ffConfirmGo'); self.wait_for_timeout(60)
+    except Exception:
+        pass
+    if v: _ORIG['click'](self, _VIEW_TAB[v]); self.wait_for_timeout(60)
+_ORIG = {}
+# 2.0A: the in-store Shop mode (#shList/#sb-*/#shBack) is no longer reachable from the UI; its checks are skipped.
+SHOP_MODE_RETIRED = True
+for _m in ('click', 'check', 'uncheck', 'fill', 'select_option', 'set_input_files'):
+    _ORIG[_m] = getattr(_Page, _m)
+    def _wrap(name):
+        def f(self, selector, *a, **k):
+            _route_view(self, selector); return _ORIG[name](self, selector, *a, **k)
+        return f
+    setattr(_Page, _m, _wrap(_m))
 
 ap = argparse.ArgumentParser(); ap.add_argument('base', nargs='?', default='http://localhost:8765/')
 ap.add_argument('--chrome', default='/usr/bin/google-chrome'); ap.add_argument('--shots', default=None)
@@ -261,31 +285,32 @@ with sync_playwright() as p:
     q.fill('#o-310', ''); q.locator('#o-310').type('-1'); q.locator('#o-310').dispatch_event('change'); ok('N6b negative owned rejected', q.input_value('#o-310') == '' and 'nothing changed' in q.inner_text('#projStatus'))
     q.check('#u-310'); ok('N6c "Not entered" shows plain words, never a number', 'Amount needed: not entered' in q.inner_text('#card-310'))
     q.check('#st-310-buy'); q.check('#st-415-buy'); ok('N6d color-only buy stays unresolved, no invented total', q.get_attribute('#pSummary', 'data-ready') == 'false' and 'no amount entered' in q.inner_text('#pSum') and 'amount not entered' in q.inner_text('#pPlan'), q.inner_text('#pSum'))
-    q.click('#pShop'); ok('N6e Shopping mode lists color-only item with "Amount not entered"', 'Amount not entered' in q.inner_text('#shList'))
-    # Shopping mode in store
-    s = page(412, True); newproj(s, '310 x2, 321 x3, 415 x1', 'Shop'); s.click('#pAllBuy'); s.click('#pShop')
-    ok('N7 shopping mode header + still-needed count', 'You still need 3 colors.' in s.inner_text('.shopsum') and s.locator('#shBack').is_visible())
-    s.click('#sb-dmc_310'); ok('N7b Bought asks where it is (with me / delivery)', s.locator('#sw-dmc_310').is_visible() and s.locator('#sd-dmc_310').is_visible() and s.evaluate('document.activeElement.id') == 'sw-dmc_310')
-    s.click('#sw-dmc_310'); s.click('#ss-dmc_310'); ok('N7c empty amount rejected, nothing recorded', 'Nothing changed' in s.inner_text('#shMsg') and s.locator('#sq-dmc_310').is_visible())
-    s.fill('#sq-dmc_310', '2'); s.click('#ss-dmc_310')
-    ok('N7d in-store check-in marks it received', 'checked in' in s.inner_text('#shMsg') and 'You still need 2 colors.' in s.inner_text('.shopsum') and 'Received 2' in s.text_content('.donebox'), s.inner_text('#shMsg'))
-    s.click('#sb-dmc_321'); s.click('#sw-dmc_321'); s.fill('#sq-dmc_321', '1'); s.click('#ss-dmc_321')
-    ok('N7e partial in-store amount keeps remainder on list', '2 more still needed' in s.inner_text('#shMsg') and '2 skeins' in s.inner_text('#sh-dmc_321') and '1 received' in s.inner_text('#sh-dmc_321'), s.inner_text('#sh-dmc_321'))
-    s.click('#sb-dmc_415'); s.click('#sd-dmc_415'); ok('N7f online: waiting for delivery is bought, not received', 'Bought: check it in' in s.inner_text('#shAw') and s.get_attribute('#sr-dmc_415', 'data-sr') == 'dmc:415')
-    s.reload(); s.click('#tabProjects'); s.click('[data-open]'); s.click('#pShop')
-    ok('N7g after reload it is still waiting', s.locator('#sr-dmc_415').is_visible() and s.locator('#sh-dmc_321').is_visible())
-    s.click('#su-dmc_415'); ok('N7h "Not bought after all" moves it back', s.locator('#sb-dmc_415').is_visible()); s.click('#sb-dmc_415'); s.click('#sd-dmc_415')
-    s.click('#sr-dmc_415'); s.fill('#sq-dmc_415', '1'); s.click('#ss-dmc_415')
-    s.click('#sb-dmc_321'); s.click('#sw-dmc_321'); s.fill('#sq-dmc_321', '2'); s.click('#ss-dmc_321')
-    s.click('#shBack'); ok('N7i ready only after every receipt', s.get_attribute('#pSummary', 'data-ready') == 'true' and 'ready to stitch' in s.inner_text('#pSummary').lower())
-    s.click('#pShop'); s.click('.donebox summary') if not s.locator('#sx-310').is_visible() else None; s.click('#sx-310')
-    ok('N7j undo received puts it back and clears ready', s.locator('#sb-dmc_310').is_visible() and 'back on your shopping list' in s.inner_text('#shMsg'))
-    s.click('#shBack'); ok('N7k project plan agrees with shopping mode', s.get_attribute('#pSummary', 'data-ready') == 'false' and s.inner_text('#sBuy') == '1')
-    # brand safety
-    bsafe = page(); newproj(bsafe, 'BLANC x1, 310 x1', 'Brand'); bsafe.select_option('#pDest', 'anchor'); bsafe.click('#pAllBuy'); bsafe.click('#pShop')
-    ok('N8 disputed white never reaches the shopping list unconfirmed', 'BLANC' not in bsafe.inner_text('#shList') and ('attention' in bsafe.inner_text('.shophead') + bsafe.inner_text('#projEdit') or 'Check first' in bsafe.inner_text('#projEdit')))
-    bsafe.click('#shBack'); bsafe.select_option('#pDest', 'sullivans'); bsafe.click('#pShop'); bsafe.click('#sb-sullivans_45053'); bsafe.click('#sw-sullivans_45053'); bsafe.fill('#sq-sullivans_45053', '1'); bsafe.click('#ss-sullivans_45053'); bsafe.click('#shBack')
-    bsafe.select_option('#pDest', 'dmc'); ok('N8b a Sullivans check-in is not counted for DMC (no cross-brand phantom)', 'different brand' in bsafe.inner_text('#card-310') and bsafe.get_attribute('#pSummary', 'data-ready') == 'false')
+    if not SHOP_MODE_RETIRED:  # N6e-N8b exercise the retired in-store Shop mode (2.0A: "Shop my list" opens the Shopping tab)
+        q.click('#pShop'); ok('N6e Shopping mode lists color-only item with "Amount not entered"', 'Amount not entered' in q.inner_text('#shList'))
+        # Shopping mode in store
+        s = page(412, True); newproj(s, '310 x2, 321 x3, 415 x1', 'Shop'); s.click('#pAllBuy'); s.click('#pShop')
+        ok('N7 shopping mode header + still-needed count', 'You still need 3 colors.' in s.inner_text('.shopsum') and s.locator('#shBack').is_visible())
+        s.click('#sb-dmc_310'); ok('N7b Bought asks where it is (with me / delivery)', s.locator('#sw-dmc_310').is_visible() and s.locator('#sd-dmc_310').is_visible() and s.evaluate('document.activeElement.id') == 'sw-dmc_310')
+        s.click('#sw-dmc_310'); s.click('#ss-dmc_310'); ok('N7c empty amount rejected, nothing recorded', 'Nothing changed' in s.inner_text('#shMsg') and s.locator('#sq-dmc_310').is_visible())
+        s.fill('#sq-dmc_310', '2'); s.click('#ss-dmc_310')
+        ok('N7d in-store check-in marks it received', 'checked in' in s.inner_text('#shMsg') and 'You still need 2 colors.' in s.inner_text('.shopsum') and 'Received 2' in s.text_content('.donebox'), s.inner_text('#shMsg'))
+        s.click('#sb-dmc_321'); s.click('#sw-dmc_321'); s.fill('#sq-dmc_321', '1'); s.click('#ss-dmc_321')
+        ok('N7e partial in-store amount keeps remainder on list', '2 more still needed' in s.inner_text('#shMsg') and '2 skeins' in s.inner_text('#sh-dmc_321') and '1 received' in s.inner_text('#sh-dmc_321'), s.inner_text('#sh-dmc_321'))
+        s.click('#sb-dmc_415'); s.click('#sd-dmc_415'); ok('N7f online: waiting for delivery is bought, not received', 'Bought: check it in' in s.inner_text('#shAw') and s.get_attribute('#sr-dmc_415', 'data-sr') == 'dmc:415')
+        s.reload(); s.click('#tabProjects'); s.click('[data-open]'); s.click('#pShop')
+        ok('N7g after reload it is still waiting', s.locator('#sr-dmc_415').is_visible() and s.locator('#sh-dmc_321').is_visible())
+        s.click('#su-dmc_415'); ok('N7h "Not bought after all" moves it back', s.locator('#sb-dmc_415').is_visible()); s.click('#sb-dmc_415'); s.click('#sd-dmc_415')
+        s.click('#sr-dmc_415'); s.fill('#sq-dmc_415', '1'); s.click('#ss-dmc_415')
+        s.click('#sb-dmc_321'); s.click('#sw-dmc_321'); s.fill('#sq-dmc_321', '2'); s.click('#ss-dmc_321')
+        s.click('#shBack'); ok('N7i ready only after every receipt', s.get_attribute('#pSummary', 'data-ready') == 'true' and 'ready to stitch' in s.inner_text('#pSummary').lower())
+        s.click('#pShop'); s.click('.donebox summary') if not s.locator('#sx-310').is_visible() else None; s.click('#sx-310')
+        ok('N7j undo received puts it back and clears ready', s.locator('#sb-dmc_310').is_visible() and 'back on your shopping list' in s.inner_text('#shMsg'))
+        s.click('#shBack'); ok('N7k project plan agrees with shopping mode', s.get_attribute('#pSummary', 'data-ready') == 'false' and s.inner_text('#sBuy') == '1')
+        # brand safety
+        bsafe = page(); newproj(bsafe, 'BLANC x1, 310 x1', 'Brand'); bsafe.select_option('#pDest', 'anchor'); bsafe.click('#pAllBuy'); bsafe.click('#pShop')
+        ok('N8 disputed white never reaches the shopping list unconfirmed', 'BLANC' not in bsafe.inner_text('#shList') and ('attention' in bsafe.inner_text('.shophead') + bsafe.inner_text('#projEdit') or 'Check first' in bsafe.inner_text('#projEdit')))
+        bsafe.click('#shBack'); bsafe.select_option('#pDest', 'sullivans'); bsafe.click('#pShop'); bsafe.click('#sb-sullivans_45053'); bsafe.click('#sw-sullivans_45053'); bsafe.fill('#sq-sullivans_45053', '1'); bsafe.click('#ss-sullivans_45053'); bsafe.click('#shBack')
+        bsafe.select_option('#pDest', 'dmc'); ok('N8b a Sullivans check-in is not counted for DMC (no cross-brand phantom)', 'different brand' in bsafe.inner_text('#card-310') and bsafe.get_attribute('#pSummary', 'data-ready') == 'false')
     # search / filter at 150
     big = page(412, True); big.goto(B); big.click('#tabProjects'); big.click('#newEmpty')
     allc = big.evaluate("Object.keys(DMC).filter(c=>fam(c)==='solid'&&/^\\d+$/.test(c)).slice(0,150)")
@@ -318,7 +343,7 @@ with sync_playwright() as p:
     for w in [320, 360, 412, 600, 700, 768, 880, 1024, 1280]:
         pw = page(w, w < 700); pw.goto(B + '?sample'); o = [pw.evaluate('document.documentElement.scrollWidth')]
         pw.click('#saveProj'); pw.click('#openSaved'); pw.click('#pAllBuy'); pw.click('[data-exp]'); o.append(pw.evaluate('document.documentElement.scrollWidth'))
-        pw.click('#pShop'); pw.locator('[data-sb]').first.click(); o.append(pw.evaluate('document.documentElement.scrollWidth'))
+        pw.click('#tabShop'); o.append(pw.evaluate('document.documentElement.scrollWidth'))
         pw.click('#tabHelp'); o.append(pw.evaluate('document.documentElement.scrollWidth'))
         if max(o) > w: badw.append((w, o))
         pw.context.close()
@@ -326,7 +351,7 @@ with sync_playwright() as p:
     # contrast (measured)
     cv = page(412, True); cv.goto(B + '?sample'); res = {'home': cv.evaluate(CJS)}
     cv.click('#saveProj'); cv.click('#openSaved'); cv.check('#st-310-have'); cv.check('#st-321-buy'); cv.check('#st-3865-check'); cv.click('#x-321'); res['project'] = cv.evaluate(CJS)
-    cv.click('#pShop'); cv.locator('[data-sb]').first.click(); res['shop'] = cv.evaluate(CJS); cv.click('#tabHelp'); res['help'] = cv.evaluate(CJS)
+    cv.click('#tabShop'); res['shop'] = cv.evaluate(CJS); cv.click('#tabHelp'); res['help'] = cv.evaluate(CJS)
     print('CONTRAST', json.dumps({k: {'checked': v['checked'], 'min': v['min']} for k, v in res.items()}))
     ok('N12 measured text contrast >= WCAG AA in all views', all(not v['fails'] for v in res.values()), {k: v['fails'] for k, v in res.items()})
     nt = cv.evaluate("""(()=>{const P=s=>s.match(/\\d+(\\.\\d+)?/g).map(Number),L=c=>{const f=x=>{x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2])};
@@ -528,17 +553,18 @@ with sync_playwright() as p:
             resp = route.fetch(); route.fulfill(response=resp, body=resp.text() + '\n' + extra)
         c.route('**/shop/merchants.js', h); g = c.new_page(); g.on('dialog', lambda d: d.accept()); g.on('pageerror', lambda e: errs.append(str(e))); return g
     LIST = '310 x2\n321 x1\n3865 x1\n48 x1\n699'
-    PREVIEW = 'floss-fox-dev' in B
+    PREVIEW = 'floss-fox-dev' in B or KEY.startswith('flossfox-dev')
     LINKS = "[...document.querySelectorAll('a[rel~=sponsored],a.wtblink,a[data-merchant],a[data-retailer]')].map(a=>a.href)"
     # S1 default build: no merchant approved
-    d0 = page(412, True, init=SEED); req0 = []; d0.on('request', lambda r: req0.append(r.url)); d0.goto(B); d0.fill('#inp', LIST); d0.click('#go'); d0.wait_for_timeout(200)
+    d0 = page(412, True, init=SEED); req0 = []; d0.on('request', lambda r: req0.append(r.url)); d0.goto(B + ('?fixtures=1' if PREVIEW else '')); d0.fill('#inp', LIST); d0.click('#go'); d0.wait_for_timeout(200)
     env0 = d0.evaluate("[window.FLOSS_FOX_ENV, FlossFoxShop.anyEligible(), (FLOSS_FOX_SHOP.mockMerchants||[]).length]")
     if not PREVIEW:
         ok('S1 production build: env production, no merchant eligible, no mock merchants', env0 == ['production', False, 0], env0)
         ok('S1b no shopping section, no disclosure, 0 external store links in the DOM', d0.locator('.wtb').count() == 0 and d0.locator('.wtbdisc').count() == 0 and not d0.evaluate(LINKS), d0.evaluate(LINKS))
         d0.click('#saveProj'); d0.click('#openSaved'); d0.click('#pAllBuy'); d0.wait_for_timeout(100)
         ok('S1c project plan: no section, no links', d0.locator('.wtb').count() == 0 and not d0.evaluate(LINKS))
-        d0.click('#pShop'); ok('S1d Shop mode: no section, no links', d0.locator('.wtb').count() == 0 and not d0.evaluate(LINKS))
+        if not SHOP_MODE_RETIRED:  # S1d retired in-store Shop mode
+            d0.click('#pShop'); ok('S1d Shop mode: no section, no links', d0.locator('.wtb').count() == 0 and not d0.evaluate(LINKS))
         src = d0.request.get(B + 'shop/merchants.js').text()
         ok('S1e published register has no affiliate or store URLs and no mock merchants', not re.search(r"https?://", re.sub(r'/\*[\s\S]*?\*/', '', src)) and '.example' not in src and 'mockMerchants=' not in src)
         ok('S1f mock file is not published', d0.request.get(B + 'shop/merchants.mock.js').status == 404 and d0.request.get(B + 'retailers.js').status == 404)
@@ -582,14 +608,15 @@ with sync_playwright() as p:
     a.locator('#pPlan input[data-bought="dmc:310"]').click(); a.wait_for_timeout(150)
     ok('S15b bought-but-not-received items are not offered again (no forced re-buy)', a.locator('#pWtb a[data-level=A]').count() == 0 and 'DMC 310' not in a.inner_text('#pWtb'), a.inner_text('#pWtb'))
     s_before = a.evaluate(STK); a.evaluate("document.getElementById('tabConvert').click()"); a.wait_for_timeout(80); a.evaluate("document.getElementById('tabProjects').click()"); a.wait_for_timeout(80)
-    a.click('[data-open]') if a.locator('[data-open]:visible').count() else None; a.wait_for_timeout(120); a.click('#pShop'); a.wait_for_timeout(100); a.click('#shBack'); a.wait_for_timeout(100)
+    a.click('[data-open]') if a.locator('[data-open]:visible').count() else None; a.wait_for_timeout(120); a.click('#tabShop'); a.wait_for_timeout(100); a.click('#shBack'); a.wait_for_timeout(100)
     ok('S16 re-rendering the shopping section (plan, Shop mode, tabs) never changes project data', a.evaluate(STK) == s_before)
     ok('S16b no project name in any link', 'Secret' not in ' '.join(a.evaluate("[...document.querySelectorAll('a[href]')].map(a=>a.href)")))
     csvp = a.evaluate("FlossFoxProjects.csv(FlossFoxProjects._store().projects[0])"); ok('S17 CSV: no URLs', 'http' not in csvp)
     bk = a.evaluate("JSON.stringify(FlossFoxProjects._store())"); ok('S17b backup data: no URLs', 'floss-store' not in bk and 'awin' not in bk)
     pt = a.evaluate("FlossFoxProjects.planText?FlossFoxProjects.planText(FlossFoxProjects._store().projects[0]):''"); ok('S17c project copy text: no URLs', 'http' not in pt)
-    a.click('#pShop'); a.wait_for_timeout(100)
-    ok('S18 Shop mode: one section with disclosure', a.locator('#shWtb .wtb').count() == 1 and a.locator('#shWtb .wtbdisc').count() == 1)
+    if not SHOP_MODE_RETIRED:  # S18 retired in-store Shop mode
+        a.click('#pShop'); a.wait_for_timeout(100)
+        ok('S18 Shop mode: one section with disclosure', a.locator('#shWtb .wtb').count() == 1 and a.locator('#shWtb .wtbdisc').count() == 1)
     a.select_option('#dest', 'anchor') if a.locator('#dest').is_visible() else None
     # S19 Anchor target: no DMC exact offer
     an = spage(REALFX); an.goto(B); an.fill('#inp', '310 x2'); an.click('#go'); an.select_option('#dest', 'anchor'); an.wait_for_timeout(150)
@@ -911,24 +938,25 @@ with sync_playwright() as p:
         sd.locator('#pPlan input[data-bought]:not(:checked)').first.click(); sd.wait_for_timeout(100)
     d1 = sd.evaluate(DONE)
     ok('R1 all bought, awaiting check-in -> presenting "Shopping list done!" + check-in guidance, not ready to stitch', d1 and d1[0] == 'done' and d1[1] == 'presenting' and 'Shopping list done' in d1[2] and 'check' in d1[2].lower() and 'stitching' not in d1[2].lower(), d1)
-    sd.click('#pShop'); sd.wait_for_timeout(80); d2 = sd.evaluate(DONE)
-    ok('R1b Shop mode: same "Shopping list done" state, no cross-stitch', d2 and d2[0] == 'done' and sd.locator('img[data-pose=cross-stitch]').count() == 0, d2)
-    for code in ['310', '321']:
-        sd.click(f'#sr-dmc_{code}'); sd.fill(f'#sq-dmc_{code}', '1'); sd.click(f'#ss-dmc_{code}'); sd.wait_for_timeout(120)
-    d3 = sd.evaluate(DONE)
-    ok('R2 every color received in full -> cross-stitch "Ready to start stitching!"', d3 and d3[0] == 'stitch' and d3[1] == 'cross-stitch' and 'Ready to start stitching!' in d3[2], d3)
-    before = sd.evaluate(STK); sd.click('#shBack'); sd.wait_for_timeout(80); d4 = sd.evaluate(DONE)
-    ok('R2b project view agrees (cross-stitch)', d4 and d4[0] == 'stitch', d4)
-    sd.evaluate("document.getElementById('tabConvert').click()"); sd.wait_for_timeout(100); sd.evaluate("document.getElementById('pipToggle').click()"); sd.evaluate("document.getElementById('tabProjects').click()"); sd.wait_for_timeout(100); sd.click('[data-open]') if sd.locator('[data-open]:visible').count() else None; sd.wait_for_timeout(80); d5 = sd.evaluate(DONE)
-    ok('R3 Pip hidden: same completion state and text, no Pip images', d5 and d5[0] == 'stitch' and d5[1] is None and 'Ready to start stitching!' in d5[2] and sd.locator('#projectsView img[src*="assets/pip/"]:visible').count() == 0, d5)
-    ok('R3b Pip never changes Have/Check/Buy or bought/received records', sd.evaluate(STK) == before)
-    sa = page(412, True, init=SEED); newproj(sa, '310 x1\n321', 'Assumed'); sa.click('#pAllBuy'); sa.wait_for_timeout(80); sa.click('#pShop')
-    for code in ['310', '321']:
-        sa.click(f'#sb-dmc_{code}'); sa.click(f'#sw-dmc_{code}'); sa.fill(f'#sq-dmc_{code}', '1'); sa.click(f'#ss-dmc_{code}'); sa.wait_for_timeout(120)
-    d6 = sa.evaluate(DONE)
-    ok('R4 received but an amount was only assumed -> reassuring guidance, never cross-stitch', d6 and d6[0] == 'check' and d6[1] == 'reassuring' and sa.locator('img[data-pose=cross-stitch]').count() == 0, d6)
-    se = page(412, True, init=SEED); newproj(se, '310 x1', 'Empty'); se.click('#pShop') if se.locator('#pShop').count() else None; se.wait_for_timeout(80); d7 = se.evaluate(DONE)
-    ok('R5 nothing marked to buy -> organizing (or no completion block), never cross-stitch', (d7 is None or d7[1] in ('organizing', 'reassuring', None)) and se.locator('img[data-pose=cross-stitch]').count() == 0, d7)
+    if not SHOP_MODE_RETIRED:  # R1b-R5 exercise the retired in-store Shop mode
+        sd.click('#pShop'); sd.wait_for_timeout(80); d2 = sd.evaluate(DONE)
+        ok('R1b Shop mode: same "Shopping list done" state, no cross-stitch', d2 and d2[0] == 'done' and sd.locator('img[data-pose=cross-stitch]').count() == 0, d2)
+        for code in ['310', '321']:
+            sd.click(f'#sr-dmc_{code}'); sd.fill(f'#sq-dmc_{code}', '1'); sd.click(f'#ss-dmc_{code}'); sd.wait_for_timeout(120)
+        d3 = sd.evaluate(DONE)
+        ok('R2 every color received in full -> cross-stitch "Ready to start stitching!"', d3 and d3[0] == 'stitch' and d3[1] == 'cross-stitch' and 'Ready to start stitching!' in d3[2], d3)
+        before = sd.evaluate(STK); sd.click('#shBack'); sd.wait_for_timeout(80); d4 = sd.evaluate(DONE)
+        ok('R2b project view agrees (cross-stitch)', d4 and d4[0] == 'stitch', d4)
+        sd.evaluate("document.getElementById('tabConvert').click()"); sd.wait_for_timeout(100); sd.evaluate("document.getElementById('pipToggle').click()"); sd.evaluate("document.getElementById('tabProjects').click()"); sd.wait_for_timeout(100); sd.click('[data-open]') if sd.locator('[data-open]:visible').count() else None; sd.wait_for_timeout(80); d5 = sd.evaluate(DONE)
+        ok('R3 Pip hidden: same completion state and text, no Pip images', d5 and d5[0] == 'stitch' and d5[1] is None and 'Ready to start stitching!' in d5[2] and sd.locator('#projectsView img[src*="assets/pip/"]:visible').count() == 0, d5)
+        ok('R3b Pip never changes Have/Check/Buy or bought/received records', sd.evaluate(STK) == before)
+        sa = page(412, True, init=SEED); newproj(sa, '310 x1\n321', 'Assumed'); sa.click('#pAllBuy'); sa.wait_for_timeout(80); sa.click('#pShop')
+        for code in ['310', '321']:
+            sa.click(f'#sb-dmc_{code}'); sa.click(f'#sw-dmc_{code}'); sa.fill(f'#sq-dmc_{code}', '1'); sa.click(f'#ss-dmc_{code}'); sa.wait_for_timeout(120)
+        d6 = sa.evaluate(DONE)
+        ok('R4 received but an amount was only assumed -> reassuring guidance, never cross-stitch', d6 and d6[0] == 'check' and d6[1] == 'reassuring' and sa.locator('img[data-pose=cross-stitch]').count() == 0, d6)
+        se = page(412, True, init=SEED); newproj(se, '310 x1', 'Empty'); se.click('#pShop') if se.locator('#pShop').count() else None; se.wait_for_timeout(80); d7 = se.evaluate(DONE)
+        ok('R5 nothing marked to buy -> organizing (or no completion block), never cross-stitch', (d7 is None or d7[1] in ('organizing', 'reassuring', None)) and se.locator('img[data-pose=cross-stitch]').count() == 0, d7)
     # ---------- Release review: art delivery and usability ----------
     ld = page(412, True, init=SEED); reqs = []; ld.on('request', lambda r: reqs.append(r.url) if '/assets/pip/' in r.url else None); ld.goto(B); ld.wait_for_timeout(600)
     poses = sorted({re.sub(r'-(\d+)\.(webp|png)$', '', u.split('/pip-')[-1]) for u in reqs})

@@ -4,7 +4,7 @@
 (function(root){'use strict';
 function route(query){const q=String(query||'').trim().slice(0,600);if(!q)return null;
  if(/\b(?:upload|import|scan|read|open)\b.*\b(?:pattern|pdf|chart|legend|image)\b|\b(?:pattern|pdf)\b.*\b(?:upload|import|scan)\b/i.test(q)){
-  return{id:'pattern-open',answer:'I can open the pattern importer. It reads PDF text locally when possible. You review colors before saving; scanning a photographed legend requires your approval before one page is sent online. Full chart stitch-grid recognition is not yet verified.',source:'local action',action:'pattern'};
+  return{id:'pattern-open',answer:'I can open the pattern importer. It reads PDF text locally when possible. You review colors before saving'+((typeof window!=='undefined'&&window.PIP_PATTERN_CONFIG&&window.PIP_PATTERN_CONFIG.enabled===true)?'; scanning a photographed legend requires your approval before one page is sent online':'; photographed legends are typed in by you')+'. Full chart stitch-grid recognition is not yet verified.',source:'local action',action:'pattern'};
  }
  if(/\b(?:move|put|reorganize|store|organize)\b.*\b(?:thread|floss|skein|color|box|drawer)\b/i.test(q))return{id:'organizer-open',answer:'Open My Thread Collection to edit storage locations. For several colors, use Bulk storage and review the changes before saving. I will not move anything automatically.',source:'local action',actions:[{label:'Open My Thread Collection',href:'index.html#threads'}]};
  const m=/\b(?:DMC\s*)?(\d{1,4}|B5200|BLANC|ECRU)\b/i.exec(q);

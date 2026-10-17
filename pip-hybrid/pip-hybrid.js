@@ -48,7 +48,7 @@
   msg('user',question);
   if(local){msg('pip',local.answer,local.source==='local calculation'?'Calculated offline':local.source==='local inventory'?'Local collection':local.source==='local action'?'Local task':'Built-in help',local.actions?.[0]);if(local.action==='pattern'&&window.FlossFoxPatternUI?.open)window.FlossFoxPatternUI.open();
    notice('Answered locally. No network request made.');
-  }else{msg('pip','I don’t have a reliable built-in answer for that yet. You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.','Built-in help');showMenu();notice('No matching offline answer. No network request made.');}
+  }else{msg('pip','I don’t have a reliable built-in answer for that yet. '+(onlineReady?'You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.':'You can try the guided help below.'),'Built-in help');showMenu();notice('No matching offline answer. No network request made.');}
   field.value='';
  }
  function cancelPending(){pending=null;if(preview)preview.hidden=true;turnstileToken='';if(window.turnstile&&turnstileId!==null){try{window.turnstile.reset(turnstileId)}catch{}}}
@@ -111,15 +111,15 @@
   dialog=node('dialog','piph-dialog');dialog.id='pipHybridDialog';dialog.setAttribute('aria-label','Chat with Pip');
   const layout=node('section','piph-layout');const hdr=node('header','piph-header');
   const img=node('img');img.src='assets/pip/pip-helpful-160.webp';img.alt='';img.width=52;img.height=76;
-  const wrap=node('div');wrap.append(node('h2','', 'Chat with Pip'),node('p','', 'Offline guide · optional AI by permission'));
+  const wrap=node('div');wrap.append(node('h2','', 'Chat with Pip'),node('p','', onlineReady?'Offline guide · optional AI by permission':'Offline guide'));
   const close=node('button','piph-close','Close');close.type='button';close.addEventListener('click',()=>dialog.close());hdr.append(img,wrap,close);
   log=node('div','piph-log');log.setAttribute('role','log');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');
-  const controls=node('form','piph-controls');const info=node('p','piph-note','Offline answers never leave this browser. For online AI, you approve the exact message and recent online conversation before sending. Do not share confidential details.');
+  const controls=node('form','piph-controls');const info=node('p','piph-note',onlineReady?'Offline answers never leave this browser. For online AI, you approve the exact message and recent online conversation before sending. Do not share confidential details.':'Pip answers from built-in help on this device. Nothing you type leaves this browser.');
   field=node('textarea');field.id='piphMessage';field.maxLength=MAX_MSG;field.placeholder='Ask Pip about cross-stitch…';field.setAttribute('aria-label','Question for Pip');
   field.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(!busy)controls.requestSubmit()}});
   const actions=node('div','piph-actions');const clearBtn=node('button','sec','Clear chat');clearBtn.type='button';clearBtn.addEventListener('click',clear);
   sendButton=node('button','pri','Ask offline');sendButton.type='submit';
-  onlineButton=node('button','sec','Ask online AI');onlineButton.type='button';onlineButton.disabled=!onlineReady;onlineButton.addEventListener('click',prepareOnline);
+  onlineButton=node('button','sec','Ask online AI');onlineButton.type='button';onlineButton.disabled=!onlineReady;onlineButton.hidden=!onlineReady;/* CI005: AI-only control hidden while AI is off */onlineButton.addEventListener('click',prepareOnline);
   status=node('span','piph-status','Built-in help ready.');status.setAttribute('role','status');
   actions.append(clearBtn,sendButton,onlineButton);controls.append(info,field,actions,status);
   preview=node('section','piph-preview');preview.hidden=true;preview.setAttribute('aria-label','Review information sent online');
