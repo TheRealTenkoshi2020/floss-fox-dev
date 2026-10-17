@@ -1,9 +1,10 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v1.9-10-v2b2-skein20a-about';
+const CACHE = 'flossfox-dev-v2.0a-ci005-0';
 const CORE = [
   './',
   "about.html",
+  "assets/nav.css",
   "demo.js",
   "fabric.html",
   "fabric/calc.js",

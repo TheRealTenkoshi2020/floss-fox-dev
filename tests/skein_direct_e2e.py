@@ -1,7 +1,7 @@
 import json,re
 from playwright.sync_api import sync_playwright
 import sys
-B=(sys.argv[1] if len(sys.argv)>1 else 'http://localhost:8765/').rstrip('/')+'/';KEY='flossfox-dev.v1';PFX=KEY[:-3];TKEY=PFX+'.threads.v1'
+B=(sys.argv[1] if len(sys.argv)>1 else 'http://localhost:8765/').rstrip('/')+'/';import os;KEY=os.environ.get('FF_KEY','flossfox-dev.v1');PFX=KEY[:-3];TKEY=PFX+'.threads.v1'
 it=lambda c,q:{'code':c,'qty':q,'assumed':0,'stated':True,'src':[c]}
 items=[it('310',2),it('321',1),it('666',1),it('3865',1),it('415',1),it('48',1)]
 dec={'310':{'status':'buy'},'321':{'status':'buy'},'666':{'status':'buy'},'3865':{'status':'check'},'415':{'status':'have','owned':2},'48':{'status':'buy'}}
@@ -63,9 +63,10 @@ with sync_playwright() as p:
   ok(t+'no page errors',not errs,errs);c.close()
  # fixture flag
  c=ctx_for(b,1280,False);g=c.new_page();g.goto(B+'?fixtures=1');g.wait_for_load_state('networkidle')
+ PREV=g.evaluate('window.FLOSS_FOX_ENV')=='preview'
  ok('fixtures=1 loads demo merchants',g.evaluate("(FLOSS_FOX_SHOP.mockMerchants||[]).length")>=2)
  g.fill('#inp','310 x2\n321');g.click('#go');g.wait_for_timeout(300)
- ok('fixtures=1 shows demo store cards',g.locator('.wtbstore').count()>0 and '(demo)' in g.inner_text('body'))
+ ok('fixtures=1 shows demo store cards (preview) / still none in production',(not PREV and g.locator('.wtbstore').count()==0 and '(demo)' not in g.inner_text('body')) or g.locator('.wtbstore').count()>0 and '(demo)' in g.inner_text('body'))
  g.goto(B);g.wait_for_load_state('networkidle');g.fill('#inp','310 x2\n321');g.click('#go');g.wait_for_timeout(300)
  ok('no flag: no demo merchants/cards',g.evaluate("(FLOSS_FOX_SHOP.mockMerchants||[]).length")==0 and g.locator('.wtbstore').count()==0 and '(demo)' not in g.inner_text('body'))
  c.close()
