@@ -22,6 +22,20 @@ def _route_view(self, sel):
         pass
     if v: _ORIG['click'](self, _VIEW_TAB[v]); self.wait_for_timeout(60)
 _ORIG = {}
+from playwright.sync_api import Locator as _Locator
+_LORIG = {}
+for _m in ('click', 'check', 'uncheck', 'fill'):
+    _LORIG[_m] = getattr(_Locator, _m)
+    def _lwrap(name):
+        def f(self, *a, **k):
+            try:
+                v = self.first.evaluate("e=>{const w=e.closest('#shopView,#projectsView');return w&&w.hidden?w.id:null}", timeout=2000)
+            except Exception:
+                v = None
+            if v: _ORIG['click'](self.page, _VIEW_TAB[v]); self.page.wait_for_timeout(60)
+            return _LORIG[name](self, *a, **k)
+        return f
+    setattr(_Locator, _m, _lwrap(_m))
 # 2.0A: the in-store Shop mode (#shList/#sb-*/#shBack) is no longer reachable from the UI; its checks are skipped.
 SHOP_MODE_RETIRED = True
 for _m in ('click', 'check', 'uncheck', 'fill', 'select_option', 'set_input_files'):
@@ -56,7 +70,7 @@ def conv(pg, text, dest=None):
 with sync_playwright() as p:
     br = p.chromium.launch(executable_path=A.chrome, args=['--no-sandbox'])
     # Legacy checks run as a returning visitor (tour already dismissed, tips off). Tour tests opt out with fresh=True.
-    PFX = os.environ.get('FF_PIP_KEY', 'flossfox.pip.v1').replace('.pip.v1', '')
+    PFX = os.environ.get('FF_PIP_KEY', KEY.replace('.v1', '.pip.v1')).replace('.pip.v1', '')  # follows FF_KEY (dev: flossfox-dev.*)
     TK, HK = PFX + '.tour.v1', PFX + '.hints.v1'
     SEED = "try{if(!localStorage.getItem('%s'))localStorage.setItem('%s','{\"status\":\"dismissed\"}');if(!localStorage.getItem('%s'))localStorage.setItem('%s','off')}catch(e){}" % (TK, TK, HK, HK)
     _nc = br.new_context
@@ -351,7 +365,7 @@ with sync_playwright() as p:
     # contrast (measured)
     cv = page(412, True); cv.goto(B + '?sample'); res = {'home': cv.evaluate(CJS)}
     cv.click('#saveProj'); cv.click('#openSaved'); cv.check('#st-310-have'); cv.check('#st-321-buy'); cv.check('#st-3865-check'); cv.click('#x-321'); res['project'] = cv.evaluate(CJS)
-    cv.click('#tabShop'); res['shop'] = cv.evaluate(CJS); cv.click('#tabHelp'); res['help'] = cv.evaluate(CJS)
+    cv.click('#tabShop'); cv.wait_for_timeout(700); res['shop'] = cv.evaluate(CJS); cv.click('#tabHelp'); cv.wait_for_timeout(700); res['help'] = cv.evaluate(CJS)  # measure after tab color transitions settle
     print('CONTRAST', json.dumps({k: {'checked': v['checked'], 'min': v['min']} for k, v in res.items()}))
     ok('N12 measured text contrast >= WCAG AA in all views', all(not v['fails'] for v in res.values()), {k: v['fails'] for k, v in res.items()})
     nt = cv.evaluate("""(()=>{const P=s=>s.match(/\\d+(\\.\\d+)?/g).map(Number),L=c=>{const f=x=>{x/=255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4)};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2])};
@@ -360,7 +374,7 @@ with sync_playwright() as p:
       const sg=document.querySelector('.seg');out.choice_border=r(P(getComputedStyle(sg).borderTopColor),[255,255,255]);return out})()""")
     print('NONTEXT', json.dumps(nt)); ok('N12b form-control borders >= 3:1 against white', min(nt.values()) >= 3, nt)
     # ---------- Pip companion ----------
-    PK = os.environ.get('FF_PIP_KEY', 'flossfox.pip.v1')
+    PK = PFX + '.pip.v1'
     pp = page(412, True); reqs = []; pp.on('request', lambda r: reqs.append(r.url)); pp.goto(B); pp.wait_for_load_state('networkidle')
     pst = lambda g: g.evaluate("[FlossFoxPip.current(), document.getElementById('pip').dataset.pose, document.getElementById('pipMsg').textContent]")
     ok('P1 Pip appears on load; returning visitor gets welcome back (greeting-alt)', pp.locator('#pip').is_visible() and pst(pp) == ['welcomeBack', 'greeting-alt', 'Welcome back! Ready for another list?'], pst(pp))
@@ -608,7 +622,7 @@ with sync_playwright() as p:
     a.locator('#pPlan input[data-bought="dmc:310"]').click(); a.wait_for_timeout(150)
     ok('S15b bought-but-not-received items are not offered again (no forced re-buy)', a.locator('#pWtb a[data-level=A]').count() == 0 and 'DMC 310' not in a.inner_text('#pWtb'), a.inner_text('#pWtb'))
     s_before = a.evaluate(STK); a.evaluate("document.getElementById('tabConvert').click()"); a.wait_for_timeout(80); a.evaluate("document.getElementById('tabProjects').click()"); a.wait_for_timeout(80)
-    a.click('[data-open]') if a.locator('[data-open]:visible').count() else None; a.wait_for_timeout(120); a.click('#tabShop'); a.wait_for_timeout(100); a.click('#shBack'); a.wait_for_timeout(100)
+    a.click('[data-open]') if a.locator('[data-open]:visible').count() else None; a.wait_for_timeout(120); a.click('#tabShop'); a.wait_for_timeout(100); a.click('#tabProjects'); a.wait_for_timeout(100)
     ok('S16 re-rendering the shopping section (plan, Shop mode, tabs) never changes project data', a.evaluate(STK) == s_before)
     ok('S16b no project name in any link', 'Secret' not in ' '.join(a.evaluate("[...document.querySelectorAll('a[href]')].map(a=>a.href)")))
     csvp = a.evaluate("FlossFoxProjects.csv(FlossFoxProjects._store().projects[0])"); ok('S17 CSV: no URLs', 'http' not in csvp)
@@ -931,7 +945,7 @@ with sync_playwright() as p:
     ok('C5 list still to buy -> no cross-stitch yet (only real events)', c.locator('img[data-pose=cross-stitch]').count() == 0)
     ok('C6 everything bought (not checked in) -> no cross-stitch', c.locator('img[data-pose=cross-stitch]').count() == 0)
     # ---------- Release review: shopping completion ----------
-    DONE = "(()=>{const e=document.querySelector('#projEdit [data-done]');if(!e)return null;const i=e.querySelector('img');return [e.dataset.done,i?i.dataset.pose:null,e.innerText]})()"
+    DONE = "(()=>{const e=document.querySelector('#shopView [data-done]')||document.querySelector('#projEdit [data-done]');if(!e)return null;const i=e.querySelector('img');return [e.dataset.done,i?i.dataset.pose:null,e.innerText]})()"
     STK = "JSON.stringify((JSON.parse(localStorage.getItem('%s'))||{}).projects.map(p=>[p.decisions,p.purchased,p.received]))" % KEY
     sd = page(412, True, init=SEED); newproj(sd, '310 x1, 321 x1', 'Done'); sd.click('#pAllBuy'); sd.wait_for_timeout(80)
     for code in ['310', '321']:
