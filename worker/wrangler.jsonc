@@ -1,0 +1,25 @@
+{
+  "name": "flossfox-pip-beta",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-16",
+  "workers_dev": true,
+  "vars": {
+    "AI_ENABLED": "false",
+    "PATTERN_ENABLED": "false",
+    "PATTERN_DAILY_GLOBAL": "20",
+    "PATTERN_MONTHLY_GLOBAL": "200",
+    "PATTERN_DAILY_VISITOR": "2",
+    "TURNSTILE_REQUIRED": "true",
+    "TURNSTILE_HOSTNAME": "floss-fox-dev.example.invalid",
+    "ALLOWED_ORIGINS": "https://floss-fox-dev.example.invalid",
+    "DAILY_GLOBAL_LIMIT": "120",
+    "MONTHLY_GLOBAL_LIMIT": "1200",
+    "DAILY_VISITOR_LIMIT": "12",
+    "MINUTE_VISITOR_LIMIT": "3"
+  },
+  "durable_objects": {
+    "bindings": [{"name":"USAGE_GATE","class_name":"UsageGate"}]
+  },
+  "migrations": [{"tag":"v1","new_sqlite_classes":["UsageGate"]}],
+  "secrets": {"required":["GOOGLE_API_KEY","IP_HASH_KEY","TURNSTILE_SECRET"]}
+}

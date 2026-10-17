@@ -133,6 +133,7 @@ function renderAsk(){const c=context();const a=TOPICS.find(t=>t[0]===lastTopic);
  <div class="atopics" role="group" aria-label="Help topics">${TOPICS.map(t=>`<button type="button" class="sec" data-a="${t[0]}"${t[0]===lastTopic?' aria-pressed="true"':''}>${esc(t[1])}</button>`).join('')}</div>
  ${a?`<div class="aans" id="askAns" tabindex="-1"><b>${esc(a[1])}</b><p>${esc(a[2])}</p></div>`:''}
  <div class="row"><label class="hintpref"><input type="checkbox" id="hintsAsk"${hintsOn()?' checked':''}> Show Pip's tips while I work</label><button type="button" class="ghost" data-a="close">Close</button></div>`;
+ window.FlossFoxPipHybrid?.decorateAskPanel(ask);
  $('hintsAsk').onchange=e=>setHints(e.target.checked)}
 function openAsk(){lastTopic=null;renderAsk();ask.hidden=false;askBtn.setAttribute('aria-expanded','true');$('askPipH').focus()}
 function closeAsk(focus){if(ask.hidden)return;ask.hidden=true;askBtn.setAttribute('aria-expanded','false');if(focus)askBtn.focus()}

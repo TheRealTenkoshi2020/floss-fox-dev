@@ -394,7 +394,7 @@ function csv(p){const P=plan(p),extra=!!(p.skeinEstimator&&p.skeinEstimator.enab
  return rows.map(r=>r.map(q).join(',')).join('\r\n')+'\r\n'}
 // Full backup, version 1: projects (top-level array, so 1.6 can still restore the projects) + thread collection + small prefs.
 // Demo items are never exported. Old project-only backups (no kind) are still accepted.
-const PFX=KEY.replace(/\.v1$/,''),PREKEY=PFX+'.preimport.v1',BK_VERSION=1;
+const PFX=KEY.replace(/\.v1$/,''),PREKEY=PFX+'.preimport.v1',BK_VERSION=2;
 const PREF_KEYS={pip:PFX+'.pip.v1',hints:PFX+'.hints.v1',tips:PFX+'.tips.v1',fabric:PFX+'.fabric.v1'};
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const TUI=()=>window.FlossFoxThreadsUI;

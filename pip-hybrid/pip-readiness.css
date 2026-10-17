@@ -1,0 +1,4 @@
+.ff-readiness{margin-bottom:16px}.ff-readiness h2{margin:0 0 7px}.ff-readiness h3{font-size:1rem;margin:12px 0 5px}
+.ff-readiness-controls{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:12px 0}.ff-readiness-controls label{font-weight:600}.ff-readiness-controls select{font:inherit;min-height:44px;min-width:min(100%,240px);max-width:100%;padding:8px;border:1px solid var(--line,#bbb);background:white;border-radius:10px}
+.ff-readiness-controls button{min-height:44px}.ff-readiness-list{padding-left:22px;max-height:240px;overflow:auto}.ff-readiness-list li{margin:4px 0;overflow-wrap:anywhere}
+.ff-readiness-heading{font-weight:700}.ff-readiness-result{overflow-wrap:anywhere}
