@@ -9,21 +9,21 @@ const create=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.class
 function api(){return root.FlossFoxProjects}
 /* ---- User-facing strings (functional labels; Pixel may replace wording). Listed in /workspace/ci005/STRINGS_FOR_PIXEL.md ---- */
 const STR=Object.freeze({
- title:'Readiness details',
- intro:'Uses the same decisions and amounts as your shopping list. Where you saved a storage spot in My threads, it is shown.',
- confirmed:'Confirmed: you have these',
+ title:'Pip\'s readiness check',
+ intro:'This uses the same choices and amounts as your shopping list. If you\'ve saved a storage location in My Thread Collection, you\'ll see it here.',
+ confirmed:'Have enough',
  buy:'Need to buy',
- awaiting:'Bought: check in when they arrive',
- unknown:'Not sure yet: amount or ownership needs checking',
+ awaiting:'Waiting to check in',
+ unknown:'Check first',
  stored:'Stored:',
- noSpot:'no storage spot saved',
+ noSpot:'no storage location saved',
  toBuy:n=>`${n} to buy`,
- estimates:'Includes provisional skein estimates. Actual thread use varies.',
- counts:r=>`${r.counts.ready} of ${r.total} confirmed · ${r.counts.toBuy} to buy · ${r.counts.awaiting} waiting · ${r.counts.review} not sure`,
- unavailable:'Readiness details could not be shown right now. The summary above is still correct.',
- chatIntro:'Choose a project. I will open its readiness details right in the project.',
- chatNone:'There are no saved projects yet. Add some colors and save a project first.',
- chatOpened:name=>`Opened “${name}”. Its readiness details are under the project summary.`
+ estimates:'Some amounts are Pip\'s estimates, so real thread use may vary.',
+ counts:r=>`${r.counts.ready} of ${r.total} have enough · ${r.counts.toBuy} to buy · ${r.counts.awaiting} to check in · ${r.counts.review} to check first`,
+ unavailable:'We couldn\'t show the readiness check just now. The project summary is still up to date.',
+ chatIntro:'Pick a project and I\'ll open its readiness check right inside it.',
+ chatNone:'You don\'t have any saved projects yet. Add some colors on Find My Floss and save a project, then I can check it.',
+ chatOpened:name=>`I opened “${name}” for you. Its readiness check is just below the project summary.`
 });
 function storageMap(project){const T=root.FlossFoxThreadsUI;if(!T||typeof T.data!=='function')return{};const d=T.data()||{};return (project&&project.demo?d.demo:d.threads)||{}}
 /* One in-project readiness view. Takes the plan the project editor already computed (no second calculation). */
@@ -58,7 +58,7 @@ function chooseForChat(host,respond){
 function mount(){const view=document.getElementById('projectsView');if(!view||view.querySelector('#pipProjectReadiness'))return;
  const panel=create('section','card ff-readiness');panel.id='pipProjectReadiness';
  const heading=create('h2','', 'Pip’s Project Readiness Check');
- const note=create('p','hint','Read-only and offline. Uses the same project decisions and quantities as your shopping list. Does not reserve floss between projects.');
+ const note=create('p','hint','This check only reads your project, on this device. It uses the same choices and amounts as your shopping list, and it doesn\'t reserve floss between projects.');
  const form=create('div','ff-readiness-controls');const lbl=create('label','', 'Project to check');const select=create('select');select.id='ffReadinessProject';lbl.htmlFor=select.id;
  const button=create('button','sec','Check this project');button.type='button';
  const details=create('div','ff-readiness-result');details.setAttribute('role','status');details.setAttribute('aria-live','polite');
@@ -67,13 +67,13 @@ function mount(){const view=document.getElementById('projectsView');if(!view||vi
   try{const r=inspect(select.value);details.append(create('p','ff-readiness-heading',r.ready?'Ready according to your project plan':'Still needs attention'));
     details.append(create('p','',`${r.counts.ready}/${r.total} accounted for · ${r.counts.toBuy} need buying · ${r.counts.awaiting} waiting to check in · ${r.counts.review} to review`));
     if(r.hasEstimates)details.append(create('p','hint','Includes provisional skein estimates. Actual thread use varies.'));
-    const sections=[['review','Check first'],['buy','Need to buy'],['awaiting','Waiting for check-in'],['have','Have enough'],['received','Received']];
+    const sections=[['review','Check first'],['buy','Need to buy'],['awaiting','Waiting to check in'],['have','Have enough'],['received','Received']];
     for(const [key,label] of sections){if(!r.groups[key].length)continue;const h=create('h3','',label);const ul=create('ul','ff-readiness-list');for(const t of r.groups[key]){
       const text=`DMC ${t.code}${t.remaining!==null?` · ${t.remaining} still to buy`:''}${t.location?` · Stored: ${t.location}`:''}${t.reason?` · ${t.reason}`:''}`;
       ul.append(create('li','',text));
     }details.append(h,ul)}
     details.append(create('p','hint',r.notice));
-  }catch{details.append(create('p','hint','Unable to calculate this project right now. Open the project to check its saved information.'))}
+  }catch{details.append(create('p','hint','I couldn\'t work this one out just now. Open the project to check its details.'))}
  }
  button.addEventListener('click',render);form.append(lbl,select,button);panel.append(heading,note,form,details);
  view.insertBefore(panel,view.querySelector('#projListCard')||view.firstChild);

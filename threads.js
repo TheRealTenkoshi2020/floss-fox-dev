@@ -67,7 +67,7 @@ function load(){let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){canSave=
   $('thReset').onclick=()=>{if(!confirm('Start a new, empty collection? The unreadable copy stays in browser storage under a separate name.'))return;canSave=true;data=C.empty();save();msg('');render()};return}
  data=m.data;if(m.skipped)msg(`${m.skipped} saved thread${m.skipped===1?'':'s'} couldn't be read and ${m.skipped===1?'was':'were'} skipped.`)}
 function save(){bulkStorageUndoState=null;if(!canSave){if(!mem)say('Not saved: saving is paused (see the note above).');return false}
- try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){say(e&&(e.name==='QuotaExceededError'||e.code===22)?'Not saved: browser storage is full.':'Not saved: browser storage refused the change.');return false}}
+ try{localStorage.setItem(KEY,JSON.stringify(data));return true}catch(e){say(e&&(e.name==='QuotaExceededError'||e.code===22)?'Not saved: browser storage is full.':'Not saved: your browser blocked the save.');return false}}
 const nm=c=>DMC[c].name.replace(/\b(vy|dk|lt|md|ul)\b/gi,m=>({vy:'very',dk:'dark',lt:'light',md:'medium',ul:'ultra'}[m.toLowerCase()]));
 const ST={stock:'In stock',partial:'Partial skein only',out:'Out of stock'};
 const MM=x=>x&&x.dataset&&x.dataset.m==='d'?(data.demo||{}):data.threads;
@@ -80,7 +80,7 @@ const byCode=(a,b)=>{const na=/^\d+$/.test(a)?+a:1e6,nb=/^\d+$/.test(b)?+b:1e6;r
 function sorted(){return Object.keys(data.threads).sort(byCode)}
 function render(){const V=$('threadsView');if(!V)return;const codes=sorted(),T=data.threads,D=Object.keys(data.demo||{}).sort(byCode);
  const sk=codes.reduce((a,c)=>a+T[c].n,0),out=codes.filter(c=>C.state(T[c])==='out').length,rs=codes.filter(c=>T[c].restock).length;
- $('thSum').innerHTML=(codes.length?`<b>${codes.length}</b> color${codes.length===1?'':'s'} · ${sk} full skein${sk===1?'':'s'}${out?` · ${out} out of stock`:''}${rs?` · ${rs} to restock`:''}`:'Your collection is empty. Add the DMC numbers you own above.')+(D.length?` <span class="mut">(plus ${D.length} demo threads, counted separately)</span>`:'');
+ $('thSum').innerHTML=(codes.length?`<b>${codes.length}</b> color${codes.length===1?'':'s'} · ${sk} full skein${sk===1?'':'s'}${out?` · ${out} out of stock`:''}${rs?` · ${rs} to restock`:''}`:'Your collection is empty for now. Add the DMC numbers you own above to get started.')+(D.length?` <span class="mut">(plus ${D.length} demo threads, counted separately)</span>`:'');
  $('thFilt').innerHTML=[['all','All'],['restock','Restock'],['out','Out of stock']].map(([k,l])=>`<button type="button" data-show="${k}" aria-pressed="${show===k}">${l}</button>`).join('');
  $('thList').innerHTML=codes.map(c=>row(c,false)).join('')+(D.length?`<li class="demohead" id="thDemoHead"><b>Demo threads</b> <span class="hint">Sample data for trying Floss Fox. Kept apart from your own threads and never added to them.</span> <button type="button" class="sec small" id="thRemoveDemo">Remove demo data</button></li>`+D.map(c=>row(c,true)).join(''):'');
  $('thTools').hidden=!codes.length&&!D.length;filter();bind();tip('threads');if(root.FlossFoxThreadLocationsUI)root.FlossFoxThreadLocationsUI.enhance();if(root.FlossFoxBulkStorageUI)root.FlossFoxBulkStorageUI.enhance()}
@@ -96,7 +96,7 @@ function keepFocus(id){const f=document.getElementById(id);if(f){if(f.disabled){
 const stamp=e=>{e.updated=new Date().toISOString()};
 async function removeDemo(){const n=Object.keys(data.demo||{}).length,P=window.FlossFoxProjects,np=P?P._store().projects.filter(x=>x.demo).length:0;
  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:'Wave goodbye to the demo data?',
-  body:`Pip tilts their head. That clears ${n} demo thread${n===1?'':'s'} and ${np} demo project${np===1?'':'s'}. Your own threads and projects stay put.`});
+  body:`That clears ${n} demo thread${n===1?'':'s'} and ${np} demo project${np===1?'':'s'}. Your own threads and projects stay put.`});
  if(!ok)return;
  delete data.demo;save();const rp=P&&P.removeDemo?P.removeDemo():0;render();say(`Demo data removed (${n} threads, ${rp} project${rp===1?'':'s'}). Your own data is unchanged.`);$('thAdd').focus()}
 function bind(){const L=$('thList');
@@ -108,8 +108,8 @@ function bind(){const L=$('thList');
  L.querySelectorAll('[data-rs]').forEach(x=>x.onchange=()=>{const c=x.dataset.rs,e=MM(x)[c];e.restock=x.checked;stamp(e);save();render();keepFocus(x.id)});
  L.querySelectorAll('[data-verify]').forEach(b=>b.onclick=()=>{const c=b.dataset.verify,e=MM(b)[c];e.confirmed=true;stamp(e);save();render();keepFocus('tn-'+(b.dataset.m==='d'?'d_':'')+c.replace(/[^\w]/g,'_'));say(`Confirmed ${e.n} full skein${e.n===1?'':'s'} of DMC ${lab(c)}.`)});
  L.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const c=b.dataset.del,M=MM(b),demo=b.dataset.m==='d',L=lab(c);
-  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:demo?`Wave goodbye to demo DMC ${L}?`:`Wave goodbye to DMC ${L}?`,
-   body:demo?'Pip tilts their head. Demo threads are just for trying Floss Fox — you can load them again anytime.':'Pip tilts their head. Are you sure? You can add it back anytime.'});
+  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:demo?`Remove demo DMC ${L}?`:`Wave goodbye to DMC ${L}?`,
+   body:demo?'Demo threads are just for trying Floss Fox. You can load them again anytime.':'Are you sure? You can add it back anytime.'});
   if(!ok)return;delete M[c];if(data.demo&&!Object.keys(data.demo).length)delete data.demo;save();render();say(`Removed DMC ${L}.`);$('thAdd').focus()});
  const rd=$('thRemoveDemo');if(rd)rd.onclick=removeDemo;
  $('thFilt').querySelectorAll('[data-show]').forEach(b=>b.onclick=()=>{show=b.dataset.show;render();const nb=$('thFilt').querySelector(`[data-show="${show}"]`);if(nb)nb.focus()})}
@@ -117,7 +117,7 @@ function addNow(){const t=$('thAdd').value;if(!t.trim()){say('Type or paste DMC 
  const r=parse(t);const big=r.items.filter(it=>(data.threads[it.code]?data.threads[it.code].n:0)+(Number.isInteger(it.qty)&&it.qty>0?it.qty:1)>CAP());
  if(big.length&&!confirm(`This would give you more than ${CAP()} full skeins of ${big.map(x=>'DMC '+lab(x.code)).join(', ')}. OK adds them anyway.`)){say('Nothing added.');return}
  const res=C.add(data,r.items),ok=save();
- $('thErr').innerHTML=r.errs.length?`<div class="errbox"><b>${r.errs.length} couldn't be added:</b><ul>${r.errs.map(e=>`<li>"${esc(e.t)}": ${esc(e.why)}.${(e.fixes||[]).filter(f=>!f.confirm).length?` <span class="mut">Did you mean ${e.fixes.filter(f=>!f.confirm).map(f=>`<i>${esc(f.label)}</i>`).join(' or ')}? Your collection counts skeins only (stitch counts aren't skeins).</span>`:''}</li>`).join('')}</ul>They're left in the box so you can fix them.</div>`:'';
+ $('thErr').innerHTML=r.errs.length?`<div class="errbox"><b>We had a little trouble reading ${r.errs.length} of those entries:</b><ul>${r.errs.map(e=>`<li>"${esc(e.t)}": ${esc(e.why)}.${(e.fixes||[]).filter(f=>!f.confirm).length?` <span class="mut">Did you mean ${e.fixes.filter(f=>!f.confirm).map(f=>`<i>${esc(f.label)}</i>`).join(' or ')}? Your collection counts skeins only (stitch counts aren't skeins).</span>`:''}</li>`).join('')}</ul>We've kept them right here in the box so you can check them and try again.</div>`:'';
  $('thAdd').value=r.errs.map(e=>e.t).join('\n');render();
  say(`${res.added?`Added ${res.added} new color${res.added===1?'':'s'}`:'No new colors'}${res.merged?`, added skeins to ${res.merged} you already had`:''}.${ok?'':' (Not saved in this browser.)'}`)}
 // Pip tips: inline (never over controls), existing poses only, once per view visit, dismissible, off with Pip hidden or tips off.
@@ -146,7 +146,7 @@ function setStorageLocation(code,storage,opts){
  if(normalized)e.storage=normalized;else delete e.storage;
  const nextMap={...map,[code]:e};
  const next=demo?{...data,demo:nextMap}:{...data,threads:nextMap};
- try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Browser storage refused the change. Nothing was applied.'}}
+ try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Your browser blocked the save. Nothing was applied.'}}
  data=next;bulkStorageUndoState=null;render();return{ok:true};
 }
 
@@ -165,23 +165,23 @@ function bulkStorageApply(codes,change,expected){
  if(!candidate.changes.length)return{ok:false,error:'No location changes are needed.'};
  const B=root.FlossFoxBulkStorageCore,at=new Date().toISOString();
  const next={...data,threads:B.applyCopy(data.threads,candidate,at)};
- try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Browser storage refused the change. Nothing was applied.'}}
+ try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Your browser blocked the save. Nothing was applied.'}}
  data=next;bulkStorageUndoState={changes:candidate.changes,at};render();
  return{ok:true,changed:candidate.changes.length};
 }
 function bulkStorageUndo(){
  const undo=bulkStorageUndoState;
- if(!undo)return{ok:false,error:'No bulk location change is available to undo.'};
- if(!canSave)return{ok:false,error:'Saving is paused; undo cannot be written.'};
+ if(!undo)return{ok:false,error:'There\'s no storage change to undo.'};
+ if(!canSave)return{ok:false,error:'Saving is paused, so the undo can\'t be saved.'};
  const B=root.FlossFoxBulkStorageCore;
  for(const c of undo.changes){const e=data.threads[c.code];
   if(!e||e.updated!==undo.at||!B.equal(B.normalize(e.storage),c.after)){
    bulkStorageUndoState=null;
-   return{ok:false,error:'A selected thread changed after this batch. Undo is no longer safe.'};
+   return{ok:false,error:'One of these threads changed since then, so undoing isn\'t safe anymore.'};
   }
  }
  const next={...data,threads:B.reverseCopy(data.threads,undo.changes)};
- try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Browser storage refused undo. Nothing was changed.'}}
+ try{localStorage.setItem(KEY,JSON.stringify(next))}catch(e){return{ok:false,error:'Your browser blocked the undo. Nothing was changed.'}}
  data=next;bulkStorageUndoState=null;render();return{ok:true,changed:undo.changes.length};
 }
 

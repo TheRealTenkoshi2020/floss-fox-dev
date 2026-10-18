@@ -45,7 +45,7 @@ function parseRow(line,validCodes,page){
 // Lines that look like thread legend rows for products this importer does not take (Light Effects, Satin, Etoile, Coloris, metallics, beads).
 const SPECIAL=/\b(?:light\s*effects?|satin|etoile|[ÉE]toile|coloris|metallic|kreinik|mill\s*hill|beads?|DMC\s*[ESC]\s?\d{2,4}|[ESC]\d{3,4})\b/i;
 function parsePages(pages,validCodes){
- if(!Array.isArray(pages)||pages.length>100)throw new Error('Invalid page list');
+ if(!Array.isArray(pages)||pages.length>100)throw new Error('That page list isn\'t valid.');
  let checked=0;const raw=[];const warnings=[];const skipped=[];
  for(const p of pages){let text=String(p.text||'');if(text.length>MAX_TEXT)text=text.slice(0,MAX_TEXT);
   const lines=text.split(/\r?\n/);for(const line of lines){if(++checked>MAX_LINES){warnings.push('text-limit-reached');break}const row=parseRow(line,validCodes,p.page);if(!row&&skipped.length<50&&(SPECIAL.test(line)||/\bDMC\s*[:#-]?\s*[A-Za-z]?\d/i.test(line)))skipped.push({page:p.page||1,line:String(line).trim().slice(0,160),reason:SPECIAL.test(line)?'specialty':'unrecognized'});if(row){raw.push(row);if(raw.length>=MAX_COLORS){warnings.push('color-limit-reached');break}}}
@@ -74,11 +74,11 @@ function projectDraft(rows,name){
  const items=[],seen=new Set();
  for(const row of rows){if(!row||!row.confirmed||!isSku(row.code)||seen.has(row.code))throw new Error('Review each color before importing');seen.add(row.code);
   const qty=row.qty==null?null:Number(row.qty),stitchCount=row.stitchCount==null?null:Number(row.stitchCount);
-  if(qty!==null&&(!Number.isInteger(qty)||qty<1||qty>9999))throw new Error('Invalid skeins');
-  if(stitchCount!==null&&(!Number.isInteger(stitchCount)||stitchCount<0||stitchCount>1e7))throw new Error('Invalid stitch count');
+  if(qty!==null&&(!Number.isInteger(qty)||qty<1||qty>9999))throw new Error('A skein amount isn\'t valid.');
+  if(stitchCount!==null&&(!Number.isInteger(stitchCount)||stitchCount<0||stitchCount>1e7))throw new Error('A stitch count isn\'t valid.');
   items.push({code:row.code,qty,stated:qty!==null,assumed:0,src:[`Reviewed pattern legend: ${String(row.sourceLine||row.code).slice(0,140)}`],stitchCount,stitchCountReviewed:stitchCount!==null,...(Number.isInteger(row.strandCount)?{strandCount:row.strandCount}:{})});
  }
- const now=new Date().toISOString();return{id:(globalThis.crypto?.randomUUID?.()||'pattern-'+Date.now()+'-'+Math.random().toString(36).slice(2,9)),name:String(name||'Imported pattern').trim().slice(0,100)||'Imported pattern',notes:'Imported from a user-reviewed pattern legend. Chart symbols and stitch-grid accuracy have NOT been verified.',buyBrand:'dmc',status:'planning',items,decisions:{},purchased:{},created:now,updated:now};
+ const now=new Date().toISOString();return{id:(globalThis.crypto?.randomUUID?.()||'pattern-'+Date.now()+'-'+Math.random().toString(36).slice(2,9)),name:String(name||'Imported pattern').trim().slice(0,100)||'Imported pattern',notes:'Imported from a pattern legend you reviewed. Chart symbols and the stitch grid have not been checked.',buyBrand:'dmc',status:'planning',items,decisions:{},purchased:{},created:now,updated:now};
 }
 return {normalCode,validCode,parseRow,parsePages,validateModelRows,projectDraft};
 });

@@ -25,18 +25,18 @@ function summarize(project,plan,storageMap={}){
  if(sum.total!==count||sum.sufficient!==grouped.have.length+grouped.received.length||sum.toBuy!==grouped.buy.length||sum.awaiting!==grouped.awaiting.length||sum.review!==grouped.review.length)throw new TypeError('Planner summary differs from project rows');
  const ready=plan.ready===true;
  if(ready&&(sum.total===0||sum.sufficient!==sum.total))throw new TypeError('Planner readiness inconsistent');
- return{projectId:clean(project.id),name:clean(project.name)||'Untitled project',total:count,ready,hasEstimates:!!plan.hasEstimates,counts:{ready:sum.sufficient,toBuy:sum.toBuy,awaiting:sum.awaiting,review:sum.review,checkFirst:num(sum.checkFirst)||0},groups:grouped,notice:'This explains the saved project decisions and the current plan—not a physical verification of your stash. The same skeins are not reserved across multiple projects.'};
+ return{projectId:clean(project.id),name:clean(project.name)||'Untitled project',total:count,ready,hasEstimates:!!plan.hasEstimates,counts:{ready:sum.sufficient,toBuy:sum.toBuy,awaiting:sum.awaiting,review:sum.review,checkFirst:num(sum.checkFirst)||0},groups:grouped,notice:'This is based on your saved project choices and current plan. It isn\'t a physical check of your threads, and the same skeins aren\'t reserved across projects.'};
 }
 function toText(r,{maxItems=12}={}){
  const nm=r.name,counts=r.counts;
  if(r.total===0)return `${nm}: No thread colors added yet. Add a pattern color list first.`;
  let out=`${nm}: ${r.ready?'Ready according to this project’s saved thread plan.':'Not ready yet according to the current plan.'} ${counts.ready} of ${r.total} colors accounted for; ${counts.toBuy} need buying; ${counts.awaiting} bought and awaiting check-in; ${counts.review} need attention.`;
  if(r.hasEstimates)out+=' Some quantities depend on provisional thread estimates; actual usage can vary.';
- const labels=[['review','Check first'],['buy','Need to buy'],['awaiting','Waiting for delivery'],['have','Have enough'],['received','Received']];
+ const labels=[['review','Check first'],['buy','Need to buy'],['awaiting','Waiting to check in'],['have','Have enough'],['received','Received']];
  let shown=0;
  for(const [category,label] of labels){const rows=r.groups[category];if(!rows.length)continue;
   const slots=Math.max(0,maxItems-shown);if(!slots)break;
-  out+=`\n${label}: `+rows.slice(0,slots).map(t=>`DMC ${t.code}${t.remaining!==null?' ('+t.remaining+' to buy)':''}${t.location?' [stored: '+t.location+']':''}${t.reason?' — '+t.reason:''}`).join('; ');
+  out+=`\n${label}: `+rows.slice(0,slots).map(t=>`DMC ${t.code}${t.remaining!==null?' ('+t.remaining+' to buy)':''}${t.location?' [stored: '+t.location+']':''}${t.reason?': '+t.reason:''}`).join('; ');
   shown+=Math.min(slots,rows.length);
  }
  if(shown<r.total)out+=`\nShowing ${shown} of ${r.total} colors. Open this project to see the full details.`;

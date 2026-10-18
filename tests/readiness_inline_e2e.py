@@ -24,7 +24,7 @@ with sync_playwright() as p:
         q321 = g.evaluate("FlossFoxProjects.plan(FlossFoxProjects._store().projects[0]).lines.find(l=>l.from.includes('321')).q")
         ok(f'[{w}] to-buy amount is the shopping plan amount (321)', f'{q321} to buy' in g.inner_text('#pReady [data-code="321"]'), (q321, g.inner_text('#pReady [data-code="321"]')))
         sm = g.evaluate("(()=>{const P=FlossFoxProjects.plan(FlossFoxProjects._store().projects[0]);return [P.sum.sufficient,P.sum.toBuy,P.sum.review,P.sum.total]})()")
-        ok(f'[{w}] counts equal the project summary (no double counting)', f'{sm[0]} of {sm[3]} confirmed · {sm[1]} to buy' in txt and g.inner_text('#sSuf').startswith(f'{sm[0]} of {sm[3]}'), (sm, txt[:120]))
+        ok(f'[{w}] counts equal the project summary (no double counting)', f'{sm[0]} of {sm[3]} have enough · {sm[1]} to buy' in txt and g.inner_text('#sSuf').startswith(f'{sm[0]} of {sm[3]}'), (sm, txt[:120]))
         before = g.evaluate(f"[localStorage.getItem('{KEY}'),localStorage.getItem('{PFX}.threads.v1')]")
         g.click('#pReady summary'); g.click('#pReady summary'); g.click('[data-flow=ready]'); g.wait_for_timeout(100)
         ok(f'[{w}] viewing readiness never writes project or thread data', g.evaluate(f"[localStorage.getItem('{KEY}'),localStorage.getItem('{PFX}.threads.v1')]") == before)

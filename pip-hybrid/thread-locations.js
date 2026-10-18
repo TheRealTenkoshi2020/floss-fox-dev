@@ -41,7 +41,7 @@ function enhance(){
   const buttons=document.createElement('div');buttons.className='ff-storage-actions';
   const save=document.createElement('button');save.type='button';save.className='sec';save.textContent='Save location';
   const clear=document.createElement('button');clear.type='button';clear.className='ghost';clear.textContent='Clear location';
-  const info=document.createElement('p');info.className='hint';info.textContent='One location for this color. Full-skein quantities and partial-skein flags stay unchanged.';
+  const info=document.createElement('p');info.className='hint';info.textContent='One storage location per color. Skein counts and partial-skein ticks don\'t change.';
   const canSave=api.canSave();save.disabled=!canSave;clear.disabled=!canSave||!s;
   if(!canSave)info.textContent='Saving is paused for this collection. Existing data will not be changed.';
   function commit(remove){

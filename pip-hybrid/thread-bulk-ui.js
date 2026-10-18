@@ -47,7 +47,7 @@ function toggleSelectionUI(){const panel=$('ffBulkPanel'),on=!!panel?.open;
 }
 function selectionChanged(){clearReview();rebuildSelectionUI()}
 function rebuildSelectionUI(){const count=$('ffBulkCount');if(count){const hidden=realRows().filter(li=>selected.has(li.dataset.code)&&li.hidden).length;
- count.textContent=`${selected.size} selected${hidden?` (${hidden} outside the current filter)`:''}. Only your real thread collection is included.`;}
+ count.textContent=`${selected.size} selected${hidden?` (${hidden} outside the current filter)`:''}. Demo threads aren't included.`;}
  for(const li of realRows()){
   const cb=li.querySelector('.ff-bulk-pick input');if(cb)cb.checked=selected.has(li.dataset.code);
  }
@@ -55,9 +55,9 @@ function rebuildSelectionUI(){const count=$('ffBulkCount');if(count){const hidde
 }
 function buildPicker(li){if(li.querySelector('.ff-bulk-pick'))return;const code=li.dataset.code;
  const label=node('label','ff-bulk-pick');label.hidden=!$('ffBulkPanel')?.open;
- const input=node('input');input.type='checkbox';input.checked=selected.has(code);input.setAttribute('aria-label',`Select DMC ${code} for bulk storage editing`);
+ const input=node('input');input.type='checkbox';input.checked=selected.has(code);input.setAttribute('aria-label',`Select DMC ${code} to organize`);
  input.addEventListener('change',()=>{if(input.checked){if(selected.size>=K.MAX_SELECTED){input.checked=false;setMessage(`Select at most ${K.MAX_SELECTED} colors.`);return}selected.add(code)}else selected.delete(code);selectionChanged()});
- label.append(input,node('span',null,'Include in bulk storage change'));
+ label.append(input,node('span',null,'Select to organize'));
  const loc=li.querySelector('.ff-storage');if(loc)loc.before(label);else li.append(label);
 }
 function field(parent,labelText,id,type='text',max=60){const l=node('label',null,labelText),el=node(type);el.id=id;
@@ -68,7 +68,7 @@ function populate(){const view=$('threadsView');if(!view||!API())return;
  sel.addEventListener('change',()=>{scope=sel.value;clearReview();updateVisibility();rebuildSelectionUI()});tools.after(label)}
  if(!$('ffBulkPanel')){
   const p=node('details','ff-bulk');p.id='ffBulkPanel';const summary=node('summary',null,'Organize several colors');p.append(summary);
-  p.append(node('p',null,'Choose DMC colors below, review the location changes, then confirm. Full skeins, partial skeins, and shopping choices will not change. Demo colors cannot be selected.'));
+  p.append(node('p',null,'Pick colors below, review the storage changes, then confirm. Skein counts, partial skeins and shopping choices won\'t change. Demo colors can\'t be selected.'));
   const actions=node('div','ff-bulk-actions');
   actions.append(button('Select visible colors',()=>{const codes=realRows().filter(li=>!li.hidden).map(li=>li.dataset.code);if(selected.size+codes.filter(c=>!selected.has(c)).length>K.MAX_SELECTED){setMessage('Too many colors selected. Narrow your search first.');return}codes.forEach(c=>selected.add(c));selectionChanged()}));
   actions.append(button('Unselect visible',()=>{realRows().filter(li=>!li.hidden).forEach(li=>selected.delete(li.dataset.code));selectionChanged()},'ghost'));
@@ -81,9 +81,9 @@ function populate(){const view=$('threadsView');if(!view||!API())return;
   const container=field(grid,'Container (e.g. Box 2)','ffBulkContainer','input',60);
   const slot=field(grid,'Slot, section or row','ffBulkSlot','input',40);
   const ml=node('label',null,'Stored as'),medium=node('select');medium.id='ffBulkMedium';for(const [v,l] of [['','Not specified'],['bobbin','Bobbin'],['skein','Skein'],['bag','Bag'],['other','Other']]){const o=node('option',null,l);o.value=v;medium.append(o)}ml.append(medium);grid.append(ml);p.append(grid);
-  const explain=node('p',null,'Replace clears previous slot/format if left blank. Move changes only the container name; it preserves existing slots and formats.');explain.id='ffBulkExplainer';p.append(explain);
+  const explain=node('p',null,'Replace clears the old slot and format if you leave them blank. Move only changes the container name and keeps existing slots and formats.');explain.id='ffBulkExplainer';p.append(explain);
   const config=()=>({mode:action.value,storage:{container:container.value,slot:slot.value,medium:medium.value}});
-  function syncMode(){const move=action.value==='move',clear=action.value==='clear';container.disabled=clear;slot.disabled=move||clear;medium.disabled=move||clear;explain.textContent=clear?'Clear location metadata from selected colors only. No skein counts are altered.':move?'Only the container changes. Existing slot and storage format are preserved.':'The entire location is replaced. Blank slot/format entries erase the old ones.';clearReview()}
+  function syncMode(){const move=action.value==='move',clear=action.value==='clear';container.disabled=clear;slot.disabled=move||clear;medium.disabled=move||clear;explain.textContent=clear?'Clears storage locations from the selected colors only. Skein counts don\'t change.':move?'Only the container changes. The existing slot and storage format are kept.':'The whole location is replaced. Leaving slot or format blank erases the old ones.';clearReview()}
   [container,slot,medium].forEach(x=>{x.addEventListener('input',clearReview);x.addEventListener('change',clearReview)});action.addEventListener('change',syncMode);
   p.append(button('Review location changes',()=>{
     try{preview=API().bulkStoragePreview([...selected],config());if(!preview.changes.length){setMessage('No changes needed: the selected colors already match this location.');clearReview();return}
@@ -91,14 +91,14 @@ function populate(){const view=$('threadsView');if(!view||!API())return;
     const list=node('ul');for(const r of preview.changes){list.append(node('li',null,`DMC ${r.code}: ${K.display(r.before)} → ${K.display(r.after)}`))}area.append(list);
     const commit=button(`Confirm ${preview.changes.length} location changes`,()=>{
       const saved=API().bulkStorageApply([...selected],config(),preview.signature);
-      if(!saved.ok){clearReview();setMessage(`Not saved: ${saved.error||'Unable to apply these locations.'}`);return}
-      clearReview();selected.clear();enhance();setMessage(`${saved.changed} storage locations saved locally. Counts and other thread fields are unchanged.`);
+      if(!saved.ok){clearReview();setMessage(`Not saved: ${saved.error||'Couldn\'t apply these locations.'}`);return}
+      clearReview();selected.clear();enhance();setMessage(`Saved ${saved.changed} storage location${saved.changed===1?'':'s'} on this device. Counts and other details didn't change.`);
     },'pri');area.append(commit,button('Cancel preview',()=>{clearReview();setMessage('No changes applied.')},'ghost'));
     commit.focus();setMessage('Review all affected DMC colors before confirming.');
-    }catch(e){clearReview();setMessage(e.message||'Review could not be created.');}
+    }catch(e){clearReview();setMessage(e.message||'Couldn\'t build the review. Nothing was changed.');}
   },'sec'));
   const review=node('section','ff-bulk-preview');review.id='ffBulkPreview';review.hidden=true;review.setAttribute('aria-label','Proposed storage changes');p.append(review);
-  const undo=button('Undo last bulk storage change',()=>{const r=API()?.bulkStorageUndo?.();if(r?.ok){clearReview();selected.clear();enhance();setMessage(`Undid ${r.changed} storage location changes. Other thread fields were left alone.`)}else setMessage(r?.error||'Undo is no longer available.');},'ghost');undo.id='ffBulkUndo';undo.disabled=true;p.append(undo);
+  const undo=button('Undo last storage change',()=>{const r=API()?.bulkStorageUndo?.();if(r?.ok){clearReview();selected.clear();enhance();setMessage(`Undid ${r.changed} storage change${r.changed===1?'':'s'}. Everything else was left alone.`)}else setMessage(r?.error||'Undo is no longer available.');},'ghost');undo.id='ffBulkUndo';undo.disabled=true;p.append(undo);
   const message=node('p');message.id='ffBulkMessage';message.setAttribute('role','status');message.setAttribute('aria-live','polite');p.append(message);
   const list=$('thList');list.before(p);p.addEventListener('toggle',toggleSelectionUI);syncMode();
  }

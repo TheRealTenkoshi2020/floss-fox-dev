@@ -15,3 +15,6 @@ nav.tabs>a.tablink{border:1.5px solid #e6dccb!important;background:#fffaf2!impor
 #tabShop #shopCount{font-size:.78em;font-weight:700;margin-left:2px}
 @media(max-width:560px){#tabShop{gap:2px;padding:2px 4px!important}}
 @media(min-width:561px){nav.tabs>*{min-width:max-content!important}}
+/* never split a word inside a tab label (e.g. "Projec ts" at 344px); wrap at spaces only */
+@media(min-width:340px) and (max-width:560px){nav.tabs>*{overflow-wrap:normal!important;word-break:normal!important}}
+@media(max-width:380px){nav.tabs>*{font-size:.8rem!important;padding:2px 3px!important}}

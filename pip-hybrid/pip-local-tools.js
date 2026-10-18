@@ -23,10 +23,10 @@
   const m=rxMarginA.exec(s)||rxMarginB.exec(s);let margin=null;
   if(m){margin=Number(m[1]);if(!Number.isFinite(margin)||margin<0||margin>12)return null}
   let text=`For ${width} × ${height} stitches on ${count}-count Aida (stitched over one square), the design area is ${fmt(designW)} × ${fmt(designH)} inches (${fmt(designW*2.54)} × ${fmt(designH*2.54)} cm).`;
-  if(margin===null){text+=' This is the stitched design, NOT a fabric-cut recommendation. Add a margin on every side for finishing/framing; use Floss Fox’s Fabric calculator to plan the cut.'}
+  if(margin===null){text+=' This is the stitched design only, not how much fabric to cut. Add a margin on every side for finishing or framing; the Fabric calculator can plan the cut for you.'}
   else{
    const cutW=Math.ceil((designW+margin*2)*4-1e-9)/4,cutH=Math.ceil((designH+margin*2)*4-1e-9)/4;
-   text+=` With ${fmt(margin)} inches of extra fabric on EACH side, the minimum calculated cut is ${fmt(designW+2*margin)} × ${fmt(designH+2*margin)} inches. Rounded up to quarter-inches: ${fmt(cutW)} × ${fmt(cutH)} inches. Check additional allowance for your finishing method and fabric shrinkage.`;
+   text+=` With ${fmt(margin)} inches of extra fabric on each side, the minimum cut is ${fmt(designW+2*margin)} × ${fmt(designH+2*margin)} inches. Rounded up to the next quarter inch: ${fmt(cutW)} × ${fmt(cutH)} inches. Allow extra for your finishing method and any shrinkage.`;
   }
   return {id:'aida-size',title:'Aida design size',answer:text,source:'local calculation',actions:[{label:'Open Fabric calculator',href:'fabric.html'}]};
  }

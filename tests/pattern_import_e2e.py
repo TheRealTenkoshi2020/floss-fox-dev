@@ -49,7 +49,7 @@ with sync_playwright() as p:
     ok('I3 column-table legend: codes taken, Blanc as White', codes == ['DMC 310', 'DMC WHITE', 'DMC 3865', 'DMC 321'], codes)
     vals = k.evaluate("[...document.querySelectorAll('#patRows input[type=number]')].map(i=>i.value)")
     ok('I3b unlabeled numbers are not filled in', all(v == '' for v in vals), vals)
-    ok('I3c plain-language warning shown', 'have no label' in k.inner_text('#patRows'))
+    ok('I3c plain-language warning shown', 'no label' in k.inner_text('#patRows'))
     k.screenshot(path=os.path.join(SHOTS, '13-column-table.png'), full_page=True)
     k.click('#ffPatternDialog .pat-header button'); k.wait_for_timeout(200)
     ok('I3d cancel (Close) saves nothing', projects(k) == [] and not k.locator('#ffPatternDialog').count())
@@ -85,7 +85,7 @@ with sync_playwright() as p:
     info, codes = load(s, 'large-35pages.pdf', 6000)
     ok('I11 35-page PDF processed locally without hanging', 'Processed' in info or 'pages' in info, info); s.click('#ffPatternDialog .pat-header button')
     # 6 manual paste path
-    s.click('.pat-launch'); s.click('#ffPatternDialog details summary'); s.fill('#patPaste', 'X 310 Black 2400 2\nDMC 321 Red 2 skeins'); s.click('text=Find colors locally'); s.wait_for_timeout(200)
+    s.click('.pat-launch'); s.click('#ffPatternDialog details summary'); s.fill('#patPaste', 'X 310 Black 2400 2\nDMC 321 Red 2 skeins'); s.click('#ffPatternDialog button:text-is("Find colors")'); s.wait_for_timeout(200)
     ok('I12 manual legend paste uses the same rules', s.evaluate("[...document.querySelectorAll('#patRows .pat-row b')].map(b=>b.textContent)") == ['DMC 310', 'DMC 321'])
     errs = g.errs + h.errs + k.errs + s.errs
     ok('I13 no page errors', not errs, errs)

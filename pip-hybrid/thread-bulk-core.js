@@ -20,10 +20,10 @@ function prepare(map,codes,request){
  if(!Array.isArray(codes)||!request||typeof request!=='object')throw new Error('Choose colors and a location action.');
  const wanted=[...new Set(codes)];if(!wanted.length)throw new Error('Select at least one color.');
  if(wanted.length>MAX_SELECTED)throw new Error(`Select no more than ${MAX_SELECTED} colors at once.`);
- if(!wanted.every(c=>typeof c==='string'&&own(map,c)&&map[c]&&typeof map[c]==='object'))throw new Error('The selection contains a missing color. Review your collection.');
- const mode=request.mode;if(!['replace','move','clear'].includes(mode))throw new Error('Choose an available location action.');
+ if(!wanted.every(c=>typeof c==='string'&&own(map,c)&&map[c]&&typeof map[c]==='object'))throw new Error('One of the selected colors is no longer in your collection. Check your selection.');
+ const mode=request.mode;if(!['replace','move','clear'].includes(mode))throw new Error('Choose what should change.');
  const loc=normalize(request.storage);
- if(mode==='replace'&&!loc)throw new Error('Enter a location or choose Clear locations.');
+ if(mode==='replace'&&!loc)throw new Error('Enter a location or choose Clear storage locations.');
  if(mode==='move'&&!loc?.container)throw new Error('Enter a container name to move colors.');
  const changes=[];
  for(const code of wanted){const e=map[code],before=normalize(e.storage);

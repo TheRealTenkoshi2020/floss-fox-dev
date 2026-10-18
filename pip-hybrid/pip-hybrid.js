@@ -48,7 +48,7 @@
   msg('user',question);
   if(local){msg('pip',local.answer,local.source==='local calculation'?'Calculated offline':local.source==='local inventory'?'Local collection':local.source==='local action'?'Local task':'Built-in help',local.actions?.[0]);if(local.action==='pattern'&&window.FlossFoxPatternUI?.open)window.FlossFoxPatternUI.open();
    notice('Answered locally. No network request made.');
-  }else{msg('pip','I don’t have a reliable built-in answer for that yet. '+(onlineReady?'You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.':'You can try the guided help below.'),'Built-in help');showMenu();notice('No matching offline answer. No network request made.');}
+  }else{msg('pip','I don\'t have a reliable built-in answer for that yet. '+(onlineReady?'You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.':'You can try the guided help below.'),'Built-in help');showMenu();notice('No matching offline answer. No network request made.');}
   field.value='';
  }
  function cancelPending(){pending=null;if(preview)preview.hidden=true;turnstileToken='';if(window.turnstile&&turnstileId!==null){try{window.turnstile.reset(turnstileId)}catch{}}}
@@ -72,7 +72,7 @@
  }
  function prepareOnline(){const message=field.value.trim();if(!message||busy)return;
   if(!onlineReady){notice('Online AI has not been configured. Built-in help is available.');return}
-  if(message.length>MAX_MSG){notice('Question is too long.');return}
+  if(message.length>MAX_MSG){notice('That question is a bit long. Try shortening it.');return}
   const outgoing={message,history:aiHistory.slice(-MAX_HISTORY).map(m=>({role:m.role,text:m.text.length>400?m.text.slice(0,399)+'…':m.text}))};
   // Never silently redact: that would alter meaning. Require user editing instead.
   const flagged=PRIVACY?.scan([message,...outgoing.history.map(x=>x.text)].join('\n'))||[];
@@ -132,7 +132,7 @@
   controls.addEventListener('submit',e=>{e.preventDefault();const question=field.value.trim();if(!question||busy)return;cancelPending();offline(question)});
   layout.append(hdr,log,controls,preview);dialog.append(layout);document.body.append(dialog);
   dialog.addEventListener('close',()=>{stamp++;abort?.abort();abort=null;setBusy(false);cancelPending()});
-  msg('pip','Hi! I can help with stitching questions and guide you through Floss Fox. Choose a topic or type your question.','Built-in help');showMenu();
+  msg('pip','Hi! I can help with stitching questions and show you around Floss Fox. Pick a topic or type your question.','Built-in help');showMenu();
  }
  function open(){makeDialog();if(!dialog.open)dialog.showModal();field.focus()}
  function decorateAskPanel(panel){if(!panel||panel.querySelector('[data-piph-open]'))return;
