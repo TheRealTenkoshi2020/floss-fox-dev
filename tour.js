@@ -17,6 +17,8 @@ const destV=()=>($('dest')||{}).value||'dmc';
 const BR={dmc:'DMC',sullivans:'Sullivans',anchor:'Anchor'};
 const pipImg=(pose,cls)=>`<picture><source type="image/webp" srcset="assets/pip/pip-${pose}-160.webp"><img class="${cls}" src="assets/pip/pip-${pose}-160.png" width="160" height="240" alt="" decoding="async"></picture>`;
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+/* FF-1261: with-colors closing line when results have colors OR the paste box holds recognizable DMC colors (typed, pasted or the tour's example) */
+const hasColors=()=>{if(st().items.length)return true;try{const v=($('inp')||{}).value||'';return !!v.trim()&&typeof parse==='function'&&parse(v).items.length>0}catch(e){return false}};
 const TOUR_SAMPLE='310\n321\n666\n699';
 // affiliate sentence only for real (non-mock) approved merchants; ?fixtures=1 demo shops earn nothing
 const linksOn=()=>!!(window.FlossFoxShop&&FlossFoxShop.anyRealEligible&&FlossFoxShop.anyRealEligible());
@@ -56,7 +58,7 @@ const STEPS=[
   help:'Floss Fox never uploads your projects or thread collection: they live on this device.'},
  {id:'finish',title:"You're all set",target:()=>null,anchor:()=>$('shopcard').hidden?document.querySelector('.hero .row'):document.querySelector('#shopcard h2'),
   pose:()=>'goodbye',
-  msg:()=>st().items.length?"You've got it! Save this list as a project when you're ready, and I'll help you check what you already have.":"You've got it! Add your colors whenever you're ready, and I'll help you plan.",
+  msg:()=>hasColors()?"You've got it! Save this list as a project when you're ready, and I'll help you check what you already have.":"You've got it! Add your colors whenever you're ready, and I'll help you plan.",
   more:()=>"You can take the tour again any time from Ask Pip or the Help tab.",
   final:true}
 ];
