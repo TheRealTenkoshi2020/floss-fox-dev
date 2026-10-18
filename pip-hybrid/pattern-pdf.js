@@ -24,7 +24,7 @@
   const jpg=header[0]===255&&header[1]===216&&header[2]===255;
   const webp=String.fromCharCode(...header.slice(0,4))==='RIFF'&&String.fromCharCode(...header.slice(8,12))==='WEBP';
   if(!((ext==='pdf'&&pdf)||(ext==='png'&&png)||(['jpg','jpeg'].includes(ext)&&jpg)||(ext==='webp'&&webp)))throw new Error('The file name and its contents don\'t match, so it may be damaged or mislabeled.');
-  if(!pdf)return {kind:'image',name:file.name,pages:[],warnings:['Image needs manual transcription or an explicitly approved AI analysis. No scan was performed.'],requiresReview:true};
+  if(!pdf)return {kind:'image',name:file.name,pages:[],warnings:['Images aren\'t read automatically. Type the legend in below, or approve an AI scan if it\'s available. Nothing was scanned.'],requiresReview:true};
   if(!pdfjs||typeof pdfjs.getDocument!=='function')return {kind:'pdf',name:file.name,pages:[],warnings:['The PDF reader isn\'t available here, so PDF text can\'t be read. You can still type the legend in below.'],requiresReview:true};
   const bytes=new Uint8Array(await file.arrayBuffer());const loading=pdfjs.getDocument({data:bytes});let document;
   try{document=await loading.promise;const pages=[];const limit=Math.min(document.numPages,MAX_PAGES);
@@ -35,7 +35,7 @@
     const text=textItemsToLines(content.items).slice(0,100000);
     pages.push({page:p,text});
    }
-   return{kind:'pdf',name:file.name,pages,warnings:[...(document.numPages>MAX_PAGES?['Only the first 30 pages were read. Import the rest separately.']:[]),...(pages.every(p=>!p.text.trim())?['No selectable text. Likely scanned pages; use manual review or approved AI.']:[])],requiresReview:true};
+   return{kind:'pdf',name:file.name,pages,warnings:[...(document.numPages>MAX_PAGES?['Only the first 30 pages were read. Import the rest separately.']:[]),...(pages.every(p=>!p.text.trim())?['No selectable text found, so these are probably scanned pages. Type the legend in below, or approve an AI scan if it\'s available.']:[])],requiresReview:true};
   }finally{await document?.destroy?.().catch?.(()=>{});await loading?.destroy?.().catch?.(()=>{});}
  }
  const api={inspect,textItemsToLines,MAX_BYTES,MAX_PAGES};root.FlossFoxPatternPDF=api;if(typeof module==='object'&&module.exports)module.exports=api;

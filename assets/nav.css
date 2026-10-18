@@ -18,3 +18,4 @@ nav.tabs>a.tablink{border:1.5px solid #e6dccb!important;background:#fffaf2!impor
 /* never split a word inside a tab label (e.g. "Projec ts" at 344px); wrap at spaces only */
 @media(min-width:340px) and (max-width:560px){nav.tabs>*{overflow-wrap:normal!important;word-break:normal!important}}
 @media(max-width:380px){nav.tabs>*{font-size:.8rem!important;padding:2px 3px!important}}
+@media(max-width:560px){nav.tabs>button{flex-wrap:wrap;justify-content:center;column-gap:3px}}

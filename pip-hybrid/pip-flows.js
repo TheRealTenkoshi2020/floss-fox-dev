@@ -20,7 +20,7 @@
   backup:{title:'Protect your projects',opening:'What do you want to do?',choices:[{label:'Save a backup',next:'backup-save'},{label:'Move to another device',next:'backup-move'},{label:'Undo an import',next:'backup-undo'}]},
   'backup-save':{title:'Download a backup',answer:'Open My Projects and download a current backup before major edits. Store it somewhere you can find again. Browser data is not synced automatically.',action:{label:'Open My Projects',href:'index.html#projects'}},
   'backup-move':{title:'Move between devices',answer:'Download a backup from your original device, then import the file on the destination. Check the preview and merge/replace choice carefully before confirming.',action:{label:'Open My Projects',href:'index.html#projects'}},
-  'backup-undo':{title:'Undo an import',answer:'Use the visible import Undo option where available. Some undo options expire after a reload or another import. Restore from an independently saved backup if needed; preview carefully.',action:{label:'Open My Projects',href:'index.html#projects'}}
+  'backup-undo':{title:'Undo an import',answer:'Use Undo last import in My Projects while it\'s still offered. Another import replaces it, so keep your own backup file too and check the preview carefully.',action:{label:'Open My Projects',href:'index.html#projects'}}
  };
  const MENU=[{id:'start',label:'New project'},{id:'knots',label:'Thread tangles'},{id:'coverage',label:'Stitch coverage'},{id:'shopping',label:'Shopping help'},{id:'backup',label:'Backups'}];
  function step(id){const s=Object.prototype.hasOwnProperty.call(FLOWS,id)?FLOWS[id]:null;return s?{...s,choices:s.choices?.map(x=>({...x})),action:s.action?{...s.action}:null}:null}

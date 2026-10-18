@@ -39,7 +39,7 @@
    if(inspection.kind==='pdf'){const lib1=await lib();if(!lib1)throw Error('The PDF preview isn\'t available here');const d=await lib1.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
     try{const p=await d.getPage(page),view=p.getViewport({scale:1}),scale=Math.min(2,1600/Math.max(view.width,view.height)),v=p.getViewport({scale});canvas.width=Math.max(1,Math.floor(v.width));canvas.height=Math.max(1,Math.floor(v.height));await p.render({canvasContext:ctx,viewport:v}).promise}finally{await d.destroy()}}
    else {const img=await createImageBitmap(file);try{const scale=Math.min(1,1600/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.floor(img.width*scale));canvas.height=Math.max(1,Math.floor(img.height*scale));ctx.drawImage(img,0,0,canvas.width,canvas.height)}finally{img.close()}}
-   previewBlob=await new Promise(ok=>canvas.toBlob(ok,'image/jpeg',0.78));if(!previewBlob||previewBlob.size>2*1024*1024)throw Error('That page is too large to scan');canvas.style.maxWidth='100%';canvas.style.maxHeight='300px';host.append(canvas);info(online?'This is the selected page. Preview it before deciding whether to send this page to AI. Nothing has been uploaded.':'This is the selected page. Images are not read automatically and AI analysis is off: type its legend into the manual box below (manual transcription). Nothing has been uploaded.');
+   previewBlob=await new Promise(ok=>canvas.toBlob(ok,'image/jpeg',0.78));if(!previewBlob||previewBlob.size>2*1024*1024)throw Error('That page is too large to scan');canvas.style.maxWidth='100%';canvas.style.maxHeight='300px';host.append(canvas);info(online?'This is the selected page. Preview it before deciding whether to send this page to AI. Nothing has been uploaded.':'Here\'s the page you picked. Images aren\'t read automatically and AI analysis is off, so type its legend into the box below. Nothing has been uploaded.');
   }catch(e){previewBlob=null;info('Couldn\'t preview that page: '+String(e.message||e))}
  }
  async function startAI(){if(!online){info('AI pattern analysis is not configured. Local import still works.');return}if(!previewBlob)await showPreview();if(!previewBlob)return;
@@ -59,7 +59,7 @@
  }
  function manualParse(){const lines=$('patPaste').value;const parsed=C.parsePages([{page:1,text:lines}],DMC);skippedLines=parsed.skipped||[];setRows(parsed.rows);info(`Found ${parsed.rows.length} color${parsed.rows.length===1?'':'s'} in your legend. Check each row before importing. Nothing was sent online.`)}
  function saveProject(){try{
-  if(window.FlossFoxProjects.canSave?.()===false)throw Error('Browser saving is unavailable. Use a backup before importing.');
+  if(window.FlossFoxProjects.canSave?.()===false)throw Error('Saving isn\'t available in this browser right now. Download a backup before importing.');
   const draft=C.projectDraft(rows,$('patName').value);const id=window.FlossFoxProjects.add(draft);
   if(!id)throw Error('The project didn\'t pass our checks');
   // Projects.add() may retain an in-memory project even when localStorage fails.
@@ -68,7 +68,7 @@
   if(key){try{const saved=JSON.parse(localStorage.getItem(key)||'null');persisted=!!saved?.projects?.some(x=>x.id===id)}catch{persisted=false}}
   const n=rows.length;dialog.close();window.FlossFoxProjects.open(id);
   {/* connected workflow: land on the project with its step strip in view */const st=document.getElementById('projStatus');if(st)st.textContent=`Pattern saved with ${n} color${n===1?'':'s'}. Next, use the project steps to check your threads.`;const fl=document.getElementById('pFlow');if(fl){window.scrollTo(0,0);const b=fl.querySelector('[aria-current=step]');if(b)b.focus({preventScroll:true})}}
-  if(!persisted){const status=document.getElementById('projStatus');if(status)status.textContent='Pattern imported temporarily, but browser storage did NOT save it. Download a backup before leaving.'}
+  if(!persisted){const status=document.getElementById('projStatus');if(status)status.textContent='Not saved: the pattern was imported for now, but this browser didn\'t store it. Download a backup before you leave.'}
  }catch(e){info('Not saved: '+String(e.message||e))}}
  function make(){if(dialog)return;dialog=N('dialog','pat-dialog');dialog.id='ffPatternDialog';dialog.setAttribute('aria-label','Import a cross-stitch pattern');const head=N('header','pat-header');head.append(N('h2','', 'Import a cross-stitch pattern'));const close=N('button','sec','Close');close.type='button';close.onclick=()=>dialog.close();head.append(close);
   const box=N('div','pat-layout'),desc=N('p','', 'PDF, PNG, JPG or WebP, up to 20 MB. We read PDF text on your device first. Chart grids (the stitch symbols) can\'t be read.');

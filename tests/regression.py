@@ -176,7 +176,7 @@ with sync_playwright() as p:
     restore(json.dumps(bad).encode()); ok('damaged/duplicate entries skipped and counted', 'skipped' in pg.inner_text('#restorePanel'), pg.inner_text('#restorePanel')); pg.click('#rCancel')
     # Storage failure modes
     pc = page(); pc.goto(B); pc.evaluate("localStorage.setItem('"+KEY+"','{bad json')"); pc.reload(); pc.click('#tabProjects')
-    ok('corrupt storage: warning, data untouched', "couldn't be read" in pc.inner_text('#storeMsg') and pc.evaluate("localStorage.getItem('"+KEY+"')") == '{bad json')
+    ok('corrupt storage: warning, data untouched', "couldn't read" in pc.inner_text('#storeMsg') and pc.evaluate("localStorage.getItem('"+KEY+"')") == '{bad json')
     pu = page(init="Object.defineProperty(window,'localStorage',{get(){throw new DOMException('blocked','SecurityError')}})"); pu.goto(B); pu.click('#tabProjects')
     ok('storage unavailable: clear message, app still works', 'Saving is unavailable' in pu.inner_text('#storeMsg'))
     pu.click('#tabConvert'); conv(pu, '310', 'dmc'); ok('convert works without storage', len(shop(pu)) == 1)
@@ -750,7 +750,7 @@ with sync_playwright() as p:
     g.select_option('#dest', 'dmc'); nxt(g)
     ok('T4c step 4 introduces only real controls; no store-link talk when links are off', step(g) == 3 and all(x in g.inner_text('#tourCard') for x in ['Print list', 'Copy as text', 'Save project', 'Shop my list', 'CSV']) and (('optional affiliate links' in g.inner_text('#tourCard').lower() and 'never need them' in g.inner_text('#tourCard')) if g.evaluate("!!(window.FlossFoxShop&&FlossFoxShop.anyEligible())") else 'affiliate' not in g.inner_text('#tourCard').lower()) and g.evaluate("[...document.querySelectorAll('#shopcard button')].filter(b=>b.textContent.trim()==='Print list'&&!b.closest('.wtb')).length") == 1 and g.locator('#copy').count() == 1 and g.locator('#saveProj').count() == 1)
     g.click('#tourCard [data-t=back]'); g.wait_for_timeout(80); ok('T5 Back returns to step 3', step(g) == 2); nxt(g); nxt(g)
-    ok('T4d step 5 finish: celebrating, both buttons', step(g) == 4 and "You've got it! Whenever you're ready, add your own colors and I'll help you plan." in g.inner_text('#tourCard') and cpose(g) == ['celebrating', 'celebrating'] and g.locator('#tourCard [data-t=start]').count() == 1 and g.locator('#tourCard [data-t=tips]').count() == 1, cpose(g))
+    ok('T4d step 5 finish: goodbye, both buttons', step(g) == 4 and ("You've got it! Save this list as a project when you're ready, and I'll help you check what you already have." in g.inner_text('#tourCard') or "You've got it! Add your colors whenever you're ready, and I'll help you plan." in g.inner_text('#tourCard')) and cpose(g) == ['goodbye', 'goodbye'] and g.locator('#tourCard [data-t=start]').count() == 1 and g.locator('#tourCard [data-t=tips]').count() == 1, cpose(g))
     g.click('#tourCard [data-t=start]'); g.wait_for_timeout(80)
     ok('T4e Start using: card gone, data kept, user on results, marked done', g.locator('#tourCard').count() == 0 and g.input_value('#inp') == '310 x2\n321' and not g.locator('#results').is_hidden() and g.evaluate("document.activeElement.closest('#results')!==null") and json.loads(g.evaluate(f"localStorage.getItem('{TK}')"))['status'] == 'done')
     ok('T4f no highlight left behind', g.locator('.tour-target').count() == 0)
@@ -878,7 +878,7 @@ with sync_playwright() as p:
     def tinfo(g): return g.evaluate("""(()=>{const c=document.getElementById('tourCard'),i=c.querySelector('.tpip'),t=document.querySelector('.tour-target');const a=i.getBoundingClientRect();let ov=false,dir=null;
       if(t){const b=t.getBoundingClientRect();ov=!(a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom);dir=(b.left+b.right)/2<(a.left+a.right)/2}return [c.dataset.pose,c.dataset.mirror||null,ov,dir,i.classList.contains('mirror')]})()""")
     poses.append(tinfo(pt)); addlist(pt, '310 x2\n321'); poses.append(tinfo(pt)); nxt(pt); poses.append(tinfo(pt)); nxt(pt); poses.append(tinfo(pt)); nxt(pt); poses.append(tinfo(pt))
-    ok('M9 tour: pointing on the control steps (1, 3, 4), presenting on results, celebrating at the end', [x[0] for x in poses] == ['pointing', 'presenting', 'pointing', 'pointing', 'celebrating'], poses)
+    ok('M9 tour: pointing on the control steps (1, 3, 4), presenting on results, goodbye at the end', [x[0] for x in poses] == ['pointing', 'presenting', 'pointing', 'pointing', 'goodbye'], poses)
     ok('M9b pointing Pip never covers the target and mirrors exactly when the target is on his other side', all(not x[2] and x[4] == x[3] for x in poses if x[0] == 'pointing'), poses)
     pd2 = tp(1280); pd2.click('#tourYes'); d1 = tinfo(pd2); ok('M9c desktop step 1 pointing, not covering the input', d1[0] == 'pointing' and not d1[2] and d1[4] == d1[3], d1)
     lay2 = []
@@ -904,7 +904,7 @@ with sync_playwright() as p:
     b2.select_option('#dest', 'anchor'); dsc = b2.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose,document.getElementById('pipMsg').textContent]")
     ok('B4 real alternatives found -> discovery (aha), claim matches the list', dsc[:2] == ['helpful', 'discovery'] and 'Anchor matches for 3 of your 3 colors' in dsc[2], dsc)
     b2.select_option('#dest', 'dmc'); b2.select_option('#dest', 'dmc')
-    ok('B4b compare-brands tip uses discovery; start tip rotates needle / needle-alt', b2.evaluate("FlossFoxPip.STATES.hintCompare.pose") == 'discovery' and sorted(b2.evaluate("[FlossFoxPip.STATES.hintStart.pose(),FlossFoxPip.STATES.hintStart.pose()]")) == ['needle', 'needle-alt'])
+    ok('B4b compare-brands tip uses discovery; start tip uses peeking', b2.evaluate("FlossFoxPip.STATES.hintCompare.pose") == 'discovery' and b2.evaluate("[FlossFoxPip.STATES.hintStart.pose(),FlossFoxPip.STATES.hintStart.pose()]") == ['peeking', 'peeking'])
     b2.close()
     sv = page(412, True, init=SEED); sv.goto(B); sv.fill('#inp', '310 x2\n321'); sv.click('#go'); sv.wait_for_timeout(4300)
     toast = lambda sel: sv.evaluate(f"(()=>{{const t=document.querySelector('{sel} .savedtoast');if(!t)return null;const i=t.querySelector('img');return [t.getAttribute('aria-hidden'),i.naturalWidth>0||i.complete,/pip-saved-160/.test(i.currentSrc||i.src)]}})()")

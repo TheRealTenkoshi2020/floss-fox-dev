@@ -31,7 +31,7 @@ const STEPS=[
   more:()=>st().errs.length?`${plural(st().errs.length,'line')} couldn't be read yet. They're listed in red under Your colors.`:st().items.length?`You've added ${plural(st().items.length,'color')}. Tap Next when you're ready.`:"Then tap Add my colors. Want to practice first? I can fill in a short sample list.",
   extra:()=>st().items.length?'':`<button type="button" class="sec" data-t="example">Try an example (310, 321, 666, 699)</button>`,
   done:()=>st().items.length>0,
-  help:'Got your pattern\'s thread list? Just pop the DMC numbers in here! One per line or separated by commas, whatever works best for you. Add amounts like 310 x2.'},
+  help:''},
  {id:'results',title:'Check your results',target:()=>$('results').hidden?null:$('results'),anchor:()=>$('summary'),
   pose:()=>st().errs.length?PIP().errPose(st()):dupN()?'duplicates':'presenting',
   msg:()=>"Here's what I found! You can check your colors and see if anything needs attention.",
@@ -55,14 +55,14 @@ const STEPS=[
   ready:()=>!$('shopcard').hidden,
   help:'Floss Fox never uploads your projects or thread collection: they live on this device.'},
  {id:'finish',title:"You're all set",target:()=>null,anchor:()=>$('shopcard').hidden?document.querySelector('.hero .row'):document.querySelector('#shopcard h2'),
-  pose:()=>'celebrating',
-  msg:()=>"You've got it! Whenever you're ready, add your own colors and I'll help you plan.",
+  pose:()=>'goodbye',
+  msg:()=>st().items.length?"You've got it! Save this list as a project when you're ready, and I'll help you check what you already have.":"You've got it! Add your colors whenever you're ready, and I'll help you plan.",
   more:()=>"You can take the tour again any time from Ask Pip or the Help tab.",
   final:true}
 ];
 
 /* ---------- Tour card ---------- */
-// Pointing Pip: his paw points to his left (screen right). Mirror him when the target's centre is to his left on screen.
+// Pointing Pip: their paw points to their left (screen right). Mirror Pip when the target's centre is to their left on screen.
 function aim(){if(!card||!tgt)return;const i=card.querySelector('.tpip');if(!i||card.dataset.pose!=='pointing')return;const a=i.getBoundingClientRect(),b=tgt.getBoundingClientRect();
  const mir=(b.left+b.right)/2<(a.left+a.right)/2;i.classList.toggle('mirror',mir);card.dataset.mirror=mir}
 let idx=-1,card=null,tgt=null,returnFocus=null,readSince=0;

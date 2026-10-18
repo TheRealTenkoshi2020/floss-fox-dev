@@ -35,20 +35,20 @@
  function showMenu(){if(!FLOWS)return;const holder=node('div','piph-choices');chips(holder,FLOWS.menu,item=>showFlow(item.id));
   if(window.FlossFoxPipReadinessUI?.chooseForChat){
     const btn=node('button','sec piph-chip','Check my project readiness');btn.type='button';
-    btn.addEventListener('click',()=>{window.FlossFoxPipReadinessUI.chooseForChat(log,t=>msg('pip',t,'Calculated offline'));notice('Read-only local project check. Nothing was sent online.')});
+    btn.addEventListener('click',()=>{window.FlossFoxPipReadinessUI.chooseForChat(log,t=>msg('pip',t,'Calculated offline'));notice('Checked on this device without changing anything. Nothing was sent online.')});
     holder.append(btn);
   }
   log.append(holder)}
  function offline(question){
   if(window.FlossFoxPipReadinessUI?.chooseForChat&&/\b(?:my project readiness|project readiness|is my project ready|what am i missing|what do i still need|project status)\b/i.test(question)){
     msg('user',question);window.FlossFoxPipReadinessUI.chooseForChat(log,t=>msg('pip',t,'Calculated offline'));
-    notice('Read-only local project check. Nothing was sent online.');field.value='';return;
+    notice('Checked on this device without changing anything. Nothing was sent online.');field.value='';return;
   }
   const local=window.FlossFoxPipLocalRouter?.route(question)||TOOLS?.answer(question)||KB.lookup(question);
   msg('user',question);
   if(local){msg('pip',local.answer,local.source==='local calculation'?'Calculated offline':local.source==='local inventory'?'Local collection':local.source==='local action'?'Local task':'Built-in help',local.actions?.[0]);if(local.action==='pattern'&&window.FlossFoxPatternUI?.open)window.FlossFoxPatternUI.open();
-   notice('Answered locally. No network request made.');
-  }else{msg('pip','I don\'t have a reliable built-in answer for that yet. '+(onlineReady?'You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.':'You can try the guided help below.'),'Built-in help');showMenu();notice('No matching offline answer. No network request made.');}
+   notice('Answered on this device. Nothing was sent online.');
+  }else{msg('pip','I don\'t have a reliable built-in answer for that yet. '+(onlineReady?'You can try the guided help below, or choose “Ask online AI” and review exactly what will be sent.':'You can try the guided help below.'),'Built-in help');showMenu();notice('No built-in answer for that. Nothing was sent online.');}
   field.value='';
  }
  function cancelPending(){pending=null;if(preview)preview.hidden=true;turnstileToken='';if(window.turnstile&&turnstileId!==null){try{window.turnstile.reset(turnstileId)}catch{}}}
@@ -67,11 +67,11 @@
    finally{challengeLoading=false}
   }
   if(!pending||!window.turnstile)return;
-  try{turnstileId=window.turnstile.render(slot,{sitekey:cfg.turnstileSiteKey,theme:'auto',size:'flexible',action:'pip_chat',callback:token=>{turnstileToken=String(token||'');confirmButton.disabled=!turnstileToken;notice('Verification ready. Review and approve your message.')},'expired-callback':()=>{turnstileToken='';confirmButton.disabled=true;notice('Verification expired; complete it again.')},'error-callback':()=>{turnstileToken='';confirmButton.disabled=true;notice('Verification unavailable. Please use built-in help.')}})}
+  try{turnstileId=window.turnstile.render(slot,{sitekey:cfg.turnstileSiteKey,theme:'auto',size:'flexible',action:'pip_chat',callback:token=>{turnstileToken=String(token||'');confirmButton.disabled=!turnstileToken;notice('Verification ready. Review and approve your message.')},'expired-callback':()=>{turnstileToken='';confirmButton.disabled=true;notice('Verification expired. Please complete it again.')},'error-callback':()=>{turnstileToken='';confirmButton.disabled=true;notice('Verification unavailable. Please use built-in help.')}})}
   catch{notice('Verification could not start. Use built-in help instead.')}
  }
  function prepareOnline(){const message=field.value.trim();if(!message||busy)return;
-  if(!onlineReady){notice('Online AI has not been configured. Built-in help is available.');return}
+  if(!onlineReady){notice('Online AI isn\'t turned on right now, but built-in help is ready.');return}
   if(message.length>MAX_MSG){notice('That question is a bit long. Try shortening it.');return}
   const outgoing={message,history:aiHistory.slice(-MAX_HISTORY).map(m=>({role:m.role,text:m.text.length>400?m.text.slice(0,399)+'…':m.text}))};
   // Never silently redact: that would alter meaning. Require user editing instead.
@@ -110,7 +110,7 @@
  function makeDialog(){if(dialog)return;
   dialog=node('dialog','piph-dialog');dialog.id='pipHybridDialog';dialog.setAttribute('aria-label','Chat with Pip');
   const layout=node('section','piph-layout');const hdr=node('header','piph-header');
-  const img=node('img');img.src='assets/pip/pip-helpful-160.webp';img.alt='';img.width=52;img.height=76;
+  const img=node('img');img.src='assets/pip/pip-face-icon-160.webp';img.alt='';img.width=52;img.height=52;
   const wrap=node('div');wrap.append(node('h2','', 'Chat with Pip'),node('p','', onlineReady?'Offline guide · optional AI by permission':'Offline guide'));
   const close=node('button','piph-close','Close');close.type='button';close.addEventListener('click',()=>dialog.close());hdr.append(img,wrap,close);
   log=node('div','piph-log');log.setAttribute('role','log');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');

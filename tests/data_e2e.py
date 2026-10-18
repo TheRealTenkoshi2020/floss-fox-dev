@@ -124,7 +124,7 @@ with sync_playwright() as p:
     b2 = json.load(open(dl.value.path()))
     ok('D7 demo items are never in a backup', [x['id'] for x in b2['projects']] == ['real-1'] and set(b2['threads']['threads']) == {'310', '898'} and 'demo' not in b2['threads'])
     g.click('#tabThreads'); g.click('#thRemoveDemo'); g.wait_for_selector('#ffConfirm:not([hidden])')
-    ok('D8a Pip dialog asks before removing demo data', 'Wave goodbye to the demo data?' in g.inner_text('#ffConfirmTitle') and 'demo thread' in g.inner_text('#ffConfirmBody'))
+    ok('D8a Pip dialog asks before removing demo data', 'Remove the demo data?' in g.inner_text('#ffConfirmTitle') and 'demo thread' in g.inner_text('#ffConfirmBody'))
     g.click('#ffConfirmGo'); g.wait_for_timeout(150)
     d = json.loads(ls(g, TKEY)); ps = proj(g)
     ok('D8 Remove demo data asks first, then removes only tagged demo items', 'demo' not in d and [x['id'] for x in ps] == ['real-1'])

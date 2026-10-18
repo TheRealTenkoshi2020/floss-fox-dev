@@ -67,14 +67,14 @@ function migrate(d){ // returns {data, skipped} or null if not Floss Fox data
 
 // ---- Storage ----
 function load(){let raw;
- try{raw=localStorage.getItem(KEY)}catch(e){canSave=false;storeMsg('<b>Saving is unavailable in this browser</b> (private mode or storage blocked). Projects will only last until this tab closes. Use <b>Download a backup</b> to keep them.');return}
+ try{raw=localStorage.getItem(KEY)}catch(e){canSave=false;storeMsg('<b>Saving is unavailable in this browser</b> (private mode or blocked storage). Your projects will only last until you close this tab. Use <b>Download a backup</b> to keep them.');return}
  if(raw===null)return;let d;
  try{d=JSON.parse(raw)}catch(e){d=null}
  const m=d&&migrate(d);
  if(!m||m.tooNew){canSave=false;try{localStorage.setItem(KEY+'.unreadable-'+Date.now(),raw)}catch(e){}
-  storeMsg(m&&m.tooNew?'<b>Your saved projects were made by a newer version of Floss Fox.</b> They are left untouched; saving is paused so nothing is overwritten. Reload the latest version of the page.':'<b>Saved project data couldn\'t be read.</b> It was left untouched (a copy was kept) and saving is paused so nothing is overwritten. You can restore a backup, or <button type="button" class="sec" id="resetStore">start fresh</button>.');
-  const r=$('resetStore');if(r)r.onclick=()=>{if(confirm('Start fresh? The unreadable data stays in browser storage under a separate name, but Floss Fox will no longer show it.')){canSave=true;store={schema:SCHEMA,projects:[]};save();storeMsg('');renderList()}};return}
- store=m.data;if(m.skipped)storeMsg(`${plural(m.skipped,'saved project')} ${m.skipped===1?'was':'were'} damaged and skipped.`)}
+  storeMsg(m&&m.tooNew?'<b>Your saved projects were made by a newer version of Floss Fox.</b> We\'ve left them untouched and paused saving so nothing gets overwritten. Reload the page to get the latest version.':'<b>We couldn\'t read your saved project data.</b> We\'ve left it untouched (a copy is kept) and paused saving so nothing gets overwritten. You can restore from a backup, or <button type="button" class="sec" id="resetStore">start fresh</button>.');
+  const r=$('resetStore');if(r)r.onclick=()=>{if(confirm('Start fresh? The unreadable data stays in browser storage under a separate name, but Floss Fox won\'t show it anymore.')){canSave=true;store={schema:SCHEMA,projects:[]};save();storeMsg('');renderList()}};return}
+ store=m.data;if(m.skipped)storeMsg(`${plural(m.skipped,'saved project')} ${m.skipped===1?'was':'were'} damaged, so we skipped ${m.skipped===1?'it':'them'}.`)}
 function save(){if(!canSave){pstatus('Not saved: browser storage is unavailable or paused. Download a backup to keep your work.');return false}
  try{localStorage.setItem(KEY,JSON.stringify(store));return true}
  catch(e){const full=e&&(e.name==='QuotaExceededError'||e.code===22);pstatus(full?'Not saved: browser storage is full. Download a backup, then delete old projects.':'Not saved: your browser blocked the save. Download a backup to keep your work.');return false}}
@@ -160,8 +160,8 @@ function renderList(){const L=$('projList');$('projCount').textContent=store.pro
  L.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProject(b.dataset.open));
  L.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProject(b.dataset.del));const ea=$('emptyAdd');if(ea)ea.onclick=()=>{showView('convert');$('inp').focus()}}
 async function delProject(id){const p=proj(id);if(!p)return;
- const ok=await FlossFoxConfirm.ask({pose:'thinking',title:`Wave goodbye to "${p.name}"?`,
-  body:"Pip tilts their head. Are you sure? This can't be undone unless you have a backup.",go:'Delete'});
+ const ok=await FlossFoxConfirm.ask({pose:'thinking',title:`Delete "${p.name}"?`,
+  body:"Are you sure? This removes the project from this browser, and it can't be undone unless you have a backup.",go:'Delete'});
  if(!ok)return;
  store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
 function openProject(id,m){{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}openId=id;mode=m||'edit';renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Opened "${proj(id).name}".`)}
@@ -210,7 +210,7 @@ function nextSteps(P){const k={};P.threads.forEach(t=>{if(t.state==='review')k[t
 // 1.7: compare with My Thread Collection. Each project is compared with the whole collection on its own (nothing is reserved).
 // Buckets: owned (verified: amount needed is stated and covered) | unverified (owned, but amount needed unknown or assumed) | short | missing.
 // "Use my collection" shows a preview first and can be undone; it changes only this project's Have/Need choices, never the collection.
-const STW={have:'Have enough',buy:'Need to buy',check:'Not sure'},stWord=d=>d.status?STW[d.status]:'Not checked',ownWord=d=>d.owned===null?'—':plural(d.owned,'skein');
+const STW={have:'Have enough',buy:'Need to buy',check:'Not sure'},stWord=d=>d.status?STW[d.status]:'Not checked',ownWord=d=>d.owned===null?'Not entered':plural(d.owned,'skein');
 let cmpPreview=null;const undoBy={};
 // compact preview line, e.g. "Will mark 13 Have enough, 4 Not sure, 2 Need to buy"
 const prevSum=ch=>{const n={have:0,check:0,buy:0};ch.forEach(c=>{n[c.to.status]++});const o=n2=>Object.entries(n2).filter(([,v])=>v).map(([k,v])=>`${v} ${STW[k]}`);
@@ -249,7 +249,7 @@ const FLOW_STR={review:'Review colors',cmp:'Check my threads',ready:'Readiness',
  tip:{review:owned=>`Next: pick Have enough, Need to buy or Not sure for each color${owned?'':'. Or add the threads you own to My Thread Collection first, then compare'}.`,
   cmp:()=>'Next: compare these colors with your thread collection, then choose for any color that\'s still undecided.',
   shop:(o,n)=>`Next: open your shopping list (${n} to buy).`,
-  /* FF-1956 split by state (wording from Pixel's handoff note) */ready:(o,n,ready,aw)=>ready?'You have enough of every color. Ready to stitch!':aw?'Next: check in the threads you bought when they arrive.':'Next: sort out the colors under Check first.'}};
+  /* FF-1956 split by state (wording from Pixel's handoff note) */ready:(o,n,ready,aw)=>ready?'You have enough of every color. Ready to stitch!':aw?'Next: check in the threads you bought when they arrive.':'Next: sort out the colors under Needs attention.'}};
 // 2.0A connected workflow: one strip that walks pattern -> compare -> readiness -> shopping using the existing sections (no new calculations).
 function renderFlow(p,P){const unchecked=p.items.filter(it=>!(p.decisions[it.code]||{}).status).length;const el=$('pFlow');if(!el)return;if(!p.items.length){el.hidden=true;return}el.hidden=false;
  const T=window.FlossFoxThreadsUI,owned=T?T.count({demo:!!p.demo}):0,toBuy=P.lines.filter(l=>!l.bought).length;
@@ -392,8 +392,8 @@ function bindEditor(p){const E=$('projEdit'),re=()=>{edited(p);touch(p);renderEd
  E.querySelectorAll('[data-own]').forEach(i=>i.onchange=()=>{const v=i.value.trim(),d=p.decisions[i.dataset.own];
   if(v===''){d.owned=null;d.ownedSource=null;d.ownedPartial=false;re();return}const n=Number(v);if(!isFinite(n)||n<0){pstatus(`"${v}" isn't a valid amount, so nothing changed.`);i.value=d.owned===null?'':d.owned;return}if(n>CAP()&&!confirm(`You have ${n} skeins of DMC ${lab(i.dataset.own)}? That's more than ${CAP()}. OK keeps ${n}.`)){i.value=d.owned===null?'':d.owned;pstatus('Nothing changed.');return}d.owned=Math.round(n*100)/100;d.ownedSource='user';d.ownedPartial=false;re()});
  E.querySelectorAll('[data-rm]').forEach(b=>b.onclick=async()=>{const c=b.dataset.rm,L=lab(c);
-  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:`Wave goodbye to DMC ${L}?`,
-   body:'Pip tilts their head. Are you sure? It leaves this project (your collection is unchanged).'});
+  const ok=await FlossFoxConfirm.ask({pose:'thinking',title:`Remove DMC ${L} from this project?`,
+   body:'Are you sure? It only leaves this project. Your thread collection doesn\'t change.'});
   if(!ok)return;p.items=p.items.filter(x=>x.code!==c);delete p.decisions[c];expanded.delete(c);re()});
  $('pAddBtn').onclick=()=>{const {items,errs}=parse($('pAdd').value);items.forEach(n=>{const ex=p.items.find(x=>x.code===n.code);
   if(ex){ex.qty=(ex.qty===null||n.qty===null)?null:ex.qty+n.qty;ex.src=ex.src.concat(n.src);ex.stitchCountReviewed=false;ex.assumed=ex.qty===null?0:asmOf(ex)+asmOf(n);ex.stated=ex.assumed===0;ex.stitchCount=ex.stitchCount!=null&&n.stitchCount!=null&&ex.stitchCount+n.stitchCount<=SK.MAX_STITCHES?ex.stitchCount+n.stitchCount:null}else{p.items.push({code:n.code,qty:n.qty,stated:n.stated,assumed:asmOf(n),src:n.src,stitchCount:n.stitchCount||null});p.decisions[n.code]=normDecision(n.code,{})}});
@@ -475,7 +475,7 @@ $('saveProj').onclick=()=>{if(saving)return;if(!state.items.length){$('copymsg')
  const ex=window.isExample&&window.isExample();
  const p={id:newId(),name:($('newProjName').value.trim()||(ex?'Example project':'Untitled project')).slice(0,100),notes:'',buyBrand:$('dest').value,status:'planning',items:state.items.map(i=>({code:i.code,qty:i.qty,stated:i.stated!==false,assumed:asmOf(i),src:i.src.slice(),stitchCount:i.stitchCount||null})),decisions:{},purchased:{},created:nowISO(),updated:nowISO()};
  p.items.forEach(i=>p.decisions[i.code]=normDecision(i.code,{anchor:choice[i.code]||null}));store.projects.push(p);const ok=save();
- $('copymsg').innerHTML=(ok?`✓ Saved "${esc(p.name)}" in this browser.`:`Saved for now only: this browser isn't letting Floss Fox store projects, so download a backup from My projects.`)+` <button type="button" class="pri small" id="openSaved">Check what you have →</button>`;$('newProjName').value='';renderList();
+ $('copymsg').innerHTML=(ok?`✓ Saved "${esc(p.name)}" in this browser.`:`Saved for now only: this browser isn't letting Floss Fox store projects, so download a backup from My Projects.`)+` <button type="button" class="pri small" id="openSaved">Check what you have →</button>`;$('newProjName').value='';renderList();
  $('openSaved').onclick=()=>{showView('projects');openProject(p.id)};if(ok&&window.FlossFoxPip)FlossFoxPip.saved($('copymsg'))};
 load();renderList();
 window.FlossFoxProjects={estimateInput,plan,planText,csv,migrate,backup,restoreFile,checkBackup,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,

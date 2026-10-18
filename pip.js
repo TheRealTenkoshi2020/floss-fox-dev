@@ -43,7 +43,7 @@ const STATES={
  tangled:    {pose:'tangled',    pri:8,  anim:'wiggle',msg:()=>TANGLE[tn%2]},
  sleepy:     {pose:'sleepy',     pri:5,  anim:'doze',  msg:()=>''},
  // Contextual tips (overlays, at most once per session each, only over a calm state; see tour.js)
- hintStart:  {pose:()=>needlePose(),    pri:22, anim:'tilt',  msg:()=>'Not sure where to start? Try typing a DMC number, like 310!'},
+ hintStart:  {pose:()=>'peeking',    pri:22, anim:'tilt',  msg:()=>'Not sure where to start? Try typing a DMC number, like 310!'},
  hintCompare:{pose:'discovery',    pri:22, anim:'pop',   msg:()=>{const n=window.FlossFoxAltFor?Math.max(FlossFoxAltFor('sullivans'),FlossFoxAltFor('anchor')):0;return n?'Want to compare another thread brand? Try "Brand to buy" in your shopping list.':''}}
 };
 // Needle tips rotate between NEEDLE (happy) and NEEDLE-ALT (calm closed smile) for variety.
