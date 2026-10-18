@@ -59,7 +59,7 @@
   const first=items.find(x=>x&&x.li&&x.li.querySelector(':scope > .ff-skein-inline'));
   const list=first&&first.li.parentElement;
   if(list&&list.parentElement){const prev=list.previousElementSibling;
-   if(!(prev&&prev.classList.contains('ff-skein-direct'))){const p=document.createElement('p');p.className='ff-skein-direct noprint';p.textContent='Direct store links. Floss Fox earns nothing from these.'+(offline?' Store pages need a connection.':'');list.parentElement.insertBefore(p,list)}}
+   if(!(prev&&prev.classList.contains('ff-skein-direct'))){const p=document.createElement('p');p.className='ff-skein-direct noprint';p.textContent='These are plain store links, and Floss Fox doesn\'t earn anything from them. Before you order, double-check the color, thread type, amount and availability on the store\'s site.'+(offline?' Store pages need a connection.':'');list.parentElement.insertBefore(p,list)}}
   return n;
  }
  root.FlossFoxSkeinPreviewUI=Object.freeze({render,inline});
