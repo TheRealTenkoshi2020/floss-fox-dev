@@ -11,21 +11,23 @@
  let dialog,file,pdfjs,inspection,rows=[],previewBlob=null,turnstileToken='',turnstileId=null,selectedPage=1,abort;
  const N=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=String(txt);return n};
  const $=id=>dialog?.querySelector('#'+id);
+ const WARN={'no-quantity-evidence':'No amount stated: left as Unknown','unlabeled-numbers-not-imported':'Numbers on this line have no label (stitches? skeins?), so none were imported','duplicate-color-rows':'Listed more than once: amounts cleared, enter the total yourself','check-thread-brand':'Mentions Anchor: check the brand','specialty-stitch-review':'Backstitch/blend/fractional line: check the amount','variegated-check-color':'Variegated thread: check the exact color number','invalid-skein-amount':'Skein amount looked wrong: cleared','invalid-stitch-count':'Stitch count looked wrong: cleared','ai-proposed-not-verified':'AI proposal: not verified','range-amount':'Amount is a range: left as Unknown, enter what you plan to buy','approximate-amount':'Amount is approximate: check it'};let skippedLines=[];
  const info=t=>{if($('patInfo'))$('patInfo').textContent=t};
  const setRows=r=>{rows=r.map(x=>({...x,confirmed:false}));drawRows()};
  function drawRows(){const host=$('patRows');host.replaceChildren();const title=N('p','',`${rows.length} color${rows.length===1?'':'s'} found. Check every value against the pattern. Unknown quantities remain unknown.`);host.append(title);
+  if(skippedLines.length){const d=N('details','pat-skipped');d.id='patSkipped';d.append(N('summary','',`${skippedLines.length} line${skippedLines.length===1?'':'s'} not imported (specialty threads, beads or unreadable color numbers)`),N('p','hint','This importer only takes standard DMC stranded cotton with a valid color number. Check these lines against your pattern and add anything you need by hand.'));const ul=N('ul');for(const x of skippedLines)ul.append(N('li','',`Page ${x.page}: ${x.line}${x.reason==='unrecognized'?' (color number not recognized)':''}`));d.append(ul);host.append(d)}
   if(!rows.length){host.append(N('p','', 'No reliable colors found. Paste a legend below, or try another pattern page.'));return}
   for(const row of rows){const div=N('div','pat-row'),h=N('b','',`DMC ${row.code}`);const evidence=N('small','',`Page ${row.sourcePage}: ${row.sourceLine||'AI proposal (not verified)'}`);
    const label=(title,val,max,field)=>{const l=N('label','',title+' '),input=N('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.inputMode='numeric';input.placeholder='Unknown';input.value=val==null?'':String(val);input.addEventListener('input',()=>{row[field]=input.value.trim()?Number(input.value):null;row.confirmed=false;tick.checked=false;validateReady()});l.append(input);return l};
    const tick=N('input');tick.type='checkbox';const confirm=N('label','pat-confirm',' I verified this color and its amounts against my pattern');confirm.prepend(tick);tick.addEventListener('change',()=>{row.confirmed=tick.checked;validateReady()});
-   const wa=N('small','pat-warnings',row.warnings.join('; ')||'Review required');div.append(h,evidence,wa,label('Full skeins',row.qty,999,'qty'),label('Stitches',row.stitchCount,10000000,'stitchCount'),confirm);host.append(div);
+   const wa=N('small','pat-warnings',[...new Set(row.warnings)].map(w=>WARN[w]||w).join(' · ')||'Review required');div.append(h,evidence,wa,label('Full skeins',row.qty,999,'qty'),label('Stitches',row.stitchCount,10000000,'stitchCount'),confirm);host.append(div);
   }
   validateReady();
  }
  function validateReady(){const btn=$('patImport');if(btn)btn.disabled=!rows.length||rows.some(r=>!r.confirmed|| (r.qty!==null&&(!Number.isInteger(r.qty)||r.qty<1||r.qty>999)) || (r.stitchCount!==null&&(!Number.isInteger(r.stitchCount)||r.stitchCount<1||r.stitchCount>10000000)) )}
  async function lib(){if(pdfjs)return pdfjs;try{/* CI005: import() in a classic script resolves against the script URL, so resolve against the page instead. */const V=u=>new URL('pip-hybrid/vendor/pdfjs/'+u,document.baseURI).href;pdfjs=await import(V('pdf.mjs'));pdfjs.GlobalWorkerOptions.workerSrc=V('pdf.worker.mjs');return pdfjs}catch{return null}}
- async function inspectFile(f){file=f;inspection=null;rows=[];$('patRows').replaceChildren();$('patAIReview').hidden=true;$('patImagePreview').replaceChildren();previewBlob=null;try{
-  info('Reading selected file locally…');const out=await I.inspect(file,await lib());inspection=out;const parsed=C.parsePages(out.pages,DMC);setRows(parsed.rows);
+ async function inspectFile(f){file=f;inspection=null;rows=[];skippedLines=[];$('patRows').replaceChildren();$('patAIReview').hidden=true;$('patImagePreview').replaceChildren();previewBlob=null;try{
+  info('Reading selected file locally…');const out=await I.inspect(file,await lib());inspection=out;const parsed=C.parsePages(out.pages,DMC);skippedLines=parsed.skipped||[];setRows(parsed.rows);
   $('patPage').max=String(Math.max(1,out.pages.length));$('patPage').value='1';$('patPageBox').hidden=!online||out.kind!=='pdf';/* page picker only feeds the AI preview */
   $('patName').value=(String(f.name||'').replace(/\.[^.]+$/,'').slice(0,100))||'Imported pattern';
   info(`Selected ${f.name}. ${out.warnings.join(' ')} ${out.kind==='pdf'?'Processed '+out.pages.length+' pages locally.':'Image selected. No image has been uploaded.'} Nothing was sent online.`);
@@ -55,7 +57,7 @@
   }catch(e){info('AI pattern analysis unavailable: '+String(e.message||e)+'. Nothing has been added.')}
   finally{clearTimeout(timer);abort=null;$('patAIReview').hidden=true}
  }
- function manualParse(){const lines=$('patPaste').value;const parsed=C.parsePages([{page:1,text:lines}],DMC);setRows(parsed.rows);info(`Local legend parser found ${parsed.rows.length} colors. Verify each row before import. No network used.`)}
+ function manualParse(){const lines=$('patPaste').value;const parsed=C.parsePages([{page:1,text:lines}],DMC);skippedLines=parsed.skipped||[];setRows(parsed.rows);info(`Local legend parser found ${parsed.rows.length} colors. Verify each row before import. No network used.`)}
  function saveProject(){try{
   if(window.FlossFoxProjects.canSave?.()===false)throw Error('Browser saving is unavailable. Use a backup before importing.');
   const draft=C.projectDraft(rows,$('patName').value);const id=window.FlossFoxProjects.add(draft);

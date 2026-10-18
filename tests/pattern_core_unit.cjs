@@ -1,0 +1,27 @@
+// node tests/pattern_core_unit.cjs : 2.0A pattern-import parser rules, against the real DMC chart in index.html.
+const fs=require('fs'),path=require('path');const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const DMC=JSON.parse(html.match(/const DMC=(\{.*?\});/)[1]);const C=require('../pip-hybrid/pattern-core.js');
+let pass=0,fail=0;const ok=(n,c,d)=>{if(c){pass++;console.log('PASS '+n)}else{fail++;console.log('FAIL '+n+' -> '+JSON.stringify(d))}};
+const P=t=>C.parsePages([{page:1,text:t}],DMC),by=(r,c)=>r.rows.find(x=>x.code===c);
+let r=P('Design size 180 x 240 stitches\nFabric: 14 count Aida\nSymbol DMC Name Stitches Skeins\nX 310 Black 2400 2\n• Blanc White 300 1\n1. 3865 Winter White 120 1\nO 321 Red 800 1');
+ok('column table: codes taken (310, WHITE from Blanc, 3865, 321)',JSON.stringify(r.rows.map(x=>x.code))==='["310","WHITE","3865","321"]',r.rows.map(x=>x.code));
+ok('column table: unlabeled numbers never become amounts',r.rows.every(x=>x.qty===null&&x.stitchCount===null&&x.warnings.includes('unlabeled-numbers-not-imported')),r.rows);
+ok('column table: "14 count Aida" and "180 x 240" not read as colors',!by(r,'14')&&!by(r,'180'));
+r=P('DMC 666 Bright Red\nDMC 321 Red 2-3 skeins\nDMC 413 about 1 skein\nDMC 3865 Winter White 1 skein 2 strands');
+ok('missing qty stays unknown',by(r,'666').qty===null&&by(r,'666').warnings.includes('no-quantity-evidence'));
+ok('range 2-3 skeins is not guessed',by(r,'321').qty===null&&by(r,'321').warnings.includes('range-amount'),by(r,'321'));
+ok('"about 1 skein" kept but flagged approximate',by(r,'413').qty===1&&by(r,'413').warnings.includes('approximate-amount'));
+ok('strands read, not confused with skeins',by(r,'3865').qty===1&&by(r,'3865').strandCount===2);
+r=P('DMC 310 Black 1 skein\nDMC E310 Light Effects Black 1 skein\nDMC Satin S321 Red 1 skein\nEtoile C310 Black 1 skein\nMill Hill beads 00557 Gold 1 pack\nDMC 115 variegated 1 skein\nKreinik #4 braid 002 Gold 1 reel');
+ok('specialty: only stranded cotton imported (310, 115)',JSON.stringify(r.rows.map(x=>x.code))==='["310","115"]',r.rows.map(x=>x.code));
+ok('specialty lines listed as not imported',r.skipped.filter(x=>x.reason==='specialty').length>=4,r.skipped);
+ok('variegated flagged for color check',by(r,'115').warnings.includes('variegated-check-color'));
+r=P('DMC 3l0 Black 1 skein\nDMC 9999 Mystery 1 skein\nDMC 31O Black 1 skein\nDMC 321 Red 1200 skeins\nDMC 415 Pearl Gray 2400\nDMC 1 White Tin 1 skein');
+ok('misread codes (3l0, 9999, 31O) are not imported',!by(r,'3')&&!by(r,'31')&&!by(r,'9999')&&!by(r,'310'),r.rows.map(x=>x.code));
+ok('misread codes are listed as unrecognized',r.skipped.filter(x=>x.reason==='unrecognized').length===3,r.skipped);
+ok('1200 skeins not truncated to 200',by(r,'321').qty===null,by(r,'321'));
+ok('bare 2400 is not an amount',by(r,'415').qty===null&&by(r,'415').stitchCount===null);
+ok('DMC 1 maps to 01',!!by(r,'01'));
+r=C.parsePages([{page:1,text:'DMC 310 Black 1200 stitches 1 skein\nDMC 321 Red 400 stitches'},{page:2,text:'DMC 310 Black 900 stitches 1 skein\nDMC 3865 Winter White 50 stitches'}],DMC);
+ok('repeated code across pages: one row, amounts cleared, not summed',r.rows.length===3&&by(r,'310').qty===null&&by(r,'310').stitchCount===null&&by(r,'310').warnings.includes('duplicate-color-rows'));
+console.log(`${pass} passed, ${fail} failed`);process.exit(fail?1:0);
