@@ -244,13 +244,19 @@ function renderCmp(p){const el=$('pCmp'),T=window.FlossFoxThreadsUI;if(!el||!T)r
  bindUndo(p)}
 function bindUndo(p){const b=$('pUndoColl');if(!b)return;b.onclick=()=>{const U=undoBy[p.id];if(!U)return;
  U.forEach(x=>{const d=p.decisions[x.code];if(d)Object.assign(d,x.from)});delete undoBy[p.id];touch(p);renderEditor();renderList();const u=$('pUseColl');if(u)u.focus();pstatus(`Undone: ${s2(U.length)} put back as they were.`)}}
+/* ---- User-facing strings for the project step strip (functional labels; Pixel may replace). See /workspace/ci005/STRINGS_FOR_PIXEL.md ---- */
+const FLOW_STR={review:'Review colors',cmp:'Check my threads',ready:'Readiness',shop:'Shopping list',done:'(done)',
+ tip:{review:owned=>`Next: for each color, choose Have enough, Need to buy or Not sure${owned?'':' (or add the threads you own in My Thread Collection first)'}.`,
+  cmp:()=>'Next: compare these colors with the threads you own, then confirm anything still unsure.',
+  shop:(o,n)=>`Next: open your shopping list (${n} to buy).`,
+  ready:(o,n,ready)=>ready?'Every color is accounted for. Ready to stitch!':'Next: check in the threads you bought when they arrive.'}};
 // 2.0A connected workflow: one strip that walks pattern -> compare -> readiness -> shopping using the existing sections (no new calculations).
 function renderFlow(p,P){const unchecked=p.items.filter(it=>!(p.decisions[it.code]||{}).status).length;const el=$('pFlow');if(!el)return;if(!p.items.length){el.hidden=true;return}el.hidden=false;
  const T=window.FlossFoxThreadsUI,owned=T?T.count({demo:!!p.demo}):0,toBuy=P.lines.filter(l=>!l.bought).length;
  const next=unchecked?(owned?'cmp':'review'):toBuy?'shop':'ready';
- const st=[['review','Review colors',!unchecked],['cmp','Check my threads',!unchecked],['ready','Readiness',P.ready],['shop','Shopping list',!unchecked&&!toBuy]];
- const tip={review:`Next: for each color, choose Have enough, Need to buy or Not sure${owned?'':' (or add the threads you own in My Thread Collection first)'}.`,cmp:'Next: compare these colors with the threads you own, then confirm anything still unsure.',shop:`Next: open your shopping list (${s2(toBuy)} to buy).`,ready:P.ready?'Every color is accounted for. Ready to stitch!':'Next: check in the threads you bought when they arrive.'}[next];
- el.innerHTML=`<ol>${st.map(([k,l,d],i)=>`<li><button type="button" class="pfstep${d?' done':''}" data-flow="${k}"${k===next?' aria-current="step"':''}><span class="pfn" aria-hidden="true">${d?'✓':i+1}</span>${l}${d?'<span class="sr"> (done)</span>':''}</button></li>`).join('')}</ol><p class="hint pftip">${esc(tip)}</p>`;
+ const F=FLOW_STR,st=[['review',F.review,!unchecked],['cmp',F.cmp,!unchecked],['ready',F.ready,P.ready],['shop',F.shop,!unchecked&&!toBuy]];
+ const tip=F.tip[next](owned,s2(toBuy),P.ready);
+ el.innerHTML=`<ol>${st.map(([k,l,d],i)=>`<li><button type="button" class="pfstep${d?' done':''}" data-flow="${k}"${k===next?' aria-current="step"':''}><span class="pfn" aria-hidden="true">${d?'✓':i+1}</span>${l}${d?'<span class="sr"> ${F.done}</span>':''}</button></li>`).join('')}</ol><p class="hint pftip">${esc(tip)}</p>`;
  el.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>{const k=b.dataset.flow;if(k==='shop')return showView('shop');const t=k==='review'?$('pThreads'):k==='cmp'?($('pCmp').firstElementChild||$('pThreads')):$('pSummary');if(t){t.scrollIntoView({block:'start'});const h=t.querySelector('h3,h2,b,button');if(h&&!h.matches('button')){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}}})}
 function renderEditor(){if(mode==='shop')return renderShop();{const sb=$('shopBody');if(sb)sb.textContent=''}const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
  const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
@@ -263,7 +269,7 @@ function renderEditor(){if(mode==='shop')return renderShop();{const sb=$('shopBo
  <details class="pmore"${p.notes?' open':''}><summary>Notes and project options</summary>
  <div class="fld"><label for="pNotes">Notes <small class="mut">(optional)</small></label><textarea id="pNotes" class="pnotes" maxlength="2000" rows="2" style="width:100%;min-height:72px;font-family:var(--font)" placeholder="e.g. threads are in the blue bag">${esc(p.notes)}</textarea></div>
  <div class="row"><button type="button" class="ghost" id="pDelete">Delete this project</button></div></details></div>
- ${window.FlossFoxSkeinsUI.html(estimateProject(p),DMC,fam,lsGet(KEY.replace(/\.v1$/,'')+'.fabric.v1'),pipOn())}<div id="pCmp" class="noprint"></div><div id="pSum"></div>
+ ${window.FlossFoxSkeinsUI.html(estimateProject(p),DMC,fam,lsGet(KEY.replace(/\.v1$/,'')+'.fabric.v1'),pipOn())}<div id="pCmp" class="noprint"></div><div id="pSum"></div><div id="pReady" class="noprint"></div>
  <section class="noprint" id="pThreads" aria-labelledby="pThreadsH"><h3 id="pThreadsH">Your colors</h3>
  <p class="hint">For each color, tap <b>Have enough</b>, <b>Need to buy</b> or <b>Not sure</b>. Open <b>Details</b> to add amounts or pick another brand. Swatches are approximate screen colors.</p>
  <div class="toolbar"><div class="searchrow"><label class="sr" for="pSearch">Find a color</label><input type="search" id="pSearch" placeholder="Find a color, e.g. 310 or black" value="${esc(query)}" autocomplete="off"><button type="button" class="sec" id="pSearchClear"${query?'':' hidden'}>Clear search</button></div>
@@ -315,6 +321,7 @@ function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxP
  el.querySelectorAll('[data-rx]').forEach(b=>b.onclick=()=>{$('rf-'+b.dataset.rx).hidden=true});
  el.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{const k=sid(b.dataset.rc),v=$('rq-'+k).value.trim();if(!/^\d+$/.test(v)||+v<1){$('pMsg').textContent='Enter how many whole skeins arrived (1 or more). Nothing changed.';$('rq-'+k).focus();return}re(receive(p,b.dataset.rc,+v))});
  renderFlow(p,P);
+ if(window.FlossFoxPipReadinessUI&&FlossFoxPipReadinessUI.renderInto)FlossFoxPipReadinessUI.renderInto($('pReady'),p,P);
  bindOut(p,'p')}
 function bindOut(p,pre){$(pre+'Print').onclick=()=>print();$(pre+'Copy').onclick=async()=>{const t=planText(p),m=$(pre+'Msg'),f=$(pre+'Fallback');try{if(!navigator.clipboard)throw 0;await navigator.clipboard.writeText(t);m.textContent='✓ Copied. Paste it into a note or message.';f.hidden=true;if(window.FlossFoxPip)FlossFoxPip.saved(m)}catch(e){m.textContent="Couldn't copy automatically. Select the text below and copy it.";f.value=t;f.hidden=false;f.focus();f.select()}};
  $(pre+'Csv').onclick=()=>{download(csv(p),safe(p.name)+'.csv','text/csv');$(pre+'Msg').textContent='Spreadsheet file downloaded.'}}

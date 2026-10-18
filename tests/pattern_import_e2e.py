@@ -68,6 +68,10 @@ with sync_playwright() as p:
     info, codes = load(s, 'repeated-codes-2pages.pdf')
     ok('I7 repeated code on two pages: one row, amounts cleared', codes.count('DMC 310') == 1 and s.evaluate("document.querySelector('#patRows input[type=number]').value") == '', codes)
     s.click('#ffPatternDialog .pat-header button')
+    info, codes = load(s, 'row-numbers-dimensions.pdf')
+    vals = s.evaluate("[...document.querySelectorAll('#patRows input[type=number]')].map(i=>i.value)")
+    ok('I7b row numbers vs codes vs dimensions: 310, 321, 3865 only; only the labeled amount filled', codes == ['DMC 310', 'DMC 321', 'DMC 3865'] and vals[0::2] == ['', '', '1'] and 'row number or symbol' in s.inner_text('#patRows'), (codes, vals))
+    s.click('#ffPatternDialog .pat-header button')
     # 5 scanned / image / bad files
     info, codes = load(s, 'scanned-image-only.pdf')
     ok('I8 scanned PDF: no text, no colors invented, manual paste offered', codes == [] and 'No reliable colors' in s.inner_text('#patRows'), (info, codes))

@@ -14,7 +14,13 @@ function parseRow(line,validCodes,page){
  if(/^\d{1,4}\s*(?:x|×|by)\s*\d{1,4}\s*(?:stitches?|crosses?)/i.test(clean))return null;
  // Strong preference: explicit DMC; standalone number only at start of a legend row.
  let match=/\bDMC\s*[:#-]?\s*(BLANC|WHITE|ECRU|B5200|\d{1,4})\b/i.exec(clean)||/^(?:\s*\|\s*)?(BLANC|WHITE|ECRU|B5200|\d{1,4})\b(?=\s|\||:|;|-)/i.exec(clean);
- let column=false;
+ let column=false,leading=false;
+ const UNIT=/^\s*(?:ct|count|strands?|x|×|by|stitch(?:es)?|cm|mm|in|inch(?:es)?|pages?|rows?|%|aida|linen|evenweave)\b/i;
+ // A bare number at the start of a row is only a color code if it is not a measurement ("14 ct", "2 strands") and
+ // not a row number/symbol in front of the real code ("1 310 Black", "3 321 Red 2"): then the second number is the code.
+ if(match&&!/dmc/i.test(match[0])){const end=match.index+match[0].length,rest=clean.slice(end);
+  if(UNIT.test(rest))match=null;
+  else{const m2=/^\s+(BLANC|WHITE|ECRU|B5200|\d{1,4})\s+(?=[A-Za-z])/i.exec(rest);if(m2&&!UNIT.test(rest.slice(m2[0].length-1))&&validCode(m2[1],validCodes)){match={0:clean.slice(0,end+m2[0].length).trimEnd(),1:m2[1],index:0};leading=true}}}
  // 2.0A: plain column legends ("X 310 Black 2400 2"): symbol, code, then a color name. The code is taken;
  // unlabeled numbers are NOT imported because their meaning (stitches? skeins? strands?) is not stated.
  if(!match){const m=/^(?:[^\w\s]{1,2}|[A-Za-z]{1,2}|\d{1,2}[.)])\s+(BLANC|WHITE|ECRU|B5200|\d{1,4})\s+(?!(?:count|ct|aida|linen|evenweave|cm|mm|in|inch|inches|x|by|stitch|stitches|strands?|skeins?|pages?)\b)[A-Za-z]/i.exec(clean);if(m){match=m;column=true}}
@@ -29,7 +35,8 @@ function parseRow(line,validCodes,page){
  if(qty!==null&&(qty<1||qty>9999))warnings.push('invalid-skein-amount');
  if(stitchCount!==null&&(stitchCount<1||stitchCount>10000000))warnings.push('invalid-stitch-count');
  if(!sk&&!st)warnings.push('no-quantity-evidence');
- if(column&&!sk&&!st&&/\d/.test(clean.slice(match.index+match[0].length)))warnings.push('unlabeled-numbers-not-imported');
+ if(leading)warnings.push('leading-number-not-a-color');
+ if((column||leading)&&!sk&&!st&&/\d/.test(clean.slice(match.index+match[0].length)))warnings.push('unlabeled-numbers-not-imported');
  if(/variegat/i.test(clean))warnings.push('variegated-check-color');
  if(/\banchor\b/i.test(clean))warnings.push('check-thread-brand');
  if(/\b(?:backstitch|half\s*cross|blend|fractional)\b/i.test(clean))warnings.push('specialty-stitch-review');

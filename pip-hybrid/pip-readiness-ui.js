@@ -7,6 +7,36 @@ const CORE=root.FlossFoxPipReadiness;
 if(!CORE)return;
 const create=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e};
 function api(){return root.FlossFoxProjects}
+/* ---- User-facing strings (functional labels; Pixel may replace wording). Listed in /workspace/ci005/STRINGS_FOR_PIXEL.md ---- */
+const STR=Object.freeze({
+ title:'Readiness details',
+ intro:'Uses the same decisions and amounts as your shopping list. Where you saved a storage spot in My threads, it is shown.',
+ confirmed:'Confirmed: you have these',
+ buy:'Need to buy',
+ awaiting:'Bought: check in when they arrive',
+ unknown:'Not sure yet: amount or ownership needs checking',
+ stored:'Stored:',
+ noSpot:'no storage spot saved',
+ toBuy:n=>`${n} to buy`,
+ estimates:'Includes provisional skein estimates. Actual thread use varies.',
+ counts:r=>`${r.counts.ready} of ${r.total} confirmed · ${r.counts.toBuy} to buy · ${r.counts.awaiting} waiting · ${r.counts.review} not sure`,
+ unavailable:'Readiness details could not be shown right now. The summary above is still correct.',
+ chatIntro:'Choose a project. I will open its readiness details right in the project.',
+ chatNone:'There are no saved projects yet. Add some colors and save a project first.',
+ chatOpened:name=>`Opened “${name}”. Its readiness details are under the project summary.`
+});
+function storageMap(project){const T=root.FlossFoxThreadsUI;if(!T||typeof T.data!=='function')return{};const d=T.data()||{};return (project&&project.demo?d.demo:d.threads)||{}}
+/* One in-project readiness view. Takes the plan the project editor already computed (no second calculation). */
+function renderInto(host,project,plan){if(!host)return;host.replaceChildren();let r;
+ try{r=CORE.summarize(JSON.parse(JSON.stringify(project)),plan,storageMap(project))}catch{host.append(create('p','hint',STR.unavailable));return}
+ if(!r.total){host.hidden=true;return}host.hidden=false;
+ const det=create('details','ff-readiness ff-readiness-inline');det.open=!r.ready;const sum=create('summary','',STR.title+' ');sum.append(create('span','mut',`(${STR.counts(r)})`));det.append(sum,create('p','hint',STR.intro));
+ const rows=[['have',STR.confirmed,r.groups.have.concat(r.groups.received)],['buy',STR.buy,r.groups.buy],['awaiting',STR.awaiting,r.groups.awaiting],['review',STR.unknown,r.groups.review]];
+ for(const [key,label,list] of rows){if(!list.length)continue;const g=create('div','ff-rg ff-rg-'+key);g.dataset.group=key;g.append(create('h4','',`${label} (${list.length})`));const ul=create('ul','ff-readiness-list');
+  for(const t of list){const li=create('li');li.dataset.code=t.code;li.append(create('b','',`DMC ${t.code}`));if(t.remaining!==null&&t.remaining!==undefined)li.append(document.createTextNode(' · '+STR.toBuy(t.remaining)));
+   if(t.location||key==='have'||key==='review')li.append(create('span',t.location?'ff-loc':'ff-loc mut',t.location?` · ${STR.stored} ${t.location}`:` · ${STR.noSpot}`));if(t.reason&&key==='review')li.append(create('span','mut',' · '+t.reason));ul.append(li)}
+  g.append(ul);det.append(g)}
+ if(r.hasEstimates)det.append(create('p','hint',STR.estimates));host.append(det)}
 function projects(){return (api()?._store()?.projects||[]).filter(p=>p&&p.demo!==true).map(p=>({id:p.id,name:p.name||'Untitled project'}))}
 function inspect(id){const P=api();if(!P||typeof P.plan!=='function')throw new Error('Project planner unavailable');
  const p=P._store().projects.find(p=>p.id===id&&p.demo!==true);if(!p)throw new Error('Project not found');
@@ -19,10 +49,10 @@ function explain(id){return CORE.toText(inspect(id))}
 function chooseForChat(host,respond){
  if(!host||typeof respond!=='function')return;
  const all=projects(),holder=create('div','piph-choices');
- if(!all.length){respond('There are no saved projects yet. Add some colors and save a project first.');return}
- respond('Choose a saved project to check. I’ll use your local project plan; nothing will be sent online.');
+ if(!all.length){respond(STR.chatNone);return}
+ respond(STR.chatIntro);
  for(const p of all){const b=create('button','sec piph-chip',p.name);b.type='button';b.addEventListener('click',()=>{
-  holder.remove();try{respond(explain(p.id))}catch{respond('That project could not be checked right now. Open My Projects to review it directly.')}
+  holder.remove();try{respond(STR.chatOpened(p.name));const dlg=document.getElementById('pipHybridDialog');if(dlg&&dlg.open)dlg.close();api().open(p.id);const el=document.getElementById('pReady');if(el){const d=el.querySelector('details');if(d)d.open=true;el.scrollIntoView({block:'start'})}}catch{respond(STR.unavailable)}
  });holder.append(b)}host.append(holder);
 }
 function mount(){const view=document.getElementById('projectsView');if(!view||view.querySelector('#pipProjectReadiness'))return;
@@ -50,6 +80,6 @@ function mount(){const view=document.getElementById('projectsView');if(!view||vi
  // Choices are refreshed at button press; never mutate user data or subscribe to private storage events.
  choices();
 }
-if(typeof document!=='undefined')mount();
-root.FlossFoxPipReadinessUI=Object.freeze({projects,inspect,explain,chooseForChat,mount});
+/* 2.0A: the standalone panel with its own picker is retired; readiness lives inside each project (renderInto). mount() kept for compatibility. */
+root.FlossFoxPipReadinessUI=Object.freeze({projects,inspect,explain,chooseForChat,mount,renderInto,STR});
 })(typeof window!=='undefined'?window:globalThis);

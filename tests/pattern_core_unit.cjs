@@ -24,4 +24,16 @@ ok('bare 2400 is not an amount',by(r,'415').qty===null&&by(r,'415').stitchCount=
 ok('DMC 1 maps to 01',!!by(r,'01'));
 r=C.parsePages([{page:1,text:'DMC 310 Black 1200 stitches 1 skein\nDMC 321 Red 400 stitches'},{page:2,text:'DMC 310 Black 900 stitches 1 skein\nDMC 3865 Winter White 50 stitches'}],DMC);
 ok('repeated code across pages: one row, amounts cleared, not summed',r.rows.length===3&&by(r,'310').qty===null&&by(r,'310').stitchCount===null&&by(r,'310').warnings.includes('duplicate-color-rows'));
+// Row numbers vs DMC codes vs pattern dimensions
+const one=t=>C.parseRow(t,DMC,1);
+ok('"1 310 Black": leading 1 is a row number, code is 310 (flagged)',one('1 310 Black')?.code==='310'&&one('1 310 Black').warnings.includes('leading-number-not-a-color'),one('1 310 Black'));
+ok('"3 321 Red 2": code 321, unlabeled 2 not imported',one('3 321 Red 2')?.code==='321'&&one('3 321 Red 2').qty===null&&one('3 321 Red 2').warnings.includes('unlabeled-numbers-not-imported'),one('3 321 Red 2'));
+ok('"12 310 Black 2 skeins": code 310 with labeled 2 skeins',one('12 310 Black 2 skeins')?.code==='310'&&one('12 310 Black 2 skeins').qty===2);
+ok('"140 x 200 stitches" is a dimension, not a color',one('140 x 200 stitches')===null);
+ok('"Size: 140 x 200" is not a color',one('Size: 140 x 200')===null);
+ok('"14 ct" / "14 ct Aida" / "28 count evenweave" are fabric, not colors',one('14 ct')===null&&one('14 ct Aida')===null&&one('28 count evenweave')===null);
+ok('"Row 12" is not a color',one('Row 12')===null);
+ok('"2 strands 310" is not DMC 02',one('2 strands 310')===null);
+ok('"Page 3" is not a color',one('Page 3')===null);
+ok('"310 Black 2 skeins" plain row still works',one('310 Black 2 skeins')?.code==='310'&&one('310 Black 2 skeins').qty===2&&!one('310 Black 2 skeins').warnings.length);
 console.log(`${pass} passed, ${fail} failed`);process.exit(fail?1:0);

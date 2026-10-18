@@ -10,6 +10,7 @@ DOCS = {
    "Etoile C310 Black 1 skein", "Mill Hill beads 00557 Gold 1 pack", "DMC 115 variegated 1 skein", "Kreinik #4 braid 002 Gold 1 reel"],
  'misrecognition-legend.pdf': ["Synthetic Smudged Scan Text (TEST FIXTURE)", "DMC 3l0 Black 1 skein", "DMC 9999 Mystery 1 skein", "DMC 31O Black 1 skein",
    "DMC 321 Red 1200 skeins", "DMC 415 Pearl Gray 2400", "DMC 1 White Tin 1 skein"],
+ 'row-numbers-dimensions.pdf': ["Synthetic Garden (TEST FIXTURE)", "Design: 140 x 200 stitches", "Fabric: 14 ct Aida", "Row 12", "No. DMC Name Skeins", "1 310 Black", "3 321 Red 2", "12 3865 Winter White 1 skein"],
  'repeated-codes-2pages.pdf': ["Page one legend (TEST FIXTURE)", "DMC 310 Black 1200 stitches 1 skein", "DMC 321 Red 400 stitches", "<<PAGE>>", "Page two legend", "DMC 310 Black 900 stitches 1 skein", "DMC 3865 Winter White 50 stitches"],
 }
 os.makedirs(OUT, exist_ok=True)
