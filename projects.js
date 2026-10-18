@@ -244,10 +244,19 @@ function renderCmp(p){const el=$('pCmp'),T=window.FlossFoxThreadsUI;if(!el||!T)r
  bindUndo(p)}
 function bindUndo(p){const b=$('pUndoColl');if(!b)return;b.onclick=()=>{const U=undoBy[p.id];if(!U)return;
  U.forEach(x=>{const d=p.decisions[x.code];if(d)Object.assign(d,x.from)});delete undoBy[p.id];touch(p);renderEditor();renderList();const u=$('pUseColl');if(u)u.focus();pstatus(`Undone: ${s2(U.length)} put back as they were.`)}}
+// 2.0A connected workflow: one strip that walks pattern -> compare -> readiness -> shopping using the existing sections (no new calculations).
+function renderFlow(p,P){const unchecked=p.items.filter(it=>!(p.decisions[it.code]||{}).status).length;const el=$('pFlow');if(!el)return;if(!p.items.length){el.hidden=true;return}el.hidden=false;
+ const T=window.FlossFoxThreadsUI,owned=T?T.count({demo:!!p.demo}):0,toBuy=P.lines.filter(l=>!l.bought).length;
+ const next=unchecked?(owned?'cmp':'review'):toBuy?'shop':'ready';
+ const st=[['review','Review colors',!unchecked],['cmp','Check my threads',!unchecked],['ready','Readiness',P.ready],['shop','Shopping list',!unchecked&&!toBuy]];
+ const tip={review:`Next: for each color, choose Have enough, Need to buy or Not sure${owned?'':' (or add the threads you own in My Thread Collection first)'}.`,cmp:'Next: compare these colors with the threads you own, then confirm anything still unsure.',shop:`Next: open your shopping list (${s2(toBuy)} to buy).`,ready:P.ready?'Every color is accounted for. Ready to stitch!':'Next: check in the threads you bought when they arrive.'}[next];
+ el.innerHTML=`<ol>${st.map(([k,l,d],i)=>`<li><button type="button" class="pfstep${d?' done':''}" data-flow="${k}"${k===next?' aria-current="step"':''}><span class="pfn" aria-hidden="true">${d?'✓':i+1}</span>${l}${d?'<span class="sr"> (done)</span>':''}</button></li>`).join('')}</ol><p class="hint pftip">${esc(tip)}</p>`;
+ el.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>{const k=b.dataset.flow;if(k==='shop')return showView('shop');const t=k==='review'?$('pThreads'):k==='cmp'?($('pCmp').firstElementChild||$('pThreads')):$('pSummary');if(t){t.scrollIntoView({block:'start'});const h=t.querySelector('h3,h2,b,button');if(h&&!h.matches('button')){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}}})}
 function renderEditor(){if(mode==='shop')return renderShop();{const sb=$('shopBody');if(sb)sb.textContent=''}const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
  const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
  const unchecked=p.items.filter(it=>!p.decisions[it.code].status).length;
  E.innerHTML=`<div class="noprint"><div class="ptitle"><button type="button" class="ghost" id="pClose">← All projects</button><button type="button" class="pri" id="pShop"><span aria-hidden="true">🛒</span> Shop my list</button></div>
+ <nav class="pflow" id="pFlow" aria-label="Project steps"></nav>
  <div class="fldrow" style="margin-top:var(--s3)"><div class="fld" style="flex:2 1 220px"><label for="pName">Project name</label><input type="text" id="pName" maxlength="100" value="${esc(p.name)}" style="width:100%"></div>
  <div class="fld" style="flex:1 1 160px"><label for="pStatus">Status</label><select id="pStatus" style="width:100%">${PSTAT.map(([k,l])=>`<option value="${k}"${(p.status||'planning')===k?' selected':''}>${l}</option>`).join('')}</select></div>
  <div class="fld" style="flex:1 1 180px"><label for="pDest">Brand to buy</label><select id="pDest" style="width:100%">${['dmc','sullivans','anchor'].map(k=>`<option value="${k}"${p.buyBrand===k?' selected':''}>${k==='dmc'?'DMC (same as pattern)':BRAND[k]}</option>`).join('')}</select></div></div>
@@ -305,6 +314,7 @@ function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxP
  el.querySelectorAll('[data-rb]').forEach(b=>b.onclick=()=>{const k=sid(b.dataset.rb);$('rf-'+k).hidden=false;$('rq-'+k).focus()});
  el.querySelectorAll('[data-rx]').forEach(b=>b.onclick=()=>{$('rf-'+b.dataset.rx).hidden=true});
  el.querySelectorAll('[data-rc]').forEach(b=>b.onclick=()=>{const k=sid(b.dataset.rc),v=$('rq-'+k).value.trim();if(!/^\d+$/.test(v)||+v<1){$('pMsg').textContent='Enter how many whole skeins arrived (1 or more). Nothing changed.';$('rq-'+k).focus();return}re(receive(p,b.dataset.rc,+v))});
+ renderFlow(p,P);
  bindOut(p,'p')}
 function bindOut(p,pre){$(pre+'Print').onclick=()=>print();$(pre+'Copy').onclick=async()=>{const t=planText(p),m=$(pre+'Msg'),f=$(pre+'Fallback');try{if(!navigator.clipboard)throw 0;await navigator.clipboard.writeText(t);m.textContent='✓ Copied. Paste it into a note or message.';f.hidden=true;if(window.FlossFoxPip)FlossFoxPip.saved(m)}catch(e){m.textContent="Couldn't copy automatically. Select the text below and copy it.";f.value=t;f.hidden=false;f.focus();f.select()}};
  $(pre+'Csv').onclick=()=>{download(csv(p),safe(p.name)+'.csv','text/csv');$(pre+'Msg').textContent='Spreadsheet file downloaded.'}}

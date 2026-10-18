@@ -26,7 +26,7 @@
  async function lib(){if(pdfjs)return pdfjs;try{/* CI005: import() in a classic script resolves against the script URL, so resolve against the page instead. */const V=u=>new URL('pip-hybrid/vendor/pdfjs/'+u,document.baseURI).href;pdfjs=await import(V('pdf.mjs'));pdfjs.GlobalWorkerOptions.workerSrc=V('pdf.worker.mjs');return pdfjs}catch{return null}}
  async function inspectFile(f){file=f;inspection=null;rows=[];$('patRows').replaceChildren();$('patAIReview').hidden=true;$('patImagePreview').replaceChildren();previewBlob=null;try{
   info('Reading selected file locally…');const out=await I.inspect(file,await lib());inspection=out;const parsed=C.parsePages(out.pages,DMC);setRows(parsed.rows);
-  $('patPage').max=String(Math.max(1,out.pages.length));$('patPage').value='1';$('patPageBox').hidden=out.kind!=='pdf';
+  $('patPage').max=String(Math.max(1,out.pages.length));$('patPage').value='1';$('patPageBox').hidden=!online||out.kind!=='pdf';/* page picker only feeds the AI preview */
   $('patName').value=(String(f.name||'').replace(/\.[^.]+$/,'').slice(0,100))||'Imported pattern';
   info(`Selected ${f.name}. ${out.warnings.join(' ')} ${out.kind==='pdf'?'Processed '+out.pages.length+' pages locally.':'Image selected. No image has been uploaded.'} Nothing was sent online.`);
   if(out.kind==='image')await showPreview();
@@ -64,7 +64,8 @@
   // Independently confirm persistence before claiming a successful save.
   const key=window.FlossFoxProjects.KEY;let persisted=!key;
   if(key){try{const saved=JSON.parse(localStorage.getItem(key)||'null');persisted=!!saved?.projects?.some(x=>x.id===id)}catch{persisted=false}}
-  dialog.close();window.FlossFoxProjects.open(id);
+  const n=rows.length;dialog.close();window.FlossFoxProjects.open(id);
+  {/* connected workflow: land on the project with its step strip in view */const st=document.getElementById('projStatus');if(st)st.textContent=`Pattern saved with ${n} color${n===1?'':'s'}. Next: follow the steps below to check your threads.`;const fl=document.getElementById('pFlow');if(fl){window.scrollTo(0,0);const b=fl.querySelector('[aria-current=step]');if(b)b.focus({preventScroll:true})}}
   if(!persisted){const status=document.getElementById('projStatus');if(status)status.textContent='Pattern imported temporarily, but browser storage did NOT save it. Download a backup before leaving.'}
  }catch(e){info('Not saved: '+String(e.message||e))}}
  function make(){if(dialog)return;dialog=N('dialog','pat-dialog');dialog.id='ffPatternDialog';dialog.setAttribute('aria-label','Import a cross-stitch pattern');const head=N('header','pat-header');head.append(N('h2','', 'Import a cross-stitch pattern'));const close=N('button','sec','Close');close.type='button';close.onclick=()=>dialog.close();head.append(close);
