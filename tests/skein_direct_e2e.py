@@ -64,7 +64,9 @@ with sync_playwright() as p:
  # fixture flag
  c=ctx_for(b,1280,False);g=c.new_page();g.goto(B+'?fixtures=1');g.wait_for_load_state('networkidle')
  PREV=g.evaluate('window.FLOSS_FOX_ENV')=='preview'
- ok('fixtures=1 loads demo merchants',g.evaluate("(FLOSS_FOX_SHOP.mockMerchants||[]).length")>=2)
+ MM=g.evaluate("(FLOSS_FOX_SHOP.mockMerchants||[]).length")
+ if PREV: ok('fixtures=1 loads demo merchants (preview)',MM>=2,MM)
+ else: ok('fixtures=1 loads no demo merchants (production build ships no mock file)',MM==0,MM)
  g.fill('#inp','310 x2\n321');g.click('#go');g.wait_for_timeout(300)
  ok('fixtures=1 shows demo store cards (preview) / still none in production',(not PREV and g.locator('.wtbstore').count()==0 and '(demo)' not in g.inner_text('body')) or g.locator('.wtbstore').count()>0 and '(demo)' in g.inner_text('body'))
  g.goto(B);g.wait_for_load_state('networkidle');g.fill('#inp','310 x2\n321');g.click('#go');g.wait_for_timeout(300)
