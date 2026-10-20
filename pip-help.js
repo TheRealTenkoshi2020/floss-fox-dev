@@ -19,7 +19,7 @@ function doNext(k){const e=entry(k)||{};switch(k){
  case'projects':{const last=P()&&P().lastProject();if(!last)return{label:e.doNext,run:()=>window.FFImportOpen&&window.FFImportOpen()};const nm=last.name.length>18?last.name.slice(0,18)+'…':last.name,l=FX(H().projectsHas,{name:nm});return{label:l.length<=28?l:H().projectsHasFallback,run:()=>P().openProject(last.id)}}
  case'project':{if($('pUseColl')&&thN())return{label:e.doNext,run:()=>click('pUseColl')};if(!thN())return{label:((S().compare||{}).emptyBtn),run:()=>P().showView('threads')};return{label:H().projectNextAlt,run:()=>click('pShop')}}
  case'readiness':{const pr=curProj(),pl=pr&&planOf(pr);if(pl&&pl.ready)return null;return{label:e.doNext,run:()=>click('f-att')}}
- case'shop':{const d=document.querySelector('#shopBody details.shopextra');if(!d)return{label:(S().shopEmptyProjects),run:()=>P().showView('projects')};return{label:e.doNext,run:()=>{d.open=true;d.scrollIntoView({block:'center'});const sm=d.querySelector('summary');if(sm)sm.focus()}}}
+ case'shop':{const c=document.querySelector('#shopBody #pCopy')||document.querySelector('#shopBody details.shopextra summary');if(!c||!vis('shopBody'))return{label:(S().shopEmptyProjects),run:()=>P().showView('projects')};return{label:e.doNext,run:()=>{const d=c.closest('details');if(d)d.open=true;c.scrollIntoView({block:'center'});c.focus()}}}
  case'fabric':return{label:e.doNext,run:()=>focus('fcW')};
  case'import':return{label:e.doNext,run:()=>click('patFile')};
  case'backup':return{label:e.doNext,run:()=>click('backupBtn')};
@@ -74,7 +74,7 @@ const CHIPS=[['#inpHint','dmc'],['label[for="thAdd"] b','skein'],['#patPaste','l
  ['label[for="fcCount"]','count'],['label[for="seStrands"]','strands']];
 function chips(){for(const [sel,term,before] of CHIPS){const el=document.querySelector(sel);if(!el||el.dataset.ffchip)continue;
  if(before){const sum=el.closest('details')&&el.closest('details').querySelector('summary');if(!sum||sum.dataset.ffchip)continue;sum.dataset.ffchip='1';const c=chip(term);if(c)sum.append(' ',c);continue}
- el.dataset.ffchip='1';const c=chip(term);if(!c)continue;if(el.matches('label')){el.after(c)}else el.append(' ',c)}}
+ el.dataset.ffchip='1';const c=chip(term);if(!c)continue;el.append(' ',c)}}
 /* import window: Pip help inside the modal (Ask Pip is behind it) */
 function importHelp(){const d=$('ffPatternDialog');if(!d||$('ffImportPip'))return;const h=d.querySelector('.pat-header');if(!h)return;
  const b=document.createElement('button');b.type='button';b.className='ghost';b.id='ffImportPip';b.textContent=S().pipHelpBtn||'Pip, how does this work?';b.setAttribute('aria-expanded','false');
@@ -93,7 +93,16 @@ function fabricAsk(){if(screen()!=='fabric'||$('ffFabricAsk'))return;const nav=d
  slot.innerHTML='<picture><source type="image/webp" srcset="assets/pip/pip-needle-160.webp"><img src="assets/pip/pip-needle-160.png" width="64" height="94" alt=""></picture><p class="ffpipline" aria-live="polite"></p>';
  const wrap=document.createElement('div');wrap.className='ffaskrow';wrap.append(slot,b);nav.after(wrap,p);last=null}
 function fillStr(){document.querySelectorAll('[data-ffs]').forEach(e=>{const v=S()[e.dataset.ffs];if(v&&e.dataset.ffsDone!==v){e.textContent=v;e.dataset.ffsDone=v}})}
-function tick(){try{fillStr();chips();importHelp();backupHelp();fabricAsk();findNext();bubble();bubbleCond()}catch(e){}}
+
+/* Pip strip: the same bubble (text + pose from pip.js) shown under the tab bar on every tab except Find floss, where the full Pip already sits.
+   Not interactive (no new touch targets), no animation under reduced motion, follows the Hide Pip preference. */
+function strip(){const t=document.querySelector('header .t'),msg=$('pipMsg'),img=$('pipImg');if(!t||!msg)return;let st=$('pipStrip');
+ if(!st){st=document.createElement('p');st.id='pipStrip';st.className='pipstrip noprint';st.setAttribute('aria-hidden','true');
+  st.innerHTML='<img alt="" width="32" height="32" decoding="async"><span class="pipstripmsg"></span>';t.append(st)}
+ const off=vis('convertView')||document.body.classList.contains('pip-hidden-all')||!msg.textContent.trim();st.hidden=off;t.classList.toggle('haspip',!off);t.parentElement.classList.toggle('haspip',!off);if(off)return;
+ const tx=msg.textContent.trim(),m=st.querySelector('span');if(m.textContent!==tx){m.textContent=tx;st.classList.remove('pipstrip-in');void st.offsetWidth;st.classList.add('pipstrip-in')}
+ const art=(img&&img.dataset.art)||'reassuring',im=st.querySelector('img'),src=`assets/pip/pip-${art}-160.png`;if(im.getAttribute('src')!==src)im.setAttribute('src',src)}
+function tick(){try{fillStr();chips();importHelp();backupHelp();fabricAsk();findNext();bubble();bubbleCond();strip()}catch(e){}}
 let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;tick()})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
 document.addEventListener('click',e=>{if(pop&&!pop.contains(e.target))closePop(false);if(e.target.closest&&e.target.closest('nav.tabs,[data-ffgo],#shopBack,#thNext,#openSaved,#pClose'))tick()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&pop)closePop(true)});
