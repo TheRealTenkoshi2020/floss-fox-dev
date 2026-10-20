@@ -29,7 +29,7 @@ with sync_playwright() as p:
     ok('p3 Find floss results: one primary = Save project', g.evaluate(PRI, '#shopcard') == ['saveProj'], g.evaluate(PRI, '#shopcard'))
     g.click('#tabThreads'); g.wait_for_timeout(200)
     ok('p4 empty collection: one primary = Add to my collection', g.evaluate(PRI, '#threadsView') == ['thAddBtn'], g.evaluate(PRI, '#threadsView'))
-    m = g.locator('#thEmptyMsg'); ok('p5 empty collection: inline empty state next to the list', m.is_visible() and 'Add to my collection' in m.inner_text(), m.count())
+    m = g.locator('#thEmptyMsg'); ok('p5 empty collection: inline empty state next to the list', m.is_visible() and m.inner_text() == 'No threads here yet. Type the DMC numbers you own in the box above, then tap Add to my collection.', m.count())
     ok('p6 disabled Undo shows why, next to it', g.is_visible('#ffBulkUndoWhy') and g.get_attribute('#ffBulkUndo', 'aria-describedby') == 'ffBulkUndoWhy' if g.locator('#ffBulkUndo').is_visible() else True)
     g.click('#tabProjects'); g.wait_for_timeout(200)
     ok('p7 no projects: one primary = Import a pattern (PDF)', g.evaluate(PRI, '#projListCard') == ['emptyImport'], g.evaluate(PRI, '#projListCard'))
