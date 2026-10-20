@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-13';
+const CACHE = 'flossfox-dev-v2.0a-ci005-14';
 const CORE = [
   "pip-hybrid/vendor/pdfjs/pdf.mjs",
   "pip-hybrid/vendor/pdfjs/pdf.worker.mjs",
@@ -55,6 +55,8 @@ const CORE = [
   "combined-shopping-plan.js",
   "planner.js",
   "tour.js",
+  "pip-help.js",
+  "flow-strings.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",
   "assets/pip/pip-celebrating-160.png",

@@ -36,7 +36,7 @@ with sync_playwright() as p:
     load(h, 'native-legend.pdf')
     for t in h.locator('#patRows input[type=checkbox]').all(): t.check()
     h.click('#patImport'); h.wait_for_timeout(400)
-    ok('I2 after import the next step is "Check my threads" (collection exists)', h.get_attribute('#pFlow [aria-current=step]', 'data-flow') == 'cmp')
+    ok('I2 after import Pip checks the collection automatically (banner shown)', 'Pip checked your threads' in h.inner_text('#pAuto'), h.inner_text('#pAuto'))
     h.click('#pFlow [data-flow=cmp]'); h.wait_for_timeout(200)
     cmp = h.inner_text('#pCmp')
     ok('I2b comparison uses the existing engine: 310 owned, others short/missing', 'Compared with my thread collection' in cmp and '1 owned' in cmp.replace('\n', ' ').replace('✓ ', ''), cmp[:300])
@@ -78,7 +78,7 @@ with sync_playwright() as p:
     ok('I8 scanned PDF: no text, no colors invented, manual paste offered', codes == [] and "couldn't find any colors" in s.inner_text('#patUnreadable'), (info, codes))
     s.click('#ffPatternDialog .pat-header button')
     info, codes = load(s, 'legend-scan.png')
-    ok('I9 legend image: no OCR without AI, no upload, manual paste offered', codes == [] and ('uploaded' in info and ('No image has been' in info or 'Nothing has been' in info)), info)
+    ok('I9 legend image: no OCR without AI, no upload, manual paste offered', codes == [] and ('uploaded' in info and ('No image has been' in info or 'Nothing has been' in info or 'Nothing was uploaded' in info)), info)
     s.click('#ffPatternDialog .pat-header button')
     for bad in ['password-protected.pdf', 'fake.pdf']:
         info, codes = load(s, bad)
