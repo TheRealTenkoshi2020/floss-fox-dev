@@ -35,7 +35,7 @@
     const text=textItemsToLines(content.items).slice(0,100000);
     pages.push({page:p,text});
    }
-   return{kind:'pdf',name:file.name,pages,warnings:[...(document.numPages>MAX_PAGES?['Only the first 30 pages were read. Import the rest separately.']:[]),...(pages.every(p=>!p.text.trim())?['No selectable text found, so these are probably scanned pages. Type the legend in below, or approve an AI scan if it\'s available.']:[])],requiresReview:true};
+   return{kind:'pdf',name:file.name,pages,warnings:[...(document.numPages>MAX_PAGES?['Only the first 30 pages were read. Import the rest separately.']:[]),...(pages.every(p=>!p.text.trim())?['This PDF has no text we can read, so it\'s probably scanned pages.']:[])],requiresReview:true};
   }finally{await document?.destroy?.().catch?.(()=>{});await loading?.destroy?.().catch?.(()=>{});}
  }
  const api={inspect,textItemsToLines,MAX_BYTES,MAX_PAGES};root.FlossFoxPatternPDF=api;if(typeof module==='object'&&module.exports)module.exports=api;
