@@ -133,6 +133,18 @@ with sync_playwright() as p:
     # photo picked opens paste box
     g = page(seed([])); g.click('#convertView .pat-launch'); fx = 'tests/fixtures/patterns/legend-scan.png'
     if os.path.exists(fx): g.set_input_files('#patFile', fx); g.wait_for_timeout(1500); ok('d3 picking a photo opens the paste box', g.evaluate("document.querySelector('details.pat-manual').open"))
+    if os.path.exists(fx):
+        inf = g.inner_text('#patInfo'); ok('d4 PDF only: picking a photo says only PDFs work right now', inf == 'Only PDFs work right now. Choose a PDF file, or type the color key into the box below.', inf)
+        ok('d5 PDF only: no photo preview drawn', g.locator('#patImagePreview canvas').count() == 0)
+    dlg = g.inner_text('#ffPatternDialog'); ok('d6 PDF only: modal text and help never offer photos or images', 'Choose a PDF, up to 20 MB. We read its text on this device to find the color key. Chart symbols and scanned pages can\'t be read.' in dlg and not any(w in dlg.lower() for w in ('photo', 'png', 'jpg', 'webp', 'image')), dlg[:400])
+    ok('d7 PDF only: file input accept is .pdf,application/pdf', g.get_attribute('#patFile', 'accept') == '.pdf,application/pdf')
+    # offline Ask Pip answers for inventory and privacy do not suggest online AI can be turned on
+    g = page(seed([]))
+    for q, want in (('inventory', 'Your collection stays in this browser.'), ('privacy', "Ask Pip's built-in help works on this device and never sends anything over the network. Online AI is off.")):
+        g.click('#askPipBtn'); g.wait_for_timeout(150); g.click('[data-piph-open]'); g.wait_for_timeout(150); g.fill('#piphMessage', q); g.click('#pipHybridDialog button:has-text("Ask offline")'); g.wait_for_timeout(300)
+        t = g.inner_text('#pipHybridDialog'); ok(f'd8 Ask Pip {q} answer is Pixel\'s text, no "enable online AI"', want in t and 'enable online AI' not in t and "shared with Pip's online AI" not in t, t[-300:])
+        ok(f'd9 online AI stays off ({q})', g.evaluate("!(window.PIP_PATTERN_CONFIG&&window.PIP_PATTERN_CONFIG.enabled===true)") and not g.locator('#pipHybridDialog button:has-text("Ask online AI")').is_visible())
+        g.keyboard.press('Escape'); g.wait_for_timeout(150)
     # 344px no overflow, touch targets
     g = page(seed([]), 344); ov = g.evaluate("document.documentElement.scrollWidth<=344")
     ok('w1 344px: no horizontal overflow on Find floss', ov)

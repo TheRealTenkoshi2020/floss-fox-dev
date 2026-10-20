@@ -39,5 +39,5 @@ window.FF_STR={
  termChipLabel:p('p12.ui.term_chip_aria'),termClose:p('p12.ui.term_close'),
  // (h) tour (Pixel)
  tour:[1,2,3,4,5].map(i=>({title:p(`p12.tour.${i}.title`),body:p(`p12.tour.${i}.body`)})),tourInvite:p('p12.tour.invite'),
- left:{catalog:p('p12.left.catalog_fallback'),imageStatus:p('p12.left.image_status'),imageWarning:p('p12.left.image_warning'),helpPdf:p('p12.left.help_pdf')}
+ left:{catalog:p('p12.left.catalog_fallback'),imageStatus:p('p12.left.image_status'),imageWarning:p('p12.left.image_warning'),helpPdf:p('p12.left.help_pdf'),modalDesc:p('p12.left.modal_desc_pdf')}
 };})();

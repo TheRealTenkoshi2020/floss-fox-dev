@@ -78,7 +78,8 @@ with sync_playwright() as p:
     ok('I8 scanned PDF: no text, no colors invented, manual paste offered', codes == [] and "couldn't find any colors" in s.inner_text('#patUnreadable'), (info, codes))
     s.click('#ffPatternDialog .pat-header button')
     info, codes = load(s, 'legend-scan.png')
-    ok('I9 legend image: no OCR without AI, no upload, manual paste offered', codes == [] and ('uploaded' in info and ('No image has been' in info or 'Nothing has been' in info or 'Nothing was uploaded' in info)), info)
+    ok('I9 legend image (PDF only): friendly "only PDFs" message, nothing read, paste box opened', codes == [] and 'Only PDFs work right now' in info and 'Import stopped' not in info and s.evaluate("document.querySelector('#ffPatternDialog details.pat-manual').open") and projects(s) == [], info)
+    ok('I9b file input accepts PDFs only', s.get_attribute('#patFile', 'accept') == '.pdf,application/pdf', s.get_attribute('#patFile', 'accept'))
     s.click('#ffPatternDialog .pat-header button')
     for bad in ['password-protected.pdf', 'fake.pdf']:
         info, codes = load(s, bad)

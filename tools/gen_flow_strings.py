@@ -2,8 +2,8 @@
    python3 tools/gen_flow_strings.py /workspace/pip-art/voice-overhaul/flow-p12.csv"""
 import csv, json, sys, re
 SRC = sys.argv[1] if len(sys.argv) > 1 else '/workspace/pip-art/voice-overhaul/flow-p12.csv'
-# Held for Myke (not applied): photo "view while you type" wording and the 6c PDF-only description.
-HOLD = {'p12.left.modal_desc_keep', 'p12.left.modal_desc_pdf'}
+# Held (not applied): photo "view while you type" wording (6c option A, not chosen).
+HOLD = {'p12.left.modal_desc_keep'}  # Myke chose 6c option B (PDF only); modal_desc_pdf is live
 # Myke's rule (d): one import label everywhere.
 FIX = [('Import a full pattern (PDF)', 'Import a pattern (PDF)')]
 rows = [r for r in csv.DictReader(open(SRC, encoding='utf-8')) if r['key'] not in HOLD]
