@@ -156,7 +156,7 @@ const foxSvg=cls=>{const l=document.querySelector('header .logo');return l?l.out
 function renderList(){const L=$('projList');$('projCount').textContent=store.projects.length?`(${store.projects.length})`:'';
  L.innerHTML=store.projects.length?store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated)).map(p=>{const P=plan(p);
   return`<li><span><span class="pname">${esc(p.name)}</span>${p.demo?' <span class="tag demotag">Demo</span>':''}<br><small class="mut">${s2(p.items.length)}${(n=>n?` · <span class="stc">${n.toLocaleString('en-US')} stitches</span>`:'')(p.items.reduce((a,i)=>a+(i.stitchCount||0),0))} · <span class="pst">${esc((PSTAT.find(x=>x[0]===p.status)||PSTAT[0])[1])}</span> · ${P.ready?'<b class="ok-msg">✓ Ready to stitch</b>':`${P.sum.sufficient} of ${P.sum.total} ready${P.sum.toBuy?` · ${P.sum.toBuy} to buy`:''}${P.sum.review?` · ${P.sum.review} need attention`:''}`} · updated ${esc(p.updated.slice(0,10))}</small></span><span class="row" style="margin:0"><button type="button" class="pri" data-open="${esc(p.id)}">Open<span class="sr"> ${esc(p.name)}</span></button><button type="button" class="ghost" data-del="${esc(p.id)}">Delete<span class="sr"> ${esc(p.name)}</span></button></span></li>`}).join('')+'<li class="storeline" style="display:block;border:0">Saved in this browser only. Open <b>Back up my projects and threads</b> below to keep a copy.</li>'
-  :`<li class="empty">${ORG()}<b>No projects yet</b>Paste your colors on the <i>Find My Floss</i> tab, then save them as a project to check what you have.<div class="row" style="justify-content:center"><button type="button" class="pri" id="emptyImport">${esc(FS('importLabel')||'Import a pattern (PDF)')}</button><button type="button" class="sec" id="emptyAdd">Add my colors</button></div></li>`;
+  :`<li class="empty">${ORG()}<b>No projects yet</b>Paste your colors on the Find floss tab, then save them as a project to check what you have.<div class="row" style="justify-content:center"><button type="button" class="pri" id="emptyImport">${esc(FS('importLabel')||'Import a pattern (PDF)')}</button><button type="button" class="sec" id="emptyAdd">Add my colors</button></div></li>`;
  L.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProject(b.dataset.open));
  L.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delProject(b.dataset.del));{const ol=$('projOpenLast');if(ol){const last=store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0];ol.hidden=!last;if(last){const H=(window.FF_STR||{}).helpAlt||{},nm=last.name.length>18?last.name.slice(0,18)+'…':last.name,lb=FX(H.projectsHas,{name:nm});ol.textContent=lb&&lb.length<=28?lb:(H.projectsHasFallback||'Open my last project');ol.onclick=()=>openProject(last.id)}}}
  const ea=$('emptyAdd');if(ea)ea.onclick=()=>{showView('convert');$('inp').focus()};const ei=$('emptyImport');if(ei)ei.onclick=()=>window.FFImportOpen&&window.FFImportOpen()}
@@ -248,14 +248,16 @@ function renderCmp(p){const el=$('pCmp'),T=window.FlossFoxThreadsUI;if(!el||!T)r
 const FS=k=>(window.FF_STR||{})[k]||'',FC=(k,v)=>{const t=((window.FF_STR||{}).compare||{})[k];return typeof t==='function'?t(v||{}):t||''},FX=(t,v)=>typeof t==='function'?t(v||{}):t||'',fill=(t,o)=>String(t).replace(/\{(\w+)\}/g,(m,k)=>o[k]!==undefined?o[k]:m);
 const AUTO_SINCE='2026-10-20T03:00:00.000Z',autoBan={},blank=f=>f.status===null&&f.owned===null&&!f.ownedSource&&!f.ownedPartial;
 const AUTOKEY=()=>KEY.replace(/\.v1$/,'')+'.autocmp-off.v1',autoOff=()=>{try{return JSON.parse(localStorage.getItem(AUTOKEY())||'[]')}catch(e){return[]}};
+const AUTOHID=()=>KEY.replace(/\.v1$/,'')+'.autocmp-hidden.v1',autoHid=()=>{try{return JSON.parse(localStorage.getItem(AUTOHID())||'[]')}catch(e){return[]}};
+function setAutoHid(id){try{const a=autoHid();if(!a.includes(id)){a.push(id);localStorage.setItem(AUTOHID(),JSON.stringify(a.slice(-200)))}}catch(e){}}
 function setAutoOff(id){try{const a=autoOff();if(!a.includes(id)){a.push(id);localStorage.setItem(AUTOKEY(),JSON.stringify(a.slice(-200)))}}catch(e){}}
 function autoPlan(p){const T=window.FlossFoxThreadsUI;if(!T||!p.items.length||!T.count({demo:!!p.demo}))return null;const {r,ch}=cmpPlan(p,T);
  const safe=ch.filter(c=>blank(c.from));return{have:r.owned.length,total:p.items.length,safe,all:ch.length,u:safe.filter(c=>c.to.status==='check').length,b:safe.filter(c=>c.to.status==='buy').length}}
 function autoCmp(p){if(window.FF_NO_AUTOCMP)return; /* test-only hook for legacy suites that drive Use my collection by hand */if(autoBan[p.id]&&autoBan[p.id].kind!=='offer')return;const T=window.FlossFoxThreadsUI;if(!T||!p.items.length)return;
  const fresh=String(p.created||'')>=AUTO_SINCE&&!autoOff().includes(p.id);
- if(!T.count({demo:!!p.demo})){if(fresh&&!p.demo)autoBan[p.id]={kind:'empty'};return}
+ if(!T.count({demo:!!p.demo})){if(fresh&&!p.demo&&!autoHid().includes(p.id))autoBan[p.id]={kind:'empty'};return}
  const a=autoPlan(p);if(!a)return;
- if(!a.safe.length){if(fresh)autoBan[p.id]={kind:'nothing'};else delete autoBan[p.id];return}
+ if(!a.safe.length){if(fresh&&!autoHid().includes(p.id))autoBan[p.id]={kind:'nothing'};else delete autoBan[p.id];return}
  if(!fresh){autoBan[p.id]=Object.assign({kind:'offer'},a);return}
  applyAuto(p,a)}
 function applyAuto(p,a){a.safe.forEach(x=>Object.assign(p.decisions[x.code],x.to));undoBy[p.id]=(undoBy[p.id]||[]).concat(a.safe);autoBan[p.id]=Object.assign({kind:'done'},a);touch(p)}
@@ -266,9 +268,9 @@ function renderAuto(p){const el=$('pAuto');if(!el)return;const b=autoBan[p.id];i
   :b.kind==='empty'?`<p>${esc(FC('empty'))}</p><div class="row"><button type="button" class="sec" id="pAutoThreads">${esc(FC('emptyBtn'))}</button>${hide}</div>`
   :b.kind==='nothing'?`<p>${esc(FC('nothing'))}</p><div class="row">${hide}</div>`
   :b.kind==='offer'?`<p><b>${esc(FS('autoOffer'))}</b></p><div class="row"><button type="button" class="pri" id="pAutoApply">${esc(FS('autoApply'))}</button>${hide}</div>`
-  :`<p><b>${esc(autoHead(b))}</b></p>${b.u?`<p class="small">${esc(FC('unsure',b))}</p>`:''}${b.b?`<p class="small">${esc(FC('buy',b))}</p>`:''}<p class="hint">${esc(FC('same'))} ${esc(FC('reserved'))}</p>
+  :`<p><b>${esc(autoHead(b))}</b></p>${b.safe&&b.safe.length?`<p class="small">${esc(FC('filled',{n:b.safe.length}))}</p>`:''}${b.u?`<p class="small">${esc(FC('unsure',b))}</p>`:''}${b.b?`<p class="small">${esc(FC('buy',b))}</p>`:''}<p class="hint">${esc(FC('same'))} ${esc(FC('reserved'))}</p>
    ${undoBy[p.id]?`<div class="row"><button type="button" class="sec" id="pAutoUndo" aria-label="${esc(FC('undoAria'))}">${esc(FC('undo'))}</button>${hide}</div><p class="hint">${esc(FC('undoHint'))}</p>`:`<div class="row">${hide}</div>`}`;
- const h=$('pAutoHide');if(h)h.onclick=()=>{if(b.kind==='offer')setAutoOff(p.id);autoBan[p.id]={kind:'hidden'};el.hidden=true;el.innerHTML=''};
+ const h=$('pAutoHide');if(h)h.onclick=()=>{if(b.kind==='offer')setAutoOff(p.id);else setAutoHid(p.id);autoBan[p.id]={kind:'hidden'};el.hidden=true;el.innerHTML=''};
  const gt=$('pAutoThreads');if(gt)gt.onclick=()=>showView('threads');
  const ap=$('pAutoApply');if(ap)ap.onclick=()=>{const a=autoPlan(p);if(!a||!a.safe.length){autoBan[p.id]={kind:'nothing'};renderEditor();return}applyAuto(p,a);renderEditor();renderList();const u=$('pAutoUndo');if(u)u.focus();pstatus(autoHead(a))};
  const u=$('pAutoUndo');if(u)u.onclick=()=>{const U=undoBy[p.id]||[];U.forEach(x=>{const d=p.decisions[x.code];if(d)Object.assign(d,x.from)});delete undoBy[p.id];touch(p);setAutoOff(p.id);autoBan[p.id]={kind:'undone',n:U.length};renderEditor();renderList();pstatus(FC('undone',{n:U.length}));const hh=$('pAutoHide');if(hh)hh.focus()}}
@@ -361,7 +363,7 @@ function mountShop(p){const sb=$('shopBody'),pl=$('pPlan');if(!sb)return;if(pl&&
 function shopPicker(){const h=$('shopPickRow');if(!h)return;const ps=store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated));h.hidden=!ps.length;if(!ps.length){h.innerHTML='';return}
  h.innerHTML=`<label for="shopPick">${esc(FS('shopPickLabel'))}</label><select id="shopPick">${openId&&proj(openId)?'':`<option value="" selected>${esc(FS('shopPickNone'))}</option>`}${ps.map(x=>`<option value="${esc(x.id)}"${x.id===openId?' selected':''}>${esc(x.name)}</option>`).join('')}</select>`;
  $('shopPick').onchange=e=>{const id=e.target.value;if(!id||!proj(id))return;if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}openId=id;mode='edit';{const pp=proj(id);if(pp)autoCmp(pp)}ensureShop();const s=$('shopPick');if(s)s.focus()}}
-function shopState(){shopPicker();const sb=$('shopBody'),p=openId&&proj(openId),has=!!(p&&sb&&sb.querySelector('#pPlan'));$('shopEmpty').hidden=has;sb.hidden=!has;$('shopProj').hidden=!has;{const nx=$('shopBack');if(nx){nx.hidden=!has;nx.textContent=FS('next').shop}}
+function shopState(){shopPicker();const sb=$('shopBody'),p=openId&&proj(openId),has=!!(p&&sb&&sb.querySelector('#pPlan'));$('shopEmpty').hidden=has;sb.hidden=!has;$('shopProj').hidden=!has||!!$('shopPick');{const sv=$('shopSeveral');if(sv)sv.hidden=!store.projects.length}{const nx=$('shopBack');if(nx){nx.hidden=!has;nx.textContent=FS('next').shop}}
  const n=has?sb.querySelectorAll('#pPlan > ul:first-of-type [data-bought]:not(:checked)').length:0;$('shopCount').textContent=n?`(${n})`:''}
 function ensureShop(){const p=openId&&proj(openId);if(!p){const sb=$('shopBody');if(sb)sb.textContent='';shopState();return}if(!$('shopBody').querySelector('#pPlan')||mode==='shop'){const m=mode;mode='edit';renderEditor();mode=m;if(m==='shop')renderEditor()}shopState()}
 function openShop(p){mode='shop';shopPanel=null;query='';renderEditor();window.scrollTo(0,0);const h=$('shH');if(h)h.focus({preventScroll:true})}
@@ -505,7 +507,7 @@ $('tabConvert').onclick=()=>showView('convert');$('tabProjects').onclick=()=>sho
  g('shopSeveral',()=>{showView('projects');closeProject();const b=$('planOpen');if(b)b.click()});g('shopBack',()=>{showView('projects')});
  g('thNext',()=>{if(store.projects.length)showView('projects');else{showView('convert');const r=document.querySelector('#convertView .pat-launch');if(r)r.focus()}});
  const tn=()=>{const b=$('thNext');if(b)b.textContent=(store.projects.length?FS('nextThreadsHasProj'):FS('nextThreads'))+' →'};tn();$('tabThreads').addEventListener('click',tn)}
-$('newEmpty').onclick=()=>{if($('newEmpty').disabled)return;$('newEmpty').disabled=true;setTimeout(()=>$('newEmpty').disabled=false,600);const p={id:newId(),name:'Untitled project',notes:'',buyBrand:'dmc',status:'planning',items:[],decisions:{},purchased:{},created:nowISO(),updated:nowISO()};store.projects.push(p);save();renderList();openProject(p.id)};
+$('newEmpty').onclick=()=>{if($('newEmpty').disabled)return;$('newEmpty').disabled=true;setTimeout(()=>$('newEmpty').disabled=false,600);const p={id:newId(),name:FS('defaultName')||'My project',notes:'',buyBrand:'dmc',status:'planning',items:[],decisions:{},purchased:{},created:nowISO(),updated:nowISO()};store.projects.push(p);save();renderList();openProject(p.id)};
 $('backupBtn').onclick=backup;undoImportRow();$('restoreFile').onchange=e=>{restoreFile(e.target.files[0]);e.target.value=''};
 let saving=false;
 $('saveProj').onclick=()=>{if(saving)return;if(!state.items.length){$('copymsg').textContent='Nothing to save yet. Add your colors first.';return}saving=true;setTimeout(()=>saving=false,800);
