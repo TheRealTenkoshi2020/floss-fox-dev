@@ -62,10 +62,9 @@ with sync_playwright() as p:
  ok('native PDF: 666 skeins unknown (not invented)',any(x.startswith('DMC 666 | ?/') for x in r['rows']),r['rows'])
  ok('native PDF: invalid DMC 9999 not accepted as color',not any('9999' in x.split(' | ')[0] for x in r['rows']),r['rows'])
  ok('XSS in imported text inert (no img element, no JS dialog)',r['imgs']==0 and not any('JS dialog' in e for e in E),E)
- ok('import blocked until every row verified',r['dis'])
+ ok('import blocked until the one "I checked these colors" confirmation',r['dis'] and 'tick' in g.inner_text('#patWhy'))
  n0=len(g.evaluate("FlossFoxProjects._store().projects"))
- g.locator('#patRows .pat-row input[type=checkbox]').first.check();ok('still blocked with 1 of N verified',g.evaluate("document.getElementById('patImport').disabled") or len(r['rows'])==1)
- for cb in g.locator('#patRows .pat-row input[type=checkbox]').all():cb.check()
+ g.check('#patAll');ok('one confirmation enables Create (no per-color ticking)',not g.evaluate("document.getElementById('patImport').disabled"))
  g.fill('#patName','Imported fixture');g.click('#patImport');g.wait_for_timeout(400)
  ps=g.evaluate("FlossFoxProjects._store().projects");new=[x for x in ps if x['name']=='Imported fixture']
  ok('reviewed import saves ONE project via FlossFoxProjects.add',len(ps)==n0+1 and len(new)==1,len(ps))

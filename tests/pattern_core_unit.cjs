@@ -36,4 +36,16 @@ ok('"Row 12" is not a color',one('Row 12')===null);
 ok('"2 strands 310" is not DMC 02',one('2 strands 310')===null);
 ok('"Page 3" is not a color',one('Page 3')===null);
 ok('"310 Black 2 skeins" plain row still works',one('310 Black 2 skeins')?.code==='310'&&one('310 Black 2 skeins').qty===2&&!one('310 Black 2 skeins').warnings.length);
+// Barbara (3.0): a full DMC color chart must never become the pattern's colors
+{const n=c=>/^\d+$/.test(c)?+c:-1;const keys=Object.keys(DMC).sort((a,b)=>(n(a)<0)-(n(b)<0)||n(a)-n(b)||(a<b?-1:a>b?1:0));
+ const chart=keys.map(k=>k+' '+DMC[k].name).join('\n');let q=P(chart);
+ ok('catalog: full DMC chart on one page imports nothing, flagged',q.rows.length===0&&q.warnings.includes('catalog-page-skipped')&&q.metadata.catalogPages[0]===1,{n:q.rows.length,w:q.warnings});
+ const pages=[{page:1,text:'X 310 Black 2400 2\nO 321 Red 800 1\n* 3865 Winter White 120 1'}];for(let i=0;i<keys.length;i+=90)pages.push({page:pages.length+1,text:keys.slice(i,i+90).map(k=>k+' '+DMC[k].name).join('\n')});
+ q=C.parsePages(pages,DMC);ok('catalog: pattern + appended chart keeps only the key colors',JSON.stringify(q.rows.map(x=>x.code))==='["310","321","3865"]',q.rows.map(x=>x.code).slice(0,10));
+ const thirds=[];for(let i=0;i<keys.length;i+=3)thirds.push(keys[i]+' '+DMC[keys[i]].name);const sp=[];for(let i=0;i<thirds.length;i+=90)sp.push({page:sp.length+1,text:thirds.slice(i,i+90).join('\n')});
+ q=C.parsePages(sp,DMC);ok('catalog: 3-column chart (>150 codes across pages) imports nothing',q.rows.length===0&&q.warnings.includes('catalog-document'),q.warnings);
+ const real=['150','310','321','415','498','666','700','725','797','815','938','3865','3713','3799','550','White'].map((c,i)=>'X'.charAt(0)+' '+c+' '+((DMC[c.toUpperCase()]||{}).name||'')+' '+(i+1)+' skeins').join('\n');
+ q=P(real);ok('catalog: a real 16-color key is NOT flagged',q.rows.length===16&&!q.warnings.includes('catalog-page-skipped'),{n:q.rows.length,w:q.warnings});
+ const sorted=['208','310','321','415','498','550','666','700','725','797','815','938','3713','3799','3865'].map(c=>c+' '+DMC[c].name+' 1 skein').join('\n');
+ q=P(sorted);ok('catalog: a sorted 15-color key is NOT flagged',q.rows.length===15&&!q.warnings.includes('catalog-page-skipped'),{n:q.rows.length,w:q.warnings});}
 console.log(`${pass} passed, ${fail} failed`);process.exit(fail?1:0);

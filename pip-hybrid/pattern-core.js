@@ -44,6 +44,14 @@ function parseRow(line,validCodes,page){
 }
 // Lines that look like thread legend rows for products this importer does not take (Light Effects, Satin, Etoile, Coloris, metallics, beads).
 const SPECIAL=/\b(?:light\s*effects?|satin|etoile|[ÉE]toile|coloris|metallic|kreinik|mill\s*hill|beads?|DMC\s*[ESC]\s?\d{2,4}|[ESC]\d{3,4})\b/i;
+const CATALOG_MIN=150,CATALOG_RUN=12;
+const ordCache=new WeakMap();
+function catalogOrder(validCodes){if(!validCodes||typeof validCodes!=='object')return new Map();if(ordCache.has(validCodes))return ordCache.get(validCodes);
+ const n=c=>/^\d+$/.test(c)?+c:-1;const keys=Object.keys(validCodes).sort((a,b)=>(n(a)<0)-(n(b)<0)||n(a)-n(b)||(a<b?-1:a>b?1:0));const m=new Map(keys.map((k,i)=>[k,i]));ordCache.set(validCodes,m);return m}
+// Longest streak of codes (in reading order) that are immediate neighbours in the DMC catalog: 150,151,152... A real pattern key almost never has 12.
+// Share of codes that directly follow the previous code in catalog order (a chart page's tail, e.g. 5283 5284 5287 ... B5200 ECRU WHITE).
+function catalogAdjacent(codes,order){let adj=0,prev=null;for(const c of codes){const i=order.get(c);if(i!==undefined&&prev!==null&&i===prev+1)adj++;if(i!==undefined)prev=i}return codes.length>1?adj/(codes.length-1):0}
+function catalogRun(codes,order){let best=0,cur=0,prev=null;for(const c of codes){const i=order.get(c);if(i!==undefined&&prev!==null&&i===prev+1)cur++;else cur=1;if(i!==undefined)prev=i;best=Math.max(best,cur)}return best}
 function parsePages(pages,validCodes){
  if(!Array.isArray(pages)||pages.length>100)throw new Error('That page list isn\'t valid.');
  let checked=0;const raw=[];const warnings=[];const skipped=[];
@@ -51,10 +59,19 @@ function parsePages(pages,validCodes){
   const lines=text.split(/\r?\n/);for(const line of lines){if(++checked>MAX_LINES){warnings.push('text-limit-reached');break}const row=parseRow(line,validCodes,p.page);if(!row&&skipped.length<50&&(SPECIAL.test(line)||/\bDMC\s*[:#-]?\s*[A-Za-z]?\d/i.test(line)))skipped.push({page:p.page||1,line:String(line).trim().slice(0,160),reason:SPECIAL.test(line)?'specialty':'unrecognized'});if(row){raw.push(row);if(raw.length>=MAX_COLORS){warnings.push('color-limit-reached');break}}}
   if(checked>MAX_LINES||raw.length>=MAX_COLORS)break;
  }
+ // Barbara (3.0 feedback): a full DMC color chart/catalog page ("310 Black" on every line) is NOT the pattern's color key.
+ // Flag pages with more than CATALOG_MIN distinct codes, or a long run of codes that are neighbours in the DMC catalog order,
+ // and import nothing from them. If the whole document still has more than CATALOG_MIN distinct codes, import nothing at all.
+ const order=catalogOrder(validCodes),perPage=new Map();for(const x of raw){if(!perPage.has(x.sourcePage))perPage.set(x.sourcePage,[]);perPage.get(x.sourcePage).push(x.code)}
+ const catalogPages=[];for(const [pg,codes] of perPage){const d=[...new Set(codes)];if(d.length>CATALOG_MIN||catalogRun(d,order)>=CATALOG_RUN||(d.length>=8&&catalogAdjacent(d,order)>=0.6))catalogPages.push(pg)}
+ let kept=raw.filter(x=>!catalogPages.includes(x.sourcePage));
+ if(catalogPages.length)warnings.push('catalog-page-skipped');
+ if(new Set(kept.map(x=>x.code)).size>CATALOG_MIN){kept=[];warnings.push('catalog-document')}
+ raw.length=0;raw.push(...kept);
  const byCode=new Map();for(const x of raw){const r=byCode.get(x.code);if(r){r.duplicates.push({page:x.sourcePage,line:x.sourceLine});r.warnings.push('duplicate-color-rows');r.needsReview=true; // Do not sum duplicate stitch counts across page legends
   r.qty=null;r.stitchCount=null;
  }else byCode.set(x.code,{...x,duplicates:[]})}
- return {version:1,rows:[...byCode.values()],skipped,warnings:[...new Set(warnings)],metadata:{sourcePages:pages.length,matchedLines:raw.length},trustedForAutomaticImport:false};
+ return {version:1,rows:[...byCode.values()],skipped,warnings:[...new Set(warnings)],metadata:{sourcePages:pages.length,matchedLines:raw.length,catalogPages},trustedForAutomaticImport:false};
 }
 function validateModelRows(model,validCodes){
  if(!model||typeof model!=='object'||!Array.isArray(model.rows)||model.rows.length>MAX_COLORS)return {rows:[],warnings:['invalid-model-output']};
@@ -80,5 +97,5 @@ function projectDraft(rows,name){
  }
  const now=new Date().toISOString();return{id:(globalThis.crypto?.randomUUID?.()||'pattern-'+Date.now()+'-'+Math.random().toString(36).slice(2,9)),name:String(name||'Imported pattern').trim().slice(0,100)||'Imported pattern',notes:'Imported from a pattern legend you reviewed. Chart symbols and the stitch grid have not been checked.',buyBrand:'dmc',status:'planning',items,decisions:{},purchased:{},created:now,updated:now};
 }
-return {normalCode,validCode,parseRow,parsePages,validateModelRows,projectDraft};
+return {normalCode,validCode,parseRow,parsePages,validateModelRows,projectDraft,catalogRun,CATALOG_MIN,CATALOG_RUN};
 });
