@@ -74,7 +74,7 @@ with sync_playwright() as p:
   ok('unknown skein qty stays unknown/uncertain in saved project',i666 and (i666[0].get('qty') is None or i666[0].get('stated') is False),i666)
  ok('importer keeps no raw pattern in storage',not g.evaluate("Object.keys(localStorage).some(k=>/pattern|pdf/i.test(k)||/%PDF|Fox Sampler legend/.test(localStorage.getItem(k)))"))
  if not g.evaluate("(document.getElementById('ffPatternDialog')||{}).open"):g.click('#tabConvert');g.click('#convertView .pat-launch');g.wait_for_timeout(200)
- for fn,expect,label in (('multicolumn-legend.pdf',None,'multi-column legend'),('scanned-image-only.pdf','no text we can read','scanned PDF has no selectable text'),('large-35pages.pdf','30','35-page PDF limited to 30'),('password-protected.pdf',None,'password-protected PDF'),('fake.pdf',"don't match",'fake .pdf rejected by signature'),('legend-scan.png',"aren't read automatically",'image needs manual transcription'),('table-unlabeled-legend.pdf','no label','unlabeled column table: codes taken, unlabeled numbers not imported (2.0A rule)'),('repeated-legend.pdf',None,'repeated legend')):
+ for fn,expect,label in (('multicolumn-legend.pdf',None,'multi-column legend'),('scanned-image-only.pdf','no text we can read','scanned PDF has no selectable text'),('large-35pages.pdf','30','35-page PDF limited to 30'),('password-protected.pdf',None,'password-protected PDF'),('fake.pdf',"don't match",'fake .pdf rejected by signature'),('legend-scan.png',"We don't read photos",'image needs manual transcription'),('table-unlabeled-legend.pdf','no label','unlabeled column table: codes taken, unlabeled numbers not imported (2.0A rule)'),('repeated-legend.pdf',None,'repeated legend')):
   try:r=load(fn);print(fn,r['info'][:160],r['rows'][:8])
   except Exception as e:r={'info':'TIMEOUT '+str(e)[:80],'rows':[]}
   if fn=='multicolumn-legend.pdf':ok('multi-column legend: 6 colors found (or flagged for review)',len(r['rows'])>=6,r)
@@ -129,10 +129,10 @@ with sync_playwright() as p:
  g.focus('#tabConvert');seen=[]
  for _ in range(30):
   g.keyboard.press('Tab');seen.append(g.evaluate("document.activeElement.textContent.trim().slice(0,40)"))
- ok('keyboard reaches Import a full pattern entry',any('Import a full pattern' in s for s in seen),seen)
- while 'Import a full pattern' not in g.evaluate("document.activeElement.textContent"):g.keyboard.press('Tab')
+ ok('keyboard reaches Import a pattern (PDF) entry',any('Import a pattern (PDF)' in s for s in seen),seen)
+ while 'Import a pattern (PDF)' not in g.evaluate("document.activeElement.textContent"):g.keyboard.press('Tab')
  g.keyboard.press('Enter');g.wait_for_timeout(200);ok('Enter opens pattern dialog; focus inside',g.evaluate("(document.getElementById('ffPatternDialog')||{}).open&&document.getElementById('ffPatternDialog').contains(document.activeElement)"))
- g.keyboard.press('Escape');g.wait_for_timeout(100);ok('focus returns to entry after Escape',('Import a full pattern' in g.evaluate("document.activeElement.textContent")),g.evaluate("document.activeElement.outerHTML.slice(0,80)"))
+ g.keyboard.press('Escape');g.wait_for_timeout(100);ok('focus returns to entry after Escape',('Import a pattern (PDF)' in g.evaluate("document.activeElement.textContent")),g.evaluate("document.activeElement.outerHTML.slice(0,80)"))
  ok('reduced motion: no page errors',not E,E);c.close()
  # Offline with AI off
  c=ctx(b,390,mob=True,sw='allow');g=c.new_page();E=[];g.on('pageerror',lambda e:E.append(str(e)));g.goto(B);g.wait_for_load_state('networkidle')
