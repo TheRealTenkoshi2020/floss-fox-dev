@@ -82,4 +82,21 @@ with sync_playwright() as p:
   ok('offline: SW controlled, Shopping tab + list + pills render',ctl and o['vis'] and o['list'] and o['a']==6,o);print('offline detail:',o)
  except Exception as e: ok('offline reload',False,e)
  c.close()
+ # Myke (flow phase 3): assumed amounts get the same untracked store links, plus a "check your pattern" note; math unchanged.
+ A=dict(PROJ['projects'][0]);A=json.loads(json.dumps(A));A['id']='asm';A['name']='Assumed test'
+ A['items']=[{'code':'310','qty':2,'assumed':0,'stated':True,'src':['310']},{'code':'321','qty':1,'assumed':1,'stated':False,'src':['321']}]
+ A['decisions']={'310':{'status':'buy'},'321':{'status':'buy'}}
+ AI="if(!sessionStorage.getItem('s')){sessionStorage.setItem('s',1);localStorage.setItem('%s.tour.v1','{\"status\":\"dismissed\"}');localStorage.setItem('%s',%s)}"%(PFX,KEY,json.dumps(json.dumps({'schema':2,'projects':[A]})))
+ c=b.new_context(viewport={'width':390,'height':844},is_mobile=True,device_scale_factor=2,service_workers='block');c.add_init_script(AI)
+ c.route(re.compile(r'https://(www\.hobbylobby|www\.everythingcrossstitch)\.com/.*'),lambda r:r.fulfill(status=200,body='<title>stub</title>',content_type='text/html'))
+ g=c.new_page();g.goto(B);g.wait_for_load_state('networkidle');g.click('#tabProjects');g.click('[data-open="asm"]');g.wait_for_timeout(250);g.click('#tabShop');g.wait_for_timeout(300)
+ r=g.evaluate("""(()=>{const w=[...document.querySelectorAll('#shopView .ff-skein-inline')];return w.map(x=>({c:x.dataset.dmc,n:x.querySelectorAll('.ff-skein-pill').length,h:[...x.querySelectorAll('.ff-skein-pill')].map(a=>a.href),tr:[...x.querySelectorAll('.ff-skein-pill')].map(a=>a.dataset.tracked+a.rel),note:(x.querySelector('.ff-skein-asm')||{}).textContent||'',li:x.closest('li').textContent}))})()""")
+ by={x['c']:x for x in r}
+ ok('A1 assumed-amount row (321) gets both store links',by.get('321',{}).get('n')==2,r)
+ ok('A2 assumed row links: same URLs as a stated row, untracked',by.get('321',{}).get('h')==EXP['321'] and all(t=='falsenoopener noreferrer' for t in by['321']['tr']),by.get('321'))
+ ok('A3 assumed row shows the note; stated row does not',by['321']['note']=='Amount is a guess. Check your pattern before you buy.' and by.get('310',{}).get('note')=='',r)
+ ok('A4 quantity math and assumed marking unchanged (DMC 321 x 1, includes an assumed amount)','DMC 321 × 1' in by['321']['li'] and 'includes an assumed amount' in by['321']['li'],by['321']['li'][:200])
+ g.emulate_media(media='print');pv=g.evaluate("[...document.querySelectorAll('#shopView .ff-skein-inline')].some(e=>getComputedStyle(e).display!=='none')")
+ ok('A5 print: store links and note are not printed; the list still says it includes an assumed amount',not pv and 'includes an assumed amount' in g.inner_text('#shopView #pPlan'))
+ c.close()
 print(R[0],'passed,',R[1],'failed')
