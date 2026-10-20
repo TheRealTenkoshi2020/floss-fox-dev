@@ -42,7 +42,7 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
   if(out.kind==='pdf'&&!parsed.rows.length){
    const parts=[`We couldn't find any colors in ${f.name}, so nothing was added.`];
    if(cat.length)parts.push(`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`);
-   else if(parsed.warnings.includes('catalog-document'))parts.push('We skipped this file because it looks like a full DMC color chart, not this pattern\'s color key.');
+   else if(parsed.warnings.includes('catalog-document'))parts.push((window.FF_STR&&FF_STR.left&&FF_STR.left.catalog)||'It looks like a full DMC color chart that lists every color, not this pattern\'s color key.');
    if(noText)parts.push('This PDF has no text we can read, so it\'s probably scanned pages.');
    parts.push('Paste the pattern\'s color key in the box below instead.');const msg=parts.join(' ');
    info(`Processed ${out.pages.length} page${out.pages.length===1?'':'s'} locally. ${limited.join(' ')} Nothing was sent online.`.replace(/\s+/g,' '));
@@ -56,7 +56,7 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
    if(inspection.kind==='pdf'){const lib1=await lib();if(!lib1)throw Error('The PDF preview isn\'t available here');const d=await lib1.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
     try{const p=await d.getPage(page),view=p.getViewport({scale:1}),scale=Math.min(2,1600/Math.max(view.width,view.height)),v=p.getViewport({scale});canvas.width=Math.max(1,Math.floor(v.width));canvas.height=Math.max(1,Math.floor(v.height));await p.render({canvasContext:ctx,viewport:v}).promise}finally{await d.destroy()}}
    else {const img=await createImageBitmap(file);try{const scale=Math.min(1,1600/Math.max(img.width,img.height));canvas.width=Math.max(1,Math.floor(img.width*scale));canvas.height=Math.max(1,Math.floor(img.height*scale));ctx.drawImage(img,0,0,canvas.width,canvas.height)}finally{img.close()}}
-   previewBlob=await new Promise(ok=>canvas.toBlob(ok,'image/jpeg',0.78));if(!previewBlob||previewBlob.size>2*1024*1024)throw Error('That page is too large to scan');canvas.style.maxWidth='100%';canvas.style.maxHeight='300px';host.append(canvas);info(online?'This is the selected page. Preview it before deciding whether to send this page to AI. Nothing has been uploaded.':'Here\'s the page you picked. Images aren\'t read automatically and AI analysis is off, so type its legend into the box below. Nothing has been uploaded.');
+   previewBlob=await new Promise(ok=>canvas.toBlob(ok,'image/jpeg',0.78));if(!previewBlob||previewBlob.size>2*1024*1024)throw Error('That page is too large to scan');canvas.style.maxWidth='100%';canvas.style.maxHeight='300px';host.append(canvas);if(inspection.kind!=='pdf'){const md=dialog&&dialog.querySelector('details.pat-manual');if(md)md.open=true}info(online?'This is the selected page. Preview it before deciding whether to send this page to AI. Nothing has been uploaded.':((window.FF_STR&&FF_STR.left&&FF_STR.left.imageStatus)||'Here\'s the page you picked. Images aren\'t read automatically and AI analysis is off, so type its legend into the box below. Nothing has been uploaded.'));
   }catch(e){previewBlob=null;info('Couldn\'t preview that page: '+String(e.message||e))}
  }
  async function startAI(){if(!online){info('AI pattern analysis is not configured. Local import still works.');return}if(!previewBlob)await showPreview();if(!previewBlob)return;
@@ -79,7 +79,7 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
   if(window.FlossFoxProjects.canSave?.()===false)throw Error('Saving isn\'t available in this browser right now. Download a backup before importing.');
   if(!rows.length)throw Error('There are no colors to add yet');if(!checkedAll)throw Error('Tick “I checked these colors against my pattern” first');
   const flagged=rows.filter(unclear).map(r=>r.code);const ready=rows.map(r=>({...r,qty:badQty(r)?null:r.qty,stitchCount:badSt(r)?null:r.stitchCount,confirmed:true}));
-  const draft=C.projectDraft(ready,$('patName').value);if(flagged.length)draft.notes+=` Check these colors against your pattern (amount unknown or unclear): DMC ${flagged.join(', ')}.`;const id=window.FlossFoxProjects.add(draft);
+  const draft=C.projectDraft(ready,$('patName').value.trim()||(window.FF_STR&&FF_STR.defaultName)||'');if(flagged.length)draft.notes+=` Check these colors against your pattern (amount unknown or unclear): DMC ${flagged.join(', ')}.`;const id=window.FlossFoxProjects.add(draft);
   if(!id)throw Error('The project didn\'t pass our checks');
   // Projects.add() may retain an in-memory project even when localStorage fails.
   // Independently confirm persistence before claiming a successful save.
@@ -91,7 +91,7 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
  }catch(e){info('Not saved: '+String(e.message||e))}}
  function showSaved(name,n,nf,persisted){document.getElementById('patSavedBox')?.remove();const pe=document.getElementById('projEdit');if(!pe)return;
   const box=N('div',persisted?'okbox pat-saved':'errbox pat-saved');box.id='patSavedBox';box.setAttribute('role','status');box.tabIndex=-1;
-  box.append(N('b','',persisted?`Saved! "${name}" is in My Projects with ${n===1?'1 color':n+' colors'}.`:`Not saved: “${name}” was imported for now, but this browser didn't store it. Download a backup before you leave.`));
+  if(persisted&&window.FF_STR)box.append(N('p','ffsaved',FF_STR.saved));box.append(N('b','',persisted?`Saved! "${name}" is in My Projects with ${n===1?'1 color':n+' colors'}.`:`Not saved: “${name}” was imported for now, but this browser didn't store it. Download a backup before you leave.`));
   if(persisted)box.append(N('p','',(nf===1?'1 color needs an amount, so it\'s under Needs attention. ':nf>1?`${nf} colors need an amount, so they\'re under Needs attention. `:'')+'You\'re looking at the project now.'));
   const r=N('div','row');const all=N('button','sec small','See all my projects');all.type='button';all.addEventListener('click',()=>{box.remove();document.getElementById('pClose')?.click()});const x=N('button','ghost small','Dismiss');x.type='button';x.addEventListener('click',()=>box.remove());r.append(all,x);box.append(r);
   pe.parentElement.insertBefore(box,pe);box.focus({preventScroll:true});window.scrollTo(0,0)}
@@ -112,8 +112,8 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
   dialog.addEventListener('close',()=>{abort?.abort();abort=null;turnstileToken='';previewBlob=null;file=null;inspection=null;rows=[];dialog.remove();dialog=null});
  }
  function open(){make();dialog.showModal();$('patFile').focus()}
- function init(){const base=document.querySelector('#convertView');if(!base)return;const button=N('button','sec pat-launch','Import a full pattern (PDF)');button.type='button';button.addEventListener('click',open);/* CI005 reconcile: Floss Fox's #saveBox is hidden until results exist, so place the entry under the Add my colors row instead. */const go=base.querySelector('#go'),row=go&&go.closest('.row');const pl=document.getElementById('newEmpty');if(pl&&!document.getElementById('patLaunchProjects')){const b2=N('button','sec pat-launch-projects','Import a pattern (PDF)');b2.type='button';b2.id='patLaunchProjects';b2.addEventListener('click',open);pl.parentElement.insertBefore(b2,pl)}
- if(row){const w=N('div','row pat-launch-row');w.append(button);row.parentElement.insertBefore(w,row.nextSibling);return}const host=base.querySelector('#saveBox')||base.querySelector('.card')||base;host.parentElement.insertBefore(button,host);}
+ function init(){const base=document.querySelector('#convertView');if(!base)return;const button=N('button','pri pat-launch',(window.FF_STR&&FF_STR.importLabel)||'Import a pattern (PDF)');button.type='button';button.addEventListener('click',open);/* CI005 reconcile: Floss Fox's #saveBox is hidden until results exist, so place the entry under the Add my colors row instead. */const go=base.querySelector('#go'),row=go&&go.closest('.row');const pl=document.getElementById('newEmpty');if(pl&&!document.getElementById('patLaunchProjects')){const b2=N('button','pri pat-launch-projects',(window.FF_STR&&FF_STR.importLabel)||'Import a pattern (PDF)');b2.type='button';b2.id='patLaunchProjects';b2.addEventListener('click',open);pl.parentElement.insertBefore(b2,pl)}
+ window.FFImportOpen=open;const g0=base.querySelector('#go');if(g0){g0.after(button);return}if(row){const w=N('div','row pat-launch-row');w.append(button);row.parentElement.insertBefore(w,row.nextSibling);return}const host=base.querySelector('#saveBox')||base.querySelector('.card')||base;host.parentElement.insertBefore(button,host);}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
  window.FlossFoxPatternUI={open};
 })();
