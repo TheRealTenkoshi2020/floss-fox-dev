@@ -11,6 +11,10 @@ from playwright.sync_api import Page as _Page
 # 2.0A+: the project shopping list lives in its own Shopping tab (#shopView). Before acting on an element that sits
 # in a hidden top-level view, click that view's tab first, like a user would. Selectors Playwright-only (text=...) are left alone.
 _VIEW_TAB = {'shopView': '#tabShop', 'projectsView': '#tabProjects'}
+_OPEN_JS = "e=>{if(!e)return;let d=(e.tagName==='SUMMARY'?e.parentElement:e).parentElement;d=d&&d.closest('#projEdit details,#shopBody details');while(d){if(!d.open){const sm=d.querySelector(':scope>summary');if(sm)sm.click();else d.open=true}d=d.parentElement&&d.parentElement.closest('#projEdit details,#shopBody details')}}"
+def _open_folds(self, sel):  # flow phase 3: project sections are folded; open the section first, like a user would
+    try: self.evaluate("s=>{let e;try{e=document.querySelector(s)}catch(_){return}(" + _OPEN_JS + ")(e)}", sel)
+    except Exception: pass
 def _route_view(self, sel):
     try:
         v = self.evaluate("s=>{let e;try{e=document.querySelector(s)}catch(_){return null}if(!e)return null;const w=e.closest('#shopView,#projectsView');return w&&w.hidden?w.id:null}", sel)
@@ -21,6 +25,7 @@ def _route_view(self, sel):
     except Exception:
         pass
     if v: _ORIG['click'](self, _VIEW_TAB[v]); self.wait_for_timeout(60)
+    _open_folds(self, sel)
 _ORIG = {}
 from playwright.sync_api import Locator as _Locator
 _LORIG = {}
@@ -33,6 +38,8 @@ for _m in ('click', 'check', 'uncheck', 'fill'):
             except Exception:
                 v = None
             if v: _ORIG['click'](self.page, _VIEW_TAB[v]); self.page.wait_for_timeout(60)
+            try: self.first.evaluate(_OPEN_JS, timeout=2000)
+            except Exception: pass
             return _LORIG[name](self, *a, **k)
         return f
     setattr(_Locator, _m, _lwrap(_m))

@@ -20,7 +20,7 @@
   for(const row of rows){const div=N('div','pat-row'),h=N('b','',`DMC ${row.code}`);const evidence=N('small','',`Page ${row.sourcePage}: ${row.sourceLine||'AI proposal (not verified)'}`);
    const label=(title,val,max,field)=>{const l=N('label','',title+' '),input=N('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.inputMode='numeric';input.placeholder='Unknown';input.value=val==null?'':String(val);input.addEventListener('input',()=>{row[field]=input.value.trim()?Number(input.value):null;validateReady()});l.append(input);return l};
    const rm=N('button','ghost small','Remove');rm.type='button';rm.setAttribute('aria-label',`Remove DMC ${row.code} from this import`);rm.addEventListener('click',()=>{rows=rows.filter(x=>x!==row);drawRows()});
-   const wa=N('small','pat-warnings',[...new Set(row.warnings)].map(w=>WARN[w]||w).join(' · ')||'Needs review');div.id='patRow-'+row.code;div.append(h,evidence,wa,label('Full skeins',row.qty,999,'qty'),label('Stitches',row.stitchCount,10000000,'stitchCount'),rm);host.append(div);
+   const wa=N('small','pat-warnings',[...new Set(row.warnings)].map(w=>WARN[w]||w).join(' · ')||'Check this line');div.id='patRow-'+row.code;div.append(h,evidence,wa,label('Full skeins',row.qty,999,'qty'),label('Stitches',row.stitchCount,10000000,'stitchCount'),rm);host.append(div);
   }
   const all=N('label','pat-confirm pat-all');const t=N('input');t.type='checkbox';t.id='patAll';t.checked=checkedAll;t.addEventListener('change',()=>{checkedAll=t.checked;validateReady()});all.append(t,' I\'ve checked these colors against my pattern');host.append(all);
   validateReady();
