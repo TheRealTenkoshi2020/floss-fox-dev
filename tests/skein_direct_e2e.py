@@ -94,7 +94,7 @@ with sync_playwright() as p:
  by={x['c']:x for x in r}
  ok('A1 assumed-amount row (321) gets both store links',by.get('321',{}).get('n')==2,r)
  ok('A2 assumed row links: same URLs as a stated row, untracked',by.get('321',{}).get('h')==EXP['321'] and all(t=='falsenoopener noreferrer' for t in by['321']['tr']),by.get('321'))
- ok('A3 assumed row shows the note; stated row does not',by['321']['note']=='Amount is a guess. Check your pattern before you buy.' and by.get('310',{}).get('note')=='',r)
+ ok('A3 assumed row shows the note; stated row does not',by['321']['note']=='This amount is an estimate, so check your pattern before you buy.' and by.get('310',{}).get('note')=='',r)
  ok('A4 quantity math and assumed marking unchanged (DMC 321 x 1, includes an assumed amount)','DMC 321 × 1' in by['321']['li'] and 'includes an assumed amount' in by['321']['li'],by['321']['li'][:200])
  g.emulate_media(media='print');pv=g.evaluate("[...document.querySelectorAll('#shopView .ff-skein-inline')].some(e=>getComputedStyle(e).display!=='none')")
  ok('A5 print: store links and note are not printed; the list still says it includes an assumed amount',not pv and 'includes an assumed amount' in g.inner_text('#shopView #pPlan'))

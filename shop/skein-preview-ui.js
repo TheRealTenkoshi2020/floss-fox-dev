@@ -5,7 +5,7 @@
 (function(root){
  'use strict';
  const get=()=>root.FlossFoxSkeinPreview;
- const ASSUMED_NOTE='Amount is a guess. Check your pattern before you buy.'; // placeholder for Pixel
+ const ASSUMED_NOTE='This amount is an estimate, so check your pattern before you buy.'; // placeholder for Pixel
  const add=(parent,tag,klass,text)=>{const e=document.createElement(tag);if(klass)e.className=klass;if(text!==undefined)e.textContent=text;parent.appendChild(e);return e};
  function render(container,needs){
   if(!container||root.FLOSS_FOX_ENV!=='preview'||!get())return 0;
