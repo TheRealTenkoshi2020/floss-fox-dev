@@ -1,0 +1,23 @@
+// node tests/pattern_check_unit.cjs : Pattern check on synthetic AI-style keys (simulated).
+const fs=require('fs'),path=require('path');const C=require('../pip-hybrid/pattern-core.js'),PC=require('../pip-hybrid/pattern-check.js'),SK=require('../skeins/calc.js');
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');const DMC=JSON.parse(/DMC=(\{"WHITE".*?\}\})/.exec(html)[1]);
+const K=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures','pattern-check','keys.json'),'utf8'));let P=0,F=0;
+const ok=(n,c,d)=>{c?P++:F++;console.log((c?'PASS ':'FAIL ')+n+(c?'':' -> '+JSON.stringify(d).slice(0,300)))};
+const run=t=>{const parsed=C.parsePages([{page:1,text:t}],DMC);const before=JSON.stringify(parsed);const r=PC.check(parsed,DMC,SK);return{parsed,r,same:before===JSON.stringify(parsed)}};
+const a=run(K.ai_bad);
+ok('fake codes 9999 and 4000 flagged',a.r.fake.includes('9999')&&a.r.fake.includes('4000'),a.r.fake);
+ok('duplicate 310 flagged',JSON.stringify(a.r.dup)==='["310"]',a.r.dup);
+ok('3865 listed as Sky Blue flagged',a.r.names.some(x=>x.code==='3865'&&x.listed==='Sky Blue'),a.r.names);
+ok('321 Christmas Red and 699 Forest Green not name-flagged',!a.r.names.some(x=>x.code==='321'||x.code==='699'),a.r.names);
+ok('321: 1 skein for 9000 stitches flagged low',a.r.amounts.some(x=>x.code==='321'&&x.kind==='low'),a.r.amounts);
+ok('699: 40 skeins for 200 stitches flagged high',a.r.amounts.some(x=>x.code==='699'&&x.kind==='high'),a.r.amounts);
+ok('3865: 1 skein for 500 stitches not flagged',!a.r.amounts.some(x=>x.code==='3865'),a.r.amounts);
+ok('check never changes the parsed rows',a.same);
+const ls=PC.lines(a.r);ok('summary lines: plain, no em dashes',ls.length===5&&ls.every(l=>!/\u2014/.test(l)),ls);
+const c=run(K.clean);ok('clean key: no flags at all (no false alarms)',c.r.count===0,c.r);ok('clean key: all 10 colors read',c.parsed.rows.length===10,c.parsed.rows.map(x=>x.code));
+ok('aliases BLANC/WHITE and ECRU match',!PC.nameMismatch('Blanc','white')&&!PC.nameMismatch('White','white')&&!PC.nameMismatch('Ecru','ecru'));
+ok('unknown words never flag',!PC.nameMismatch('Mystic Dream','black')&&!PC.nameMismatch('','black'));
+ok('generous: 2 skeins for 2400 stitches ok, 1 for 2400 ok at 18ct',PC.amountCheck({qty:2,stitchCount:2400},SK)===null&&PC.amountCheck({qty:1,stitchCount:2400},SK)===null);
+ok('no stitch count or no skeins: no amount check',PC.amountCheck({qty:2,stitchCount:null},SK)===null&&PC.amountCheck({qty:null,stitchCount:5000},SK)===null);
+ok('Pip help line present, they/them safe',/never changes your colors/.test(PC.HELP[1])&&!/\b(he|she|his|her)\b/i.test(PC.HELP[1]));
+console.log(`${P} passed, ${F} failed`);process.exit(F?1:0);
