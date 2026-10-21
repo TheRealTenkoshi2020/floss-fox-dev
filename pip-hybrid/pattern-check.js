@@ -34,7 +34,7 @@ function amountCheck(row,SK,fab){if(!SK||!Number.isInteger(row.qty)||!Number.isI
  if(row.qty*1.25<e.base)return{kind:'low',...out};      // generous: stated covers less than 80% of the bare need
  if(row.qty>Math.max(3,e.whole*3))return{kind:'high',...out};return null}
 function check(parsed,catalog,SK,fab){const rows=(parsed&&parsed.rows)||[],out={fake:[],dup:[],names:[],amounts:[]};
- for(const s of (parsed&&parsed.skipped)||[]){if(s.reason!=='unrecognized')continue;const m=/\bDMC\s*[:#-]?\s*([A-Za-z]?\d{1,5}[A-Za-z]?)\b/i.exec(s.line)||/^\S{1,3}\s+(\d{1,5})\b/.exec(s.line);if(m&&!out.fake.includes(m[1].toUpperCase()))out.fake.push(m[1].toUpperCase())}
+ for(const s of (parsed&&parsed.skipped)||[]){if(s.reason!=='unrecognized')continue;const m=/\bDMC\s*[:#-]?\s*([A-Za-z]?\d{1,5}[A-Za-z]?)\b/i.exec(s.line)||/^\S{1,3}\s+(\d{1,5})\b/.exec(s.line);if(m&&!(catalog&&catalog[m[1].toUpperCase()])&&!out.fake.includes(m[1].toUpperCase()))/* a real DMC code on a line we couldn't read is not 'not in the catalog' */out.fake.push(m[1].toUpperCase())}
  for(const r of rows){if(r.duplicates&&r.duplicates.length)out.dup.push(r.code);
   const c=catalog&&catalog[r.code];const ln=[r.sourceLine,...(r.duplicates||[]).map(d=>d.line)];
   if(c&&c.name){for(const l of ln){const nm=listedName(l,r.code);if(nameMismatch(nm,c.name)){out.names.push({code:r.code,listed:nm,catalog:c.name});break}}}

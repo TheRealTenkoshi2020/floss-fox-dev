@@ -1,12 +1,13 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-27';
+const CACHE = 'flossfox-dev-v2.0a-ci005-28';
 const CORE = [
   "pip-hybrid/vendor/pdfjs/pdf.mjs",
   "pip-hybrid/vendor/pdfjs/pdf.worker.mjs",
   "pip-hybrid/pip-local-router.js",
   "pip-hybrid/pattern-ui.css",
   "pip-hybrid/pattern-check.js",
+  "pip-hybrid/pattern-chart.js",
   "pip-hybrid/pattern-ui.js",
   "pip-hybrid/pattern-pdf.js",
   "pip-hybrid/pattern-core.js",
