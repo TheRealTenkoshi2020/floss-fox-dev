@@ -30,6 +30,9 @@ const vg=v1('ghost-replica'),vb=v1('barrel-replica');console.log('INFO v1 ghost'
 ok('v1 ghost: duplicates 3608/3607/3685/211 flagged',['3608','3607','3685','211'].every(c=>vg.dup.includes(c)),vg.dup);
 ok('v1 ghost: 6003 not a DMC code',vg.fake.includes('6003'),vg.fake);
 ok('v1 barrel: 310 duplicate flagged',vb.dup.includes('310'),vb.dup);
+for(const k of ['ghost-replica','ghost-below']){const rows=C.parsePages(P[k].map(p=>({page:p.page,text:p.text})),DMC).rows.map(x=>x.code).sort().join();ok(k+': imports exactly the 6 key colors (no DMC 01 from a row label)',rows==='211,310,3607,3608,3685,602',rows)}
+{const rows=C.parsePages(P['barrel-replica'].map(p=>({page:p.page,text:p.text})),DMC).rows.map(x=>x.code);ok('barrel replica: no row labels imported as codes',rows.every(c=>c.length>=3),rows)}
+{const r=C.parsePages([{page:1,text:'12 Tender Green 2 skeins'}],DMC).rows.map(x=>x.code).join();ok('no chart on the page: "12 Tender Green 2 skeins" still imports DMC 12',r==='12',r)}
 const all=JSON.stringify(Object.keys(P).map(k=>{const x=PCH.check(P[k],DMC);return[PCH.lines(x),PCH.note(x)]}))+JSON.stringify(PCH.STR.sum({sum:1,room:1,w:1,h:1}));
 ok('no em dashes in any v2 copy',!/\u2014/.test(all));
 ok('no he/she pronouns in copy',!/\b(he|she|his|her)\b/i.test(all));
