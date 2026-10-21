@@ -195,6 +195,7 @@ img[src*="assets/pip/"]{object-fit:contain}body.pip-hidden-all .orgpip,body.pip-
 .storeline{font-size:.88rem;color:var(--ink-2);margin:var(--s2) 0 0}
 /* project editor */
 .ff-skein-asm{display:block;flex-basis:100%;margin-top:2px;color:var(--mut);font-size:.85rem}
+.ffest{display:inline-block;margin-left:6px;padding:0 8px;border:1.5px dashed var(--txt);border-radius:999px;background:#fff;color:var(--txt);font-size:.78rem;font-weight:700;line-height:1.5;vertical-align:middle}.ffestsum{margin:4px 0 8px;padding:6px 10px;border-left:4px solid var(--txt);background:#fff;color:var(--txt);font-size:.9rem}
 .ptname{margin:var(--s3) 0 var(--s2);font-size:1.25rem}.psec{margin-top:var(--s3)}.psec>summary{cursor:pointer;min-height:44px;display:flex;align-items:center}.psec>summary h3,.psec>summary h4{display:inline;margin:0}.ffwhy{display:block;margin-top:2px}.ffwhy[hidden]{display:none}
 .ptitle{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);flex-wrap:wrap}
 .psum{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r3);padding:var(--s4);margin:var(--s4) 0;box-shadow:var(--shadow)}
@@ -505,7 +506,10 @@ $('cov').textContent=Object.keys(DMC).length+' DMC codes, '+Object.values(DMC).f
 $('psrc').textContent=['dmc','anchor','sullivans','cxcSet'].map(k=>k+': '+PRICES[k].src).join(' · ');$('pdate').textContent=PRICES.checked;
 if(location.search==="?sample"){fromHook=true;$('sample').onclick();fromHook=false}
 </script>
-<script src="flow-strings.js"></script><script src="skeins/calc.js"></script><script src="skeins/ui.js"></script><script src="confirm.js"></script><script src="projects.js"></script><script src="threads.js"></script>
+<script>/* Flow phase 3: guessed (assumed) amounts are marked. Placeholders for Pixel. */
+window.FF_EST={badge:'<span class="ffest" data-est="1"><span aria-hidden="true">\u2248 </span>Estimated<span class="sr"> amount</span></span>',
+ sum:n=>n===1?'1 amount is an estimate. Check your pattern before you buy.':n+' amounts are estimates. Check your pattern before you buy.',
+ line:(n,id)=>n?'<p class="ffestsum" id="'+id+'"><span aria-hidden="true">\u2248 </span>'+(n===1?'1 amount is an estimate. Check your pattern before you buy.':n+' amounts are estimates. Check your pattern before you buy.')+'</p>':''};</script><script src="flow-strings.js"></script><script src="skeins/calc.js"></script><script src="skeins/ui.js"></script><script src="confirm.js"></script><script src="projects.js"></script><script src="threads.js"></script>
 <script src="pip-hybrid/thread-locations.js"></script>
 <script src="pip-hybrid/thread-bulk-core.js"></script>
 <script src="pip-hybrid/thread-bulk-ui.js"></script>
