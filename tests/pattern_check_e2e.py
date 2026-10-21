@@ -16,8 +16,8 @@ with sync_playwright() as p:
         g.click('#ffPatternDialog .pat-manual button:has-text("Find colors")'); g.wait_for_timeout(250)
     paste(K['ai_bad']); box = g.inner_text('#patCheck') if g.locator('#patCheck').count() else ''
     ok('Pattern check box shows after a pasted key', box.startswith('Pattern check'), box)
-    for frag, n in [('Not DMC colors: 9999, 4000', 'fake codes'), ('Listed more than once: DMC 310', 'duplicate'), ('DMC 3865 is listed as "Sky Blue"', 'name mismatch'),
-                    ('Amount looks low: DMC 321', 'low amount'), ('Amount looks high: DMC 699', 'high amount'), ('You can still save', 'never blocks note')]:
+    for frag, n in [("We couldn't find 9999, 4000 in the DMC catalog.", 'fake codes'), ('DMC 310 is listed more than once.', 'duplicate'), ('DMC 3865 is listed as "Sky Blue", but the DMC catalog calls it winter white.', 'name mismatch'),
+                    ('DMC 321 says 1 skein for 9000 stitches. Our estimate is about', 'low amount'), ('DMC 699 says 40 skeins for 200 stitches. Our estimate is about 1 on 14-count Aida, so it may look high.', 'high amount'), ('You can still save', 'never blocks note')]:
         ok(f'flags {n}', frag in box, box)
     ok('no em dashes in the box', '\u2014' not in box)
     if SHOT:
@@ -27,7 +27,9 @@ with sync_playwright() as p:
     st = g.evaluate(f"JSON.parse(localStorage.getItem('{KEY}')||'{{}}')"); pr = (st.get('projects') or [{}])[-1]; items = {i['code']: i.get('qty') for i in pr.get('items', [])}
     ok('saved amounts are exactly what the key said (check changed nothing)', items.get('321') == 1 and items.get('699') == 40 and items.get('3865') == 1 and '9999' not in items, items)
     g.goto(B + '?nosw'); g.wait_for_timeout(500); paste(K['clean']); box = g.inner_text('#patCheck') if g.locator('#patCheck').count() else ''
-    ok('clean key: "Nothing looks wrong" and no flags', 'Nothing looks wrong' in box and g.get_attribute('#patCheck', 'data-flags') == '0', box)
+    ok('clean key: "Nothing stands out" and no flags', 'Nothing stands out.' in box and g.get_attribute('#patCheck', 'data-flags') == '0', box)
     hl = g.evaluate("(window.FF_PCHECK_HELP||[])[0]||''"); ok('Pip help topic for the check is loaded', hl == 'What is the Pattern check?', hl)
+    ha = g.evaluate("(window.FF_PCHECK_HELP||[])[1]||''"); ok('import help answer ends with the new sentence', ha.endswith('It can miss things, so still check each color against your pattern.'), ha)
+    ok('Ask Pip offline answer matches the import help', ha in g.evaluate("document.documentElement.innerHTML") or g.evaluate("fetch('pip-hybrid/offline-knowledge.js').then(r=>r.text())").replace("\\'", "'").find(ha) >= 0)
     ok('no page errors', not ERR, ERR[:3])
     print(f'{R[0]} passed, {R[1]} failed')
