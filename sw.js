@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-33';
+const CACHE = 'flossfox-dev-v2.0a-ci005-34';
 const CORE = [
   "pip-hybrid/vendor/pdfjs/pdf.mjs",
   "pip-hybrid/vendor/pdfjs/pdf.worker.mjs",

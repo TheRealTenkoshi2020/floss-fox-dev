@@ -28,14 +28,6 @@ with sync_playwright() as p:
         ok(f'string {k} is Pixel\'s text verbatim', S.get(k) == r['exact text'], (S.get(k), r['exact text']))
     ok('pcheck.fake.one comes from the CSV, no PENDING mark left', 'pipA.pcheck.fake.one' in CSV and 'PENDING' not in g.evaluate("fetch('pip.js').then(r=>r.text())"))
     ok('every event line is 90 characters or fewer (with example numbers)', all(len(t.replace('${have}','12').replace('${total}','24').replace('${n}','12')) <= 90 for t in S.values()), [t for t in S.values() if len(t) > 90])
-    for w in (390, 344):
-        g.set_viewport_size({'width': w, 'height': 844}); g.evaluate("FlossFoxPip.setLevel('chatty')")
-        cut = g.evaluate("""(()=>{const P=FlossFoxPip,a=document.getElementById('copymsg'),bad=[];for(const k of Object.keys(P.STRINGS_A)){P._capsReset();P.closeBubble();
-          const base=k.replace(/[.](one|many|none|full|part)$/,'').replace('pipA.cmp.unsure','pipA.cmp.done');
-          const v={have:12,total:24,u:k.includes('unsure')?(k.endsWith('.one')?1:12):0,n:k.endsWith('.one')?1:12,full:k.endsWith('full')};if(k==='pipA.cmp.done.one'){v.total=1}if(k==='pipA.cmp.done.none'){v.have=0}
-          if(!P.react(base,v,a,{id:k})){bad.push(k+':not shown');continue}const t=document.querySelector('.pipA-bubble .pipA-text');if(t.scrollHeight>t.clientHeight+1)bad.push(k);if(document.querySelector('.pipA-bubble').dataset.key!==k)bad.push(k+':got '+document.querySelector('.pipA-bubble').dataset.key)}
-          P.closeBubble();P._capsReset();return bad})()""")
-        ok(f'{w}px: every bubble line fits in 3 lines (not cut off)', cut == [], cut)
     g.evaluate(f"localStorage.removeItem('{LVK}')"); g.set_viewport_size({'width': 390, 'height': 844}); g.reload(); g.wait_for_timeout(300)
     ok('copy lint: no em dashes, max one "!", no he/she', all('\u2014' not in t and t.count('!') <= 1 for t in S.values()) and not any(w in (' ' + t.lower() + ' ') for t in S.values() for w in (' he ', ' she ', ' his ', ' her ')))
     V = g.evaluate("[['pipA.cmp.done',{have:2,total:3,u:0}],['pipA.cmp.done',{have:0,total:3,u:0}],['pipA.cmp.done',{have:1,total:1,u:0}],['pipA.cmp.done',{have:1,total:3,u:1}],['pipA.cmp.done',{have:0,total:3,u:2}],['pipA.cmp.undo',{n:1}],['pipA.cmp.undo',{n:4}],['pipA.pcheck.fake',{n:1}],['pipA.pcheck.fake',{n:2}],['pipA.checkin',{full:true}],['pipA.checkin',{full:false}]].map(([k,v])=>FlossFoxPip.variant(k,v))")
@@ -114,4 +106,19 @@ with sync_playwright() as p:
     g.click('#saveProj'); g.wait_for_timeout(1200); g.fill('#newProjName', 'Chatty 2'); g.click('#saveProj'); g.wait_for_timeout(400)
     ok('save bubble only once per session', (bub(g) or {}).get('key') != 'pipA.save.ok' or g.evaluate("document.querySelectorAll('.pipA-bubble').length") <= 1)
     ok('no page errors', not g.errs, g.errs[:3]); g.context.close()
+    # --- no line cut off: every string in the spot it really appears (project card #pAuto, Pattern check #patCheck), 390 and 344 px
+    MEAS = """(a)=>{const P=FlossFoxPip,bad=[],el=document.querySelector(a.sel);if(!el)return['no anchor '+a.sel];el.hidden=false;for(const k of a.keys){P._capsReset();P.closeBubble();
+      const base=k.replace(/[.](one|many|none|full|part)$/,'').replace('pipA.cmp.unsure','pipA.cmp.done');const v={have:12,total:24,u:k.includes('unsure')?(k.endsWith('.one')?1:12):0,n:k.endsWith('.one')?1:12,full:k.endsWith('full')};
+      if(k==='pipA.cmp.done.one')v.total=1;if(k==='pipA.cmp.done.none')v.have=0;if(!P.react(base,v,el,{id:k+Math.random()})){bad.push(k+':not shown');continue}
+      const b=document.querySelector('.pipA-bubble'),t=b.querySelector('.pipA-text');if(b.dataset.key!==k)bad.push(k+':got '+b.dataset.key);if(t.scrollHeight>t.clientHeight+1)bad.push(k)}P.closeBubble();P._capsReset();return bad}"""
+    for w in (390, 344):
+        g = page(w, 844, f"localStorage.setItem('{LVK}','chatty');localStorage.setItem('{PFX}.threads.v1',{json.dumps(json.dumps(TH))})")
+        g.fill('#inp', '310 x1\n321 x1'); g.click('#go'); g.wait_for_timeout(200); g.fill('#newProjName', 'Fit'); g.click('#saveProj'); g.wait_for_timeout(300); g.click('#openSaved'); g.wait_for_timeout(500)
+        keys = [k for k in S if not k.startswith('pipA.pcheck')]
+        ok(f'{w}px: every project-card line fits in 3 lines (not cut off)', g.evaluate(MEAS, {'sel': '#pAuto', 'keys': keys}) == [], g.evaluate(MEAS, {'sel': '#pAuto', 'keys': keys}))
+        g.goto(B + '?nosw'); g.wait_for_timeout(400); g.click('#convertView .pat-launch'); g.evaluate("document.querySelector('#ffPatternDialog .pat-manual').open=true")
+        g.fill('#patPaste', 'DMC 310 Black 1 skein\nO DMC 9999 X 1 skein'); g.click('#ffPatternDialog .pat-manual button:has-text("Find colors")'); g.wait_for_timeout(300)
+        keys = [k for k in S if k.startswith('pipA.pcheck')]
+        ok(f'{w}px: every Pattern check line fits in 3 lines (not cut off)', g.evaluate(MEAS, {'sel': '#patCheck', 'keys': keys}) == [], g.evaluate(MEAS, {'sel': '#patCheck', 'keys': keys}))
+        g.context.close()
     print(f'{R[0]} passed, {R[1]} failed')
