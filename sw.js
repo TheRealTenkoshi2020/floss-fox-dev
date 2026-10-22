@@ -1,7 +1,10 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-34';
+const CACHE = 'flossfox-dev-v2.0a-ci005-35';
 const CORE = [
+  "backup-core.js",
+  "backup-ui.js",
+  "backup-ui.css",
   "pip-hybrid/vendor/pdfjs/pdf.mjs",
   "pip-hybrid/vendor/pdfjs/pdf.worker.mjs",
   "pip-hybrid/pip-local-router.js",
