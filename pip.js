@@ -133,27 +133,26 @@ arm();
 /* ---- Pip direction A (dev): Pip reacts to real events, plus a Pip level setting. Strings are Pixel's (a-strings.csv), verbatim.
    One helper, FlossFoxPip.react(key, vars, anchor, opts): level + caps + layout + live region in one place. Callers pass
    numbers the app already computed; the helper only picks the singular/plural variant. Caps live in memory (this session). */
-const LEVEL_DEFAULT='important'; // PENDING MYKE: Pixel's proposed default "Just the important ones". Change here only.
+const LEVEL_DEFAULT='important'; // "Just the important ones", confirmed by Myke (Oct 21 2026). Change here only.
 const LEVEL_KEY=PIP_KEY.replace(/\.pip\.v1$/,'.pipLevel.v1'),LEVELS=['chatty','important','quiet','off'];
-const AS={
- 'pipA.save.ok':()=>"Saved in this browser. Next, let's check it against your threads.",
- 'pipA.cmp.done.many':v=>`I checked your threads: you have enough of ${v.have} of these ${v.total} colors. I only filled in colors you hadn't decided.`,
- 'pipA.cmp.done.none':v=>`None of these ${v.total} colors have enough recorded in your collection yet. I only filled in colors you hadn't decided.`,
- 'pipA.cmp.done.one':()=>"I checked your threads against this color and filled it in. You can change it anytime.",
- 'pipA.cmp.unsure':v=>`${v.u} of them are in your collection, but I can't tell if there's enough. I marked them Not sure.`,
- 'pipA.cmp.unsure.one':()=>"One of them is in your collection, but I can't tell if there's enough. I marked it Not sure.",
- 'pipA.cmp.empty':()=>"Your thread collection is empty on this device. Add the threads you own and I'll compare them for you.",
- 'pipA.cmp.nothing':()=>"Every color here already has a choice. I didn't change any of them.",
- 'pipA.cmp.undo':v=>`Done. ${v.n} colors are undecided again, and I won't fill this project in on my own.`,
- 'pipA.cmp.undo.one':()=>"Done. That color is undecided again, and I won't fill this project in on my own.",
- 'pipA.pcheck.fake':v=>`${v.n} number(s) in the key aren't DMC colors I know. They're listed under Pattern check. I haven't changed anything.`,
- // PENDING PIXEL: .one variant written by Mouse from Pixel's .fake line (the CSV asks for a .one/.many split but has no .one row).
- 'pipA.pcheck.fake.one':()=>"1 number in the key isn't a DMC color I know. It's listed under Pattern check. I haven't changed anything.",
- 'pipA.pcheck.other':()=>"A few things in this key are worth a second look. They're listed under Pattern check, and I haven't changed anything.",
- 'pipA.checkin.full':()=>"Checked in. That thread now counts as yours for this project.",
- 'pipA.checkin.part':()=>"Got part of it. I've kept the rest on your shopping list.",
- 'pipA.ready':()=>"Every color is covered and checked. Ready to stitch!"};
-const AL={label:'How much should Pip chat?',chatty:'Chatty: every helpful moment',important:'Just the important ones (recommended)',quiet:'Quiet: only when I ask',off:'Off: hide Pip',saved:'Pip setting saved on this device.',dismiss:"Dismiss Pip's message",settings:'Pip settings'};
+const AS={ // GENERATED from /workspace/pip-art/m-involved/a-strings.csv (Pixel). Do not edit by hand.
+ 'pipA.save.ok':v=>`Saved in this browser. Next, let's check it against your threads.`,
+ 'pipA.cmp.done.many':v=>`You have enough of ${v.have} of these ${v.total} colors. I only filled in undecided ones.`,
+ 'pipA.cmp.done.none':v=>`None of these ${v.total} colors have enough in your collection yet.`,
+ 'pipA.cmp.done.one':v=>`I checked this color against your threads and filled it in.`,
+ 'pipA.cmp.unsure':v=>`${v.n} are in your collection, but I can't tell if there's enough. I marked them Not sure.`,
+ 'pipA.cmp.unsure.one':v=>`One is in your collection, but I can't tell if there's enough. I marked it Not sure.`,
+ 'pipA.cmp.empty':v=>`Your thread collection is empty. Add threads you own and I'll compare them.`,
+ 'pipA.cmp.nothing':v=>`Every color here already has a choice. I didn't change any of them.`,
+ 'pipA.cmp.undo':v=>`Done. ${v.n} colors are undecided again, and I won't fill them in on my own.`,
+ 'pipA.cmp.undo.one':v=>`Done. That color is undecided again, and I won't fill it in on my own.`,
+ 'pipA.pcheck.fake':v=>`${v.n} numbers aren't DMC colors I know. See Pattern check. I haven't changed anything.`,
+ 'pipA.pcheck.fake.one':v=>`1 number isn't a DMC color I know. See Pattern check. I haven't changed anything.`,
+ 'pipA.pcheck.other':v=>`A few things are worth a second look. See Pattern check. I haven't changed anything.`,
+ 'pipA.checkin.full':v=>`Checked in. That thread now counts as yours for this project.`,
+ 'pipA.checkin.part':v=>`Got part of it. I've kept the rest on your shopping list.`,
+ 'pipA.ready':v=>`Every color is covered and checked. Ready to stitch!`};
+const AL={label:"How much should Pip chat?",chatty:"Chatty: every helpful moment",important:"Just the important ones (recommended)",quiet:"Quiet: only when I ask",off:"Off: hide Pip",saved:"Pip setting saved on this device.",dismiss:"Dismiss Pip's message",settings:'Pip settings'};
 // event -> pose, levels, cap. gapFree: direct result of the user's tap (Undo, Ready), so no 20 s gap.
 const EV={save:{pose:'saved',lv:['chatty'],cap:'session'},cmp:{lv:['chatty','important'],cap:'project'},empty:{pose:'organizing',lv:['chatty'],cap:'session'},
  nothing:{pose:'curious',lv:['chatty'],cap:'project'},undo:{pose:'reassuring',lv:['chatty','important'],cap:'none',gapFree:true},
@@ -175,7 +174,7 @@ const live=(()=>{let r=document.getElementById('pipALive');if(!r){r=document.cre
 function closeBubble(){clearTimeout(bubT);if(bub){bub.remove();bub=null}}
 const BUB_MS=8000; // fade after 8 s; paused while hovered or focused. Separate from T.toast (3.5 s) which only times the small saved wink.
 function armFade(){clearTimeout(bubT);if(bub&&!bub.matches(':hover')&&!bub.contains(document.activeElement))bubT=setTimeout(closeBubble,BUB_MS)}
-function react(key,vars,anchor,opts){opts=opts||{};vars=vars||{};const k=variant(key,vars),ev=EV[EVOF[key]||EVOF[k]];if(!ev||!AS[k])return false;
+function react(key,vars,anchor,opts){opts=opts||{};vars=vars||{};if(key==='pipA.cmp.done'&&vars.u>=1)vars={...vars,n:vars.u};const k=variant(key,vars),ev=EV[EVOF[key]||EVOF[k]];if(!ev||!AS[k])return false;
  const lv=level();if(lv==='off'||lv==='quiet'||!ev.lv.includes(lv))return false;
  if(touring||document.querySelector('#ffConfirm:not([hidden])'))return false;
  const now=performance.now(),id=EVOF[key]+':'+(ev.cap==='project'?opts.id:ev.cap==='file'?opts.id:'');

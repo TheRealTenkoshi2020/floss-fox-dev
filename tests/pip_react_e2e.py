@@ -5,7 +5,8 @@ from playwright.sync_api import sync_playwright
 B = sys.argv[1].rstrip('/') + '/'; SH = sys.argv[2] if len(sys.argv) > 2 else None; R = [0, 0]
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); PFX = KEY[:-3]; PIPK = PFX + '.pip.v1'; LVK = PFX + '.pipLevel.v1'
 def ok(n, c, d=''): R[0 if c else 1] += 1; print(('PASS ' if c else 'FAIL ') + n + ('' if c else ' -> ' + str(d)[:300]))
-CSV = {r['key']: r for r in csv.DictReader(open('/workspace/pip-art/m-involved/a-strings.csv', encoding='utf-8'))}
+_rows = list(csv.reader(open('/workspace/pip-art/m-involved/a-strings.csv', encoding='utf-8'))); CSV = {r[0]: dict(zip(_rows[0], r)) for r in _rows[1:]}
+assert all(len(r) == 6 for r in _rows), 'a-strings.csv must parse as 6 columns'
 TH = {'schema': 2, 'threads': {'310': {'n': 3, 'partial': False, 'restock': False, 'updated': '2026-10-01T00:00:00Z'}, '321': {'n': 0, 'partial': True, 'restock': False, 'updated': '2026-10-01T00:00:00Z'}}}
 def init(extra=''):
     return f"if(!sessionStorage.getItem('i')){{sessionStorage.setItem('i','1');localStorage.setItem('{PFX}.tour.v1','{{\"status\":\"dismissed\"}}');localStorage.setItem('{PFX}.hints.v1','off');{extra}}}"
@@ -24,9 +25,18 @@ with sync_playwright() as p:
     g = page(); S = g.evaluate("Object.fromEntries(Object.entries(FlossFoxPip.STRINGS_A).map(([k,f])=>[k,f({have:'${have}',total:'${total}',u:'${n}',n:'${n}'})]))")
     for k, r in CSV.items():
         if k.startswith('pipA.level') or k == 'pipA.dismiss.aria': continue
-        ex = r['exact text'] + (',' + r['pose'] if r.get(None) else '')  # a-strings.csv row pipA.save.ok has an unquoted comma
-        ok(f'string {k} is Pixel\'s text verbatim', S.get(k) == ex, (S.get(k), ex))
-    ok('pcheck.fake.one exists (pending Pixel)', 'pipA.pcheck.fake.one' in S)
+        ok(f'string {k} is Pixel\'s text verbatim', S.get(k) == r['exact text'], (S.get(k), r['exact text']))
+    ok('pcheck.fake.one comes from the CSV, no PENDING mark left', 'pipA.pcheck.fake.one' in CSV and 'PENDING' not in g.evaluate("fetch('pip.js').then(r=>r.text())"))
+    ok('every event line is 90 characters or fewer (with example numbers)', all(len(t.replace('${have}','12').replace('${total}','24').replace('${n}','12')) <= 90 for t in S.values()), [t for t in S.values() if len(t) > 90])
+    for w in (390, 344):
+        g.set_viewport_size({'width': w, 'height': 844}); g.evaluate("FlossFoxPip.setLevel('chatty')")
+        cut = g.evaluate("""(()=>{const P=FlossFoxPip,a=document.getElementById('copymsg'),bad=[];for(const k of Object.keys(P.STRINGS_A)){P._capsReset();P.closeBubble();
+          const base=k.replace(/[.](one|many|none|full|part)$/,'').replace('pipA.cmp.unsure','pipA.cmp.done');
+          const v={have:12,total:24,u:k.includes('unsure')?(k.endsWith('.one')?1:12):0,n:k.endsWith('.one')?1:12,full:k.endsWith('full')};if(k==='pipA.cmp.done.one'){v.total=1}if(k==='pipA.cmp.done.none'){v.have=0}
+          if(!P.react(base,v,a,{id:k})){bad.push(k+':not shown');continue}const t=document.querySelector('.pipA-bubble .pipA-text');if(t.scrollHeight>t.clientHeight+1)bad.push(k);if(document.querySelector('.pipA-bubble').dataset.key!==k)bad.push(k+':got '+document.querySelector('.pipA-bubble').dataset.key)}
+          P.closeBubble();P._capsReset();return bad})()""")
+        ok(f'{w}px: every bubble line fits in 3 lines (not cut off)', cut == [], cut)
+    g.evaluate(f"localStorage.removeItem('{LVK}')"); g.set_viewport_size({'width': 390, 'height': 844}); g.reload(); g.wait_for_timeout(300)
     ok('copy lint: no em dashes, max one "!", no he/she', all('\u2014' not in t and t.count('!') <= 1 for t in S.values()) and not any(w in (' ' + t.lower() + ' ') for t in S.values() for w in (' he ', ' she ', ' his ', ' her ')))
     V = g.evaluate("[['pipA.cmp.done',{have:2,total:3,u:0}],['pipA.cmp.done',{have:0,total:3,u:0}],['pipA.cmp.done',{have:1,total:1,u:0}],['pipA.cmp.done',{have:1,total:3,u:1}],['pipA.cmp.done',{have:0,total:3,u:2}],['pipA.cmp.undo',{n:1}],['pipA.cmp.undo',{n:4}],['pipA.pcheck.fake',{n:1}],['pipA.pcheck.fake',{n:2}],['pipA.checkin',{full:true}],['pipA.checkin',{full:false}]].map(([k,v])=>FlossFoxPip.variant(k,v))")
     ok('variants: many/none/one/unsure.one/unsure, undo.one/undo, fake.one/fake, checkin full/part', V == ['pipA.cmp.done.many', 'pipA.cmp.done.none', 'pipA.cmp.done.one', 'pipA.cmp.unsure.one', 'pipA.cmp.unsure', 'pipA.cmp.undo.one', 'pipA.cmp.undo', 'pipA.pcheck.fake.one', 'pipA.pcheck.fake', 'pipA.checkin.full', 'pipA.checkin.part'], V)
@@ -60,6 +70,7 @@ with sync_playwright() as p:
     shot(g, 'event-autocompare-390.png', '.pipA-bubble')
     g.click('#pAutoUndo'); g.wait_for_timeout(300); b = bub(g)
     ok('Undo bubble right away (no 20 s gap) with the undo key', b and b['key'] in ('pipA.cmp.undo', 'pipA.cmp.undo.one'), b)
+    ok('undo: Pip line not put in the shared live region (site status announces it)', g.evaluate("document.getElementById('pipALive').textContent") == '')
     shot(g, 'event-undo-390.png', '.pipA-bubble')
     g.press('.pipA-x', 'Escape'); ok('Escape inside the bubble dismisses it', bub(g) is None)
     g.goto(B + '?nosw'); g.wait_for_timeout(400); g.click('#convertView .pat-launch'); g.evaluate("document.querySelector('#ffPatternDialog .pat-manual').open=true")
@@ -67,6 +78,7 @@ with sync_playwright() as p:
     ok('pattern check with a fake number: pcheck.fake.one, puzzled, below #patCheck', b and b['key'] == 'pipA.pcheck.fake.one' and b['pose'] == 'puzzled' and g.evaluate("document.querySelector('#patCheck').nextElementSibling.classList.contains('pipA-bubble')"), b)
     shot(g, 'event-patterncheck-390.png', '.pipA-bubble')
     g.evaluate("FlossFoxPip.closeBubble();FlossFoxPip._capsReset()"); g.fill('#patPaste', 'DMC 310 Black 1 skein\nDMC 321 Red 1 skein'); g.click('#ffPatternDialog .pat-manual button:has-text("Find colors")'); g.wait_for_timeout(300)
+    ok('tab names at 673px match mobile (Find floss, My threads, Projects, Shopping, Fabric, Help)', [x.strip() for x in g.evaluate("[...document.querySelectorAll('nav.tabs > *')].map(e=>e.innerText.replace(/[^A-Za-z ]/g,'').trim())")] == ['Find floss','My threads','Projects','Shopping','Fabric','Help'] if g.set_viewport_size({'width':673,'height':841}) is None else False, g.evaluate("[...document.querySelectorAll('nav.tabs > *')].map(e=>e.innerText)")); g.set_viewport_size({'width':390,'height':844})
     ok('clean pattern check: no bubble', bub(g) is None, bub(g))
     ok('live region exists, polite, never assertive', g.evaluate("(()=>{const r=document.getElementById('pipALive');return !!r&&r.getAttribute('aria-live')==='polite'&&!document.querySelector('.pipA-bubble [aria-live=assertive]')})()"))
     ok('no new network requests (only this site)', all(u.startswith(B) or u.startswith('data:') or u.startswith('blob:') for u in g.reqs), [u for u in g.reqs if not u.startswith(B)][:3])
@@ -93,6 +105,7 @@ with sync_playwright() as p:
     # --- chatty real events: save bubble once per session, check-in
     g = page(extra=f"localStorage.setItem('{LVK}','chatty')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Chatty'); g.click('#saveProj'); g.wait_for_timeout(400); b = bub(g)
     ok('chatty: save bubble pipA.save.ok, pose saved; the saved wink is skipped', b and b['key'] == 'pipA.save.ok' and b['pose'] == 'saved' and g.locator('#copymsg .savedtoast').count() == 0, b)
+    ok('save: Pip line not put in the shared live region (site status announces it)', g.evaluate("document.getElementById('pipALive').textContent") == '')
     shot(g, 'event-save-chatty-390.png', '.pipA-bubble')
     if SH:
         for w, h, n in ((344, 882, 'fold-folded-344.png'), (673, 841, 'fold-unfolded-673.png')):
