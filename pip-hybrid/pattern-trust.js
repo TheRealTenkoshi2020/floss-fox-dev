@@ -7,17 +7,17 @@ const req=(g,f)=>root[g]||(typeof require==='function'?require(f):null);
 const PC=()=>req('FlossFoxPatternCheck','./pattern-check.js'),PCH=()=>req('FlossFoxPatternChart','./pattern-chart.js');
 // ---- strings (PLACEHOLDER for Pixel)
 const STR={
- red:'Check before you stitch',amber:n=>`Check ${n===1?'this 1 thing':'these '+n+' things'}`,green:'Looks good to stitch',greenKey:'The color key looks good',
+ red:'Check before you stitch',amber:n=>`Check ${n===1?'this 1 thing':'these '+n+' things'}`,green:'Nothing stood out in the chart',greenKey:'Nothing stood out in the color key',
  fix:'Fix it',fixCode:c=>`Fix ${c}`,show:'Show me',more:n=>`And ${n} more.`,small:'Small things',
- sheetFake:x=>x.name?`DMC ${x.from} isn't a real DMC color. The key calls it "${x.name}". Here's the closest real color Pip found.`:`DMC ${x.from} isn't a real DMC color. Here's the closest real color Pip found.`,
- sheetName:x=>`The key calls DMC ${x.from} "${x.name}", but DMC ${x.from} is ${x.catalog}. Here's a real color that fits the name.`,
- titleFake:x=>`Swap DMC ${x.from}?`,titleName:x=>`Change DMC ${x.from}?`,
- far:"Pip couldn't find a close real color. Type the DMC number from your pattern.",nothing:"There's no color name to go on, so Pip won't guess. Type the DMC number from your pattern.",
- notDmc:'Not a DMC color',very:'Very close',close:'Close',others:'Other close colors:',typeLabel:'Type a DMC number',typeBtn:'Use this number',
- typeBad:"That isn't a DMC number we know.",already:c=>`DMC ${c} is already in your list.`,
+ sheetFake:x=>x.name?`We couldn't find DMC ${x.from} in the DMC catalog. The key calls it "${x.name}". Here's the closest DMC color we found.`:`We couldn't find DMC ${x.from} in the DMC catalog. Here's the closest DMC color we found.`,
+ sheetName:x=>`The key calls DMC ${x.from} "${x.name}", but in the DMC catalog ${x.from} is ${x.catalog}. Here's a DMC color that fits the name.`,
+ titleFake:x=>`Change DMC ${x.from}?`,titleName:x=>`Change DMC ${x.from}?`,
+ far:"We couldn't find a close DMC color. Type the DMC number from your pattern.",nothing:"There's no color name to go on, so we won't guess. Type the DMC number from your pattern.",
+ notDmc:'Not in the DMC catalog',very:'Very close',close:'Close',others:'Other close colors:',typeLabel:'Type a DMC number',typeBtn:'Use this number',
+ typeBad:"We don't know that DMC number. Check it against your pattern.",already:c=>`DMC ${c} is already in your list.`,
  use:c=>`Use DMC ${c}`,keep:c=>`Keep ${c}`,safe:"Your pattern file stays the same. Only your Floss Fox color list changes. You can undo.",
- changed:x=>`Changed: DMC ${x.from} to DMC ${x.to}.`,tag:x=>`Changed from DMC ${x.from}`,undo:'Undo',undoAll:'Undo all fixes',undone:x=>`Put back: DMC ${x.from}.`,undoneAll:n=>`Put back ${n} fix${n===1?'':'es'}.`,
- projIntro:'From when you imported this pattern.',pipRed:"Some things in this pattern need a look before you stitch. I haven't changed anything."};
+ changed:x=>`Changed DMC ${x.from} to DMC ${x.to}.`,tag:x=>`Changed from DMC ${x.from}`,undo:'Undo',undoAll:'Undo all fixes',undone:x=>`Put back DMC ${x.from}.`,undoneAll:n=>`Put back ${n} fix${n===1?'':'es'}.`,
+ projIntro:'From when you imported this pattern.',pipRed:"A few things need a look before you stitch. See Pattern check. I haven't changed anything."};
 // ---- color math: sRGB hex -> CIELAB (D65) -> CIEDE2000
 function lab(hex){const h=String(hex||'').replace('#','');if(!/^[0-9a-f]{6}$/i.test(h))return null;const c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v>0.04045?((v+0.055)/1.055)**2.4:v/12.92);
  const X=(c[0]*0.4124564+c[1]*0.3575761+c[2]*0.1804375)/0.95047,Y=c[0]*0.2126729+c[1]*0.7151522+c[2]*0.072175,Z=(c[0]*0.0193339+c[1]*0.119192+c[2]*0.9503041)/1.08883;

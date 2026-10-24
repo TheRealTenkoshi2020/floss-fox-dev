@@ -57,4 +57,26 @@ const all=JSON.stringify(Object.values(T.STR).map(x=>typeof x==='function'?x({n:
 const it=(s,x,y)=>({s,x,y,w:s.length*5});const items=[it('Key',10,500),it('●',10,480),it('1',30,480),it('White',50,480),it('X',10,465),it('310',30,465),it('Black',50,465)];
 for(let r=0;r<6;r++){items.push(it(String(r+1),10,400-r*10));for(let c=0;c<8;c++)items.push(it((r+c)%2?'●':'X',30+c*10,400-r*10))}
 const rr=PCH.check([{page:1,text:'',items}],DMC);ok('"● 1 White" is read as DMC 01, not dropped (no false extra symbol)',!rr.extra.some(e=>e.sym==='●')&&!rr.unused.length,rr);
+// 8) verdict re-evaluates after fixes (Pixel question): red -> amber/green, undo all -> red, survives save/load (JSON)
+{const pv=q=>T.verdict(T.projectChecks(q,DMC),null).level;const q=JSON.parse(JSON.stringify(proj0));const orig=JSON.stringify(q);
+ ok('project: red with an open unknown code',pv(q)==='red',T.projectChecks(q,DMC));
+ T.projectFix(q,{kind:'fake',from:'3999',to:'987'},parse);ok('project: all red fixed, name mismatch left -> amber',pv(q)==='amber',T.projectChecks(q,DMC));
+ const q2=JSON.parse(JSON.stringify(q));ok('project: amber survives save and reload',pv(q2)==='amber');
+ T.projectFix(q2,{kind:'name',from:'3865',to:'519'},parse);ok('project: everything fixed -> green',pv(q2)==='green-key'&&T.verdict(T.projectChecks(q2,DMC),null).label==='Nothing stood out in the color key');
+ const q3=JSON.parse(JSON.stringify(q2));ok('project: green survives save and reload',pv(q3)==='green-key');
+ T.projectUndoAll(q3);ok('project: Undo all -> red again, exact original',pv(q3)==='red'&&JSON.stringify(q3)===orig,q3);
+ const r=JSON.parse(JSON.stringify(proj0));r.items=r.items.filter(i=>i.code!=='3865');delete r.decisions['3865'];T.projectFix(r,{kind:'fake',from:'3999',to:'987'},parse);ok('project: only red item fixed -> green',pv(r)==='green-key',T.projectChecks(r,DMC));
+ const st={rows:[],skipped:JSON.parse(JSON.stringify(sk0)),log:[]};const iv=()=>T.verdict({fake:st.skipped.length?['3999']:[],names:[],dup:[],amounts:[],count:0},null).level;
+ ok('import: red before fix',iv()==='red');T.importFix(st,{kind:'fake',from:'3999',to:'987'},parse);ok('import: red fixed -> green',iv()==='green-key');T.importUndoAll(st);ok('import: Undo all -> red',iv()==='red')}
+// 9) Pixel final text, exactly
+{const S=T.STR,x={from:'3999',to:'987',name:'Deep Forest Green',catalog:'winter white'};
+ for(const [k,got,want] of [['green',S.green,'Nothing stood out in the chart'],['greenKey',S.greenKey,'Nothing stood out in the color key'],
+  ['sheetFake',S.sheetFake(x),`We couldn't find DMC 3999 in the DMC catalog. The key calls it "Deep Forest Green". Here's the closest DMC color we found.`],
+  ['sheetName',S.sheetName(x),`The key calls DMC 3999 "Deep Forest Green", but in the DMC catalog 3999 is winter white. Here's a DMC color that fits the name.`],
+  ['titleFake',S.titleFake(x),'Change DMC 3999?'],['far',S.far,"We couldn't find a close DMC color. Type the DMC number from your pattern."],
+  ['nothing',S.nothing,"There's no color name to go on, so we won't guess. Type the DMC number from your pattern."],['notDmc',S.notDmc,'Not in the DMC catalog'],
+  ['typeBad',S.typeBad,"We don't know that DMC number. Check it against your pattern."],['changed',S.changed(x),'Changed DMC 3999 to DMC 987.'],['undone',S.undone(x),'Put back DMC 3999.'],
+  ['undoneAll 2',S.undoneAll(2),'Put back 2 fixes.'],['undoneAll 1',S.undoneAll(1),'Put back 1 fix.'],['pipRed',S.pipRed,"A few things need a look before you stitch. See Pattern check. I haven't changed anything."]])ok('Pixel text: '+k,got===want,got);
+ const csv=fs.readFileSync('/workspace/pip-art/m-involved/a-strings.csv','utf8'),row=csv.split('\n').find(l=>l.startsWith('pipA.pcheck.red,'));const pip=fs.readFileSync(path.join(__dirname,'..','pip.js'),'utf8');
+ ok('pipA.pcheck.red in pip.js matches a-strings.csv and uses magnifier',row&&row.includes(S.pipRed)&&row.includes(',magnifier,')&&pip.includes("'pipA.pcheck.red':v=>`"+S.pipRed+'`')&&pip.includes("'pipA.pcheck.red':'magnifier'"))}
 console.log(`${N} passed, ${F} failed`);process.exitCode=F?1:0;
