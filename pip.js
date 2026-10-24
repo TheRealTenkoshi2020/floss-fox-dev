@@ -151,6 +151,7 @@ const AS={ // GENERATED from /workspace/pip-art/m-involved/a-strings.csv (Pixel)
  'pipA.cmp.undo.one':v=>`Done. That color is undecided again, and I won't fill it in on my own.`,
  'pipA.pcheck.fake':v=>`${v.n} numbers aren't DMC colors I know. See Pattern check. I haven't changed anything.`,
  'pipA.pcheck.fake.one':v=>`1 number isn't a DMC color I know. See Pattern check. I haven't changed anything.`,
+ 'pipA.pcheck.red':v=>`Some things in this pattern need a look before you stitch. I haven't changed anything.`,/* PLACEHOLDER for Pixel */
  'pipA.pcheck.other':v=>`A few things are worth a second look. See Pattern check. I haven't changed anything.`,
  'pipA.checkin.full':v=>`Checked in. That thread now counts as yours for this project.`,
  'pipA.checkin.part':v=>`Got part of it. I've kept the rest on your shopping list.`,
@@ -161,8 +162,8 @@ const EV={save:{pose:'saved',lv:['chatty'],cap:'session'},cmp:{lv:['chatty','imp
  nothing:{pose:'dropped-bobbin',lv:['chatty'],cap:'project'},undo:{pose:'phew',lv:['chatty','important'],cap:'none',gapFree:true},
  pcheck:{lv:['chatty','important'],cap:'file'},checkin:{pose:'floss-box',lv:['chatty'],cap:'checkin'},ready:{pose:'proud-finish',lv:['chatty','important'],cap:'none',gapFree:true},
  first:{pose:'shy-heart',lv:['chatty','important'],cap:'none',gapFree:true}}; // first: one-time first-project moment (see firstProject)
-const POSE={'pipA.cmp.done.many':'presenting','pipA.cmp.done.one':'presenting','pipA.cmp.done.none':'thinking','pipA.cmp.unsure':'magnifier','pipA.cmp.unsure.one':'magnifier','pipA.pcheck.fake':'puzzled','pipA.pcheck.fake.one':'puzzled','pipA.pcheck.other':'magnifier'};
-const EVOF={'pipA.save.ok':'save','pipA.cmp.done':'cmp','pipA.cmp.empty':'empty','pipA.cmp.nothing':'nothing','pipA.cmp.undo':'undo','pipA.pcheck.fake':'pcheck','pipA.pcheck.other':'pcheck','pipA.checkin':'checkin','pipA.ready':'ready','pipA.save.first':'first'};
+const POSE={'pipA.cmp.done.many':'presenting','pipA.cmp.done.one':'presenting','pipA.cmp.done.none':'thinking','pipA.cmp.unsure':'magnifier','pipA.cmp.unsure.one':'magnifier','pipA.pcheck.fake':'puzzled','pipA.pcheck.fake.one':'puzzled','pipA.pcheck.other':'magnifier','pipA.pcheck.red':'magnifier'};
+const EVOF={'pipA.save.ok':'save','pipA.cmp.done':'cmp','pipA.cmp.empty':'empty','pipA.cmp.nothing':'nothing','pipA.cmp.undo':'undo','pipA.pcheck.fake':'pcheck','pipA.pcheck.other':'pcheck','pipA.pcheck.red':'pcheck','pipA.checkin':'checkin','pipA.ready':'ready','pipA.save.first':'first'};
 /* Approved by Pixel (review of 6377560; not in a-strings.csv yet): first project saved, shown once per device. */
 AS['pipA.save.first']=v=>`Your first project is saved! Next, let's check it against your threads.`;
 // One-time flag: a UI preference key only (same prefix as pipLevel), never part of the saved data or backups.

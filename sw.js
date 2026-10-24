@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-39';
+const CACHE = 'flossfox-dev-v2.0a-ci005-40';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -11,6 +11,8 @@ const CORE = [
   "pip-hybrid/pattern-ui.css",
   "pip-hybrid/pattern-check.js",
   "pip-hybrid/pattern-chart.js",
+  "pip-hybrid/pattern-trust.js",
+  "pip-hybrid/pattern-trust-ui.js",
   "analytics.js",
   "pip-hybrid/pattern-ui.js",
   "pip-hybrid/pattern-pdf.js",
