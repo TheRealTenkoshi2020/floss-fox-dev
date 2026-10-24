@@ -163,11 +163,13 @@ const EV={save:{pose:'saved',lv:['chatty'],cap:'session'},cmp:{lv:['chatty','imp
  first:{pose:'shy-heart',lv:['chatty','important'],cap:'none',gapFree:true}}; // first: one-time first-project moment (see firstProject)
 const POSE={'pipA.cmp.done.many':'presenting','pipA.cmp.done.one':'presenting','pipA.cmp.done.none':'thinking','pipA.cmp.unsure':'magnifier','pipA.cmp.unsure.one':'magnifier','pipA.pcheck.fake':'puzzled','pipA.pcheck.fake.one':'puzzled','pipA.pcheck.other':'magnifier'};
 const EVOF={'pipA.save.ok':'save','pipA.cmp.done':'cmp','pipA.cmp.empty':'empty','pipA.cmp.nothing':'nothing','pipA.cmp.undo':'undo','pipA.pcheck.fake':'pcheck','pipA.pcheck.other':'pcheck','pipA.checkin':'checkin','pipA.ready':'ready','pipA.save.first':'first'};
-/* PLACEHOLDER for Pixel review (not in a-strings.csv yet): first project saved, shown once per device. */
-AS['pipA.save.first']=v=>`Your first project! I'm so happy. Next, let's check it against your threads.`;
+/* Approved by Pixel (review of 6377560; not in a-strings.csv yet): first project saved, shown once per device. */
+AS['pipA.save.first']=v=>`Your first project is saved! Next, let's check it against your threads.`;
 // One-time flag: a UI preference key only (same prefix as pipLevel), never part of the saved data or backups.
 const FIRST_KEY=PIP_KEY.replace(/\.pip\.v1$/,'.pipFirstProject.v1');
 function firstProject(anchor){try{if(localStorage.getItem(FIRST_KEY))return false}catch(e){return false}
+ /* never on Shopping or Find floss: only while the Projects view is on screen; the flag is not spent otherwise */
+ {const pv=document.getElementById('projectsView');if(!pv||pv.hidden||!pv.getClientRects().length)return false}
  if(!react('pipA.save.first',{},anchor,{siteAnnounces:true}))return false;try{localStorage.setItem(FIRST_KEY,'shown')}catch(e){}return true}
 // Singular/plural: choose the variant key from numbers the caller passed (same rule as projects.js plural/s2: n===1 is singular).
 function variant(key,v){v=v||{};

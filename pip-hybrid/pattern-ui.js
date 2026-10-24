@@ -54,11 +54,11 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
   if(out.kind==='image')await showPreview();
  }catch(e){info(e&&e.pdfOnly?String(e.message):'Import stopped: '+String(e.message||e));if(e&&e.pdfOnly){const md=dialog&&dialog.querySelector('details.pat-manual');if(md)md.open=true}setRows([])}}
  /* new-15 grumpy-knot: only for Pip's own struggle with a scanned PDF (never a user error). Decorative art, hidden when Pip is off or quiet.
-    Line is a PLACEHOLDER for Pixel review. */
+    Line approved by Pixel (review of 6377560). */
  function pipKnot(m){const P=window.FlossFoxPip,lv=P&&P.level?P.level():'off';if(lv==='off'||lv==='quiet')return;
   const w=N('div','pat-pipknot');
   w.innerHTML='<picture aria-hidden="true"><source type="image/webp" srcset="assets/pip/pip-grumpy-knot-160.webp"><img src="assets/pip/pip-grumpy-knot-160.png" width="64" height="86" alt="" decoding="async"></picture>';
-  w.appendChild(N('span','pat-pipknot-text',"I got tangled in this one. It looks like scanned pages, so I can't read the text. You can type the colors in instead."));
+  w.appendChild(N('span','pat-pipknot-text',"I got tangled in this one. It looks like scanned pages, so there's no text I can read. You can type the colors in instead."));
   m.parentElement.insertBefore(w,m)}
  async function showPreview(){const host=$('patImagePreview');host.replaceChildren();const page=Number($('patPage')?.value||1);selectedPage=page;previewBlob=null;if(!file)return;
   const canvas=N('canvas');const ctx=canvas.getContext('2d');

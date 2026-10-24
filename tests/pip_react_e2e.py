@@ -97,12 +97,21 @@ with sync_playwright() as p:
     # --- chatty real events: save bubble once per session, check-in
     # new-15 first-project moment: one time per device (UI pref key only), shy-heart, then the normal save path; skipped when quiet/off
     FK = f"{PFX}.pipFirstProject.v1"
-    g = page(extra=f"localStorage.removeItem('{FK}')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'First'); g.click('#saveProj'); g.wait_for_timeout(400); b = bub(g)
-    ok('first project: shy-heart moment shows once at the default level', b and b['key'] == 'pipA.save.first' and b['pose'] == 'shy-heart' and g.evaluate(f"localStorage.getItem('{FK}')") == 'shown', b)
+    TAB = lambda g, t: (g.evaluate(f"document.getElementById('{t}').click()"), g.wait_for_timeout(700))
+    FIRSTB = "(()=>{const b=document.querySelector('.pipA-bubble[data-key=\\'pipA.save.first\\']');return b?b.getBoundingClientRect().height>0:false})()"
+    g = page(extra=f"localStorage.removeItem('{FK}')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'First'); g.click('#saveProj'); g.wait_for_timeout(700)
+    ok('first project: never on the Find floss shopping list after save, flag not spent', not g.evaluate(FIRSTB) and g.evaluate(f"localStorage.getItem('{FK}')") is None)
+    ok('first project: firstProject() refuses off the Projects view', g.evaluate("FlossFoxPip.firstProject(document.body)") is False and g.evaluate(f"localStorage.getItem('{FK}')") is None)
+    TAB(g, 'tabShop')
+    ok('first project: never on the Shopping tab, flag not spent', not g.evaluate(FIRSTB) and g.evaluate(f"localStorage.getItem('{FK}')") is None)
+    TAB(g, 'tabProjects'); b = bub(g)
+    ok('first project: shy-heart shows once on Projects at the default level', b and b['key'] == 'pipA.save.first' and b['pose'] == 'shy-heart' and g.evaluate("!document.getElementById('projectsView').hidden") and g.evaluate(f"localStorage.getItem('{FK}')") == 'shown', b)
     ok('first project: flag is a UI pref only (not in projects data)', 'pipFirstProject' not in (g.evaluate(f"localStorage.getItem('{PFX}.v1')") or ''))
-    g.reload(); g.wait_for_timeout(300); g.fill('#inp', '321 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Second'); g.click('#saveProj'); g.wait_for_timeout(400); b = bub(g)
-    ok('first project: never shows again', not b or b['key'] != 'pipA.save.first', b)
-    g = page(extra=f"localStorage.removeItem('{FK}');localStorage.setItem('{LVK}','quiet')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Q'); g.click('#saveProj'); g.wait_for_timeout(400)
+    g.evaluate("FlossFoxPip.closeBubble()"); TAB(g, 'tabConvert'); TAB(g, 'tabProjects')
+    ok('first project: not repeated on the next Projects visit', not g.evaluate(FIRSTB))
+    g.reload(); g.wait_for_timeout(300); TAB(g, 'tabConvert'); g.fill('#inp', '321 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Second'); g.click('#saveProj'); g.wait_for_timeout(400); TAB(g, 'tabProjects')
+    ok('first project: never shows again', not g.evaluate(FIRSTB))
+    g = page(extra=f"localStorage.removeItem('{FK}');localStorage.setItem('{LVK}','quiet')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Q'); g.click('#saveProj'); g.wait_for_timeout(400); TAB(g, 'tabProjects')
     ok('first project: skipped when Pip is quiet, flag not spent', bub(g) is None and g.evaluate(f"localStorage.getItem('{FK}')") is None)
     g = page(extra=f"localStorage.setItem('{LVK}','chatty')"); g.fill('#inp', '310 x1'); g.click('#go'); g.wait_for_timeout(300); g.fill('#newProjName', 'Chatty'); g.click('#saveProj'); g.wait_for_timeout(400); b = bub(g)
     ok('chatty: save bubble pipA.save.ok, pose saved; the saved wink is skipped', b and b['key'] == 'pipA.save.ok' and b['pose'] == 'saved' and g.locator('#copymsg .savedtoast').count() == 0, b)
