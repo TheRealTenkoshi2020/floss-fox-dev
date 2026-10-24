@@ -4,9 +4,9 @@ const assert=require('node:assert/strict');
 const S=require('../shop/skein-preview-catalog.js');
 const valid=(more={})=>({brand:'dmc',family:'six-strand-cotton',pack:'single-skein',code:'310',qty:2,assumed:false,disputed:false,...more});
 const preview='preview';
-test('14 individually curated direct product URLs; exactly 2 retailers',()=>{
+test('514 individually curated direct product URLs; exactly 2 retailers',()=>{
  const manifest=require('../docs/product-links.json');
- assert.equal(manifest.length,14);
+ assert.equal(manifest.length,514);
  for(const x of manifest){const links=S.linksFor(valid({code:x.code}),preview);
    assert.equal(links.length,2);
    const link=links.find(l=>l.storeId===x.merchantId);
@@ -25,9 +25,9 @@ test('correct Everything Cross Stitch DMC 321 and 3012 direct products',()=>{
  assert.equal(link.type,'exact-product');assert.equal(link.code,c)}
 });
 test('uncatalogued color has two honest DMC cotton catalog links',()=>{
- const links=S.linksFor(valid({code:'666'}),preview);
+ const links=S.linksFor(valid({code:'3829'}),preview);
  assert.equal(links.length,2);assert.ok(links.every(l=>l.type==='catalog'&&!l.exact));
- assert.ok(links.every(l=>l.label.includes('Find DMC 666')));
+ assert.ok(links.every(l=>l.label.includes('Find DMC 3829')));
  assert.ok(links.every(l=>l.url.startsWith('https://')));
 });
 test('never claim all link targets are product pages',()=>{
@@ -61,7 +61,7 @@ test('reject unconfirmed or malformed skein quantities',()=>{
   assert.equal(S.linksFor(valid({qty}),preview).length,0);
 });
 test('rows are read-only, do not double count duplicates and never include review or owned lines',()=>{
- const list=[valid(),valid({code:'321',qty:3}),valid({code:'310',qty:2}),valid({code:'666',qty:0}),valid({code:'839',assumed:true})];
+ const list=[valid(),valid({code:'321',qty:3}),valid({code:'310',qty:2}),valid({code:'3829',qty:0}),valid({code:'839',assumed:true})];
  const before=JSON.stringify(list);const rows=S.rowsFor(list,preview);
  assert.deepEqual(rows.map(x=>x.code),['321','839']);
  assert.deepEqual(rows.map(x=>x.qty),[3,2]);assert.deepEqual(rows.map(x=>x.assumed),[false,true]);assert.equal(JSON.stringify(list),before);
