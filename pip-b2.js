@@ -43,7 +43,7 @@ function tick(){const lv=level();
  if(tipEl){if(lv!=='chatty')tipEl.remove();return}
  let shown=null;try{shown=sessionStorage.getItem(TIP_KEY)}catch(e){}
  if(shown||!allowed('helpTip',hv))return;const card=hv.querySelector('.card.help');if(!card)return;
- const d=art('helpTip',64,'b2.helpTip');const h=card.querySelector('h2');h?h.after(d):card.prepend(d);try{sessionStorage.setItem(TIP_KEY,'shown')}catch(e){}}
+ const d=art('helpTip',64,'b2.helpTip');const h=card.querySelector('.helphead')||card.querySelector('h2');h?h.after(d):card.prepend(d);try{sessionStorage.setItem(TIP_KEY,'shown')}catch(e){}}
 let q=0;new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;tick()})}).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
 document.addEventListener('change',e=>{if(e.target&&e.target.name==='pipLevel')setTimeout(tick,0)});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tick);else tick();
