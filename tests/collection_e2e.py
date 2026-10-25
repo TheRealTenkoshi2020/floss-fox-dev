@@ -32,7 +32,7 @@ with sync_playwright() as p:
 
     # ---- C: collection basics, persistence, quantities, duplicates, search ----
     g = page(390); g.click('#tabThreads')
-    ok('C0 storage note is shown in plain words', 'only in this browser' in g.inner_text('#thCard') and 'deletes it' in g.inner_text('#thCard'))
+    ok('C0 storage note is shown in plain words', 'only in this browser' in g.text_content('#thCard') and 'deletes it' in g.text_content('#thCard'))
     add(g, '310, 321 x2\n310\n03')
     ok('C1 add several at once; duplicate lines merge (310 twice = 2)', n(g, '310') == 2 and n(g, '321') == 2 and n(g, '03') == 1 and g.locator('#thList .th').count() == 3)
     add(g, '310 x3'); ok('C2 adding an owned color again merges into one row', g.locator('#thList .th[data-code="310"]').count() == 1 and n(g, '310') == 5)

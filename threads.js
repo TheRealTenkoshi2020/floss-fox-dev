@@ -192,9 +192,18 @@ window.FlossFoxThreadsUI={setStorageLocation,bulkStoragePreview,bulkStorageApply
  addItems:(items,o)=>{const r=C.add(data,items,o);const ok=save();render();return{...r,saved:ok}},set:(code,f,o)=>{const e=(o&&o.demo?data.demo||{}:data.threads)[code];if(!e)return;Object.assign(e,f);save();render()}};
 $('thAddBtn').onclick=addNow;$('thAdd').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!/\n/.test($('thAdd').value)){e.preventDefault();addNow()}});
 $('thSearch').oninput=()=>{q=$('thSearch').value;filter()};
-$('thImport').onclick=()=>{const P=window.FlossFoxProjects&&FlossFoxProjects._store();if(!P)return;let a=0;
- P.projects.forEach(p=>p.items.forEach(it=>{const d=p.decisions[it.code];if(d&&(d.status==='have'||d.recv)&&!data.threads[it.code]){const ex=d.owned!==null&&d.owned!==undefined,own=ex?Math.floor(d.owned):(it.qty||1);data.threads[it.code]={n:Math.min(999,own),partial:ex&&d.owned%1>0,restock:false,updated:new Date().toISOString(),...(ex&&d.ownedSource!=='unverified'?{confirmed:true}:{})};a++}}));
- save();render();say(a?`Added ${a} color${a===1?'':'s'} you marked Have enough (or received) in your projects. Colors already in your collection were left alone.`:'Nothing new to add from your projects.')};
+/* Flow pass item 4: add the colors a project says you have enough of. Shows the count first, never touches colors already
+   in the collection, skips demo projects, and keeps one Undo that removes exactly what it added (if you haven't changed it since). */
+const haveNew=p=>{const seen=new Set();return(p&&!p.demo?p.items:[]).filter(it=>{const d=p.decisions[it.code];if(!d||!(d.status==='have'||d.recv)||data.threads[it.code]||seen.has(it.code))return false;seen.add(it.code);return true})};
+let fromUndo=null;
+function addFromProjects(ids){const P=window.FlossFoxProjects&&FlossFoxProjects._store();if(!P)return{added:[]};const added={};
+ P.projects.filter(p=>!p.demo&&(!ids||ids.includes(p.id))).forEach(p=>haveNew(p).forEach(it=>{if(data.threads[it.code])return;const d=p.decisions[it.code],ex=d.owned!==null&&d.owned!==undefined,own=ex?Math.floor(d.owned):(it.qty||1);data.threads[it.code]={n:Math.min(999,own),partial:ex&&d.owned%1>0,restock:false,updated:new Date().toISOString(),...(ex&&d.ownedSource!=='unverified'?{confirmed:true}:{})};added[it.code]=JSON.stringify(data.threads[it.code])}));
+ const codes=Object.keys(added);if(codes.length){fromUndo=added;save();render()}return{added:codes}}
+function undoFromProjects(){if(!fromUndo)return 0;let n=0;for(const [c,snap] of Object.entries(fromUndo))if(data.threads[c]&&JSON.stringify(data.threads[c])===snap){delete data.threads[c];n++}fromUndo=null;save();render();return n}
+function fromProjectsCount(ids){const P=window.FlossFoxProjects&&FlossFoxProjects._store();if(!P)return 0;const s=new Set();P.projects.filter(p=>!p.demo&&(!ids||ids.includes(p.id))).forEach(p=>haveNew(p).forEach(it=>s.add(it.code)));return s.size}
+Object.assign(window.FlossFoxThreadsUI,{addFromProjects,undoFromProjects,fromProjectsCount,canUndoFrom:()=>!!fromUndo});
+$('thImport').onclick=()=>{const r=addFromProjects(null),a=r.added.length;
+ say(a?`Added ${a} color${a===1?'':'s'} you marked Have enough (or received) in your projects. Colors already in your collection were left alone.`:'Nothing new to add from your projects.');if(window.FlossFoxFlow)FlossFoxFlow.offerUndo(a)};
 const bk=$('thBackup');if(bk)bk.onclick=()=>{const P=window.FlossFoxProjects;if(P&&P.backup){P.backup();say('Backup downloaded (projects and thread collection).')}};
 const rs=$('thRestore');if(rs)rs.onclick=()=>{const P=window.FlossFoxProjects;if(!P)return;P.showView('projects');$('backupBox').open=true;$('backupBox').scrollIntoView({block:'nearest'});$('restoreFile').click()};
 render();

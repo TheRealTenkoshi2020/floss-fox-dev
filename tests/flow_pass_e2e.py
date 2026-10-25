@@ -42,5 +42,40 @@ with sync_playwright() as p:
         g.context.close()
     else:
         print('SKIP F2 real pattern PDF (set FLOW_PDF)')
+
+    # ---- Item 3: quick add at the top of My threads
+    g = page()
+    g.click('#tabThreads'); g.wait_for_timeout(200)
+    top = g.evaluate("document.getElementById('thAdd').getBoundingClientRect().bottom")
+    ok('F3a the add box is on the first phone screen', top < 844 - 60, top)
+    ok('F3b Add sits right beside the box', g.evaluate("(()=>{const a=document.getElementById('thAdd').getBoundingClientRect(),b=document.getElementById('thAddBtn').getBoundingClientRect();return Math.abs(a.top-b.top)<30})()"))
+    g.fill('#thAdd', '310'); g.press('#thAdd', 'Enter'); g.wait_for_timeout(200)
+    ok('F3c typing 310 and Enter adds it', '310' in threads(g).get('threads', {}), threads(g))
+    g.fill('#thAdd', '321, 3865 x2'); g.click('#thAddBtn'); g.wait_for_timeout(200)
+    th = threads(g).get('threads', {})
+    ok('F3d several at once with the same rules (3865 x2 is 2 skeins)', '321' in th and th.get('3865', {}).get('n') == 2, th)
+    ok('F3e the privacy note is folded, not in the way', g.locator('.thkept').count() == 1 and not g.evaluate("document.querySelector('.thkept').open"))
+    g.context.close()
+    # ---- Item 4: add owned colors from a project, with a count and an Undo
+    g = page()
+    g.evaluate("""FlossFoxThreadsUI.addItems([{code:'310',n:5}]);FlossFoxProjects.add({id:'p-autumn',name:'Autumn fox',items:[{code:'310',qty:1},{code:'321',qty:1},{code:'666',qty:2},{code:'797',qty:1}],
+      decisions:{'310':{status:'have',owned:1},'321':{status:'have',owned:2},'666':{status:'have',owned:null},'797':{status:'buy',owned:0}}})""")
+    g.click('#tabThreads'); g.wait_for_timeout(300)
+    btn = g.locator('#thFromProj [data-from]')
+    ok('F4a My threads offers the project with a clear count (2 new, 310 already owned)', btn.count() == 1 and 'Add 2 colors you have from Autumn fox' in btn.inner_text(), btn.all_inner_texts())
+    before = threads(g)['threads']['310']
+    btn.click(); g.wait_for_timeout(200); th = threads(g)['threads']
+    ok('F4b it adds exactly the 2 new colors and leaves 310 alone', set(th) == {'310', '321', '666'} and th['310'] == before and th['321']['n'] == 2, th)
+    ok('F4c an Undo is offered right there', g.locator('[data-ffundo]').is_visible())
+    g.click('[data-ffundo]'); g.wait_for_timeout(200); th = threads(g)['threads']
+    ok('F4d Undo takes back exactly what was added', set(th) == {'310'} and th['310'] == before, th)
+    g.click('#tabProjects'); g.wait_for_timeout(200); g.evaluate("FlossFoxProjects.open('p-autumn')"); g.wait_for_timeout(400)
+    pb = g.locator('#pToThreadsBtn')
+    ok('F4e an open project offers "Put my 2 colors marked Have enough in My threads"', pb.count() == 1 and '2 colors' in pb.inner_text(), pb.all_inner_texts())
+    pb.click(); g.wait_for_timeout(200); th = threads(g)['threads']
+    ok('F4f the project button adds them and offers Undo', set(th) == {'310', '321', '666'} and g.locator('#projEdit [data-ffundo]').count() == 1, th)
+    ok('F4g project choices were not changed', g.evaluate("FlossFoxProjects._store().projects.find(x=>x.id==='p-autumn').decisions['797'].status") == 'buy')
+    ok('F4h no page errors', not g.errs, g.errs)
+    g.context.close()
     b.close()
 print(f'flow_pass: {sum(R)} passed, {len(R)-sum(R)} failed'); sys.exit(0 if all(R) else 1)
