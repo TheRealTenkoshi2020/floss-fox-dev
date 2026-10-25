@@ -25,7 +25,7 @@ with sync_playwright() as p:
         # DEMO-2: own text, user-typed name "Example project" stays real
         g.click('#tabConvert')
         if g.locator('#exitExample').is_visible(): g.click('#exitExample')
-        g.fill('#inp', '310 x2\n898 x1'); g.click('#go'); g.wait_for_timeout(150)
+        g.fill('#inp', '310 x2\n898 x1'); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(150)
         g.fill('#newProjName', 'Example project'); g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
         ps = json.loads(g.evaluate(f"localStorage.getItem('{KEY}')"))['projects']
         ok(f'{w}px real project named "Example project" stays real and is backed up', len(ps) == 1 and 'demo' not in ps[0] and len(g.evaluate("FlossFoxProjects.fullBackup()")['projects']) == 1, [(x['name'],x.get('demo')) for x in ps])

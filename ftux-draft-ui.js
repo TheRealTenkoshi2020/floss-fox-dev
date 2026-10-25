@@ -14,17 +14,17 @@
   const demo = () => { const b = document.getElementById('exampleBanner'); return !!b && !b.hidden; };
   let blocked = false, timer = null, committedText = null, warned = false;
   const stored = S.read();
-  const wrap = document.createElement('section'); wrap.className = 'bknotice noprint ffdraft'; wrap.id = 'ffDraftRecovery'; wrap.hidden = true;
+  const wrap = document.createElement('section'); wrap.className = 'bknotice noprint ffdraft'; wrap.id = 'ffDraftRecovery'; wrap.hidden = true; wrap.style.margin = '0 0 8px'; wrap.style.padding = '10px 12px'; /* spacing only: keeps the paste box closer to the first screen */
   wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Unfinished list');
   const heading = document.createElement('p'); const hb = document.createElement('b'); hb.textContent = 'Pick up where you left off?'; heading.append(hb);
   const desc = document.createElement('p'); desc.className = 'hint';
-  const buttons = document.createElement('div'); buttons.className = 'ffdraft-row'; buttons.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px';
+  const buttons = document.createElement('div'); buttons.className = 'ffdraft-row'; buttons.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:6px';
   const restore = document.createElement('button'); restore.type = 'button'; restore.className = 'pri small'; restore.id = 'ffDraftRestore'; restore.textContent = 'Restore my list';
   const discard = document.createElement('button'); discard.type = 'button'; discard.className = 'sec small'; discard.id = 'ffDraftDiscard'; discard.textContent = 'Discard it';
-  const msg = document.createElement('p'); msg.className = 'hint'; msg.id = 'ffDraftMsg'; msg.setAttribute('role', 'status'); msg.setAttribute('aria-live', 'polite');
+  const msg = document.createElement('p'); msg.className = 'hint'; msg.id = 'ffDraftMsg'; msg.setAttribute('role', 'status'); msg.setAttribute('aria-live', 'polite'); msg.style.margin = '0';
   buttons.append(restore, discard); wrap.append(heading, desc, buttons);
   box.insertAdjacentElement('beforebegin', wrap); wrap.insertAdjacentElement('afterend', msg);
-  const message = t => { msg.textContent = t; };
+  const message = t => { msg.textContent = t; msg.style.margin = t ? '0 0 8px' : '0'; };
   const show = t => { desc.textContent = t; wrap.hidden = false; };
   const hide = () => { wrap.hidden = true; };
   if (stored.status === 'ok' && C.shouldOfferRecovery(box.value, stored, demo())) {
