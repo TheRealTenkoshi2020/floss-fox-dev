@@ -25,8 +25,12 @@
   buttons.append(restore, discard); wrap.append(heading, desc, buttons);
   box.insertAdjacentElement('beforebegin', wrap); wrap.insertAdjacentElement('afterend', msg);
   const message = t => { msg.textContent = t; msg.style.margin = t ? '0 0 8px' : '0'; };
-  const show = t => { desc.textContent = t; wrap.hidden = false; };
-  const hide = () => { wrap.hidden = true; };
+  /* While the recovery card is up, the tour's first-visit invite steps aside (Myke, 2026-10-25); it comes back when the card closes. */
+  const invite = on => { const i = document.getElementById('tourInvite'); if (i) i.style.display = on ? '' : 'none'; };
+  const syncInvite = () => invite(wrap.hidden);
+  new MutationObserver(syncInvite).observe(document.querySelector('.hero') || document.body, {childList: true, subtree: true});
+  const show = t => { desc.textContent = t; wrap.hidden = false; syncInvite(); };
+  const hide = () => { wrap.hidden = true; syncInvite(); };
   if (stored.status === 'ok' && C.shouldOfferRecovery(box.value, stored, demo())) {
     blocked = true; show('You have an unfinished color list waiting in this browser. Your saved projects and threads weren\'t changed. Note: backups don\'t include unfinished lists.');
   } else if (stored.status === 'protected') {
