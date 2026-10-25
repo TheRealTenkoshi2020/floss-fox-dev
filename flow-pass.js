@@ -33,9 +33,11 @@ function drawFill(){const p=P();if(!p||!p.missingCount)return;const id=p.openId&
  $('pFillBtn').onclick=()=>{const k=p.fillMissing(id);const s=$('projStatus');if(s)s.textContent=`Filled ${colors(k)} with 1 skein each, marked Estimated. Change any of them in Details.`;
   const u=document.createElement('div');u.id='pFill';u.className='ffill ffundo noprint';u.innerHTML=`<span class="hint">Filled ${colors(k)} with 1 skein each, marked Estimated.</span><button type="button" class="sec small" data-fillundo>Undo</button>`;
   const sm=$('pSummary');(sm.querySelector('.stats')||sm.lastElementChild).after(u);u.querySelector('button').onclick=()=>{const r=p.undoFill();u.remove();const s2=$('projStatus');if(s2)s2.textContent=r?`Took back ${colors(r)}. Their amounts are unknown again.`:'Nothing to take back.';refresh()}}}
+// ---- Item 1: keep the chosen tab in view in the one-row phone tabs.
+function tabInView(){const n=document.querySelector('nav.tabs');if(!n||n.scrollWidth<=n.clientWidth)return;const a=n.querySelector('[aria-pressed=true]');if(a&&a.scrollIntoView){const r=a.getBoundingClientRect(),m=n.getBoundingClientRect();if(r.left<m.left||r.right>m.right)n.scrollLeft+=r.left-m.left-12}}
 // ---- Item 3: Enter adds (already), the box grows for a pasted list.
 function grow(){const a=$('thAdd');if(!a)return;a.style.height='auto';a.style.height=Math.min(160,Math.max(44,a.scrollHeight+2))+'px'}
-let q=0;function refresh(){if(q)return;q=requestAnimationFrame(()=>{q=0;drawFrom();drawProjAdd();drawFill();FF.after.forEach(f=>{try{f()}catch(e){}})})}
+let q=0;function refresh(){if(q)return;q=requestAnimationFrame(()=>{q=0;drawFrom();drawProjAdd();drawFill();tabInView();FF.after.forEach(f=>{try{f()}catch(e){}})})}
 const FF=window.FlossFoxFlow={offerUndo,refresh,after:[]};
 function init(){const a=$('thAdd');if(a)a.addEventListener('input',grow);
  const mo=new MutationObserver(refresh);{const e=$('projEdit');if(e)mo.observe(e,{childList:true,subtree:true})}['thList','pCmp','projEdit','projList','shopBody'].forEach(i=>{const e=$(i);if(e)mo.observe(e,{childList:true})});

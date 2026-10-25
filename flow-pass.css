@@ -13,3 +13,11 @@
 .ffill{display:flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center;margin:.5rem 0}
 .ffill .hint{flex:1 1 14rem}
 @media(max-width:360px){.thqrow{flex-wrap:wrap}.thqrow textarea{flex:1 1 100%}.thqrow #thAddBtn{flex:1 1 100%}}
+/* Item 1: phones get one row of tabs that scrolls sideways (Settings included) and a smaller Ask Pip. */
+@media(max-width:560px){
+ nav.tabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;padding-top:4px;padding-bottom:4px;mask-image:linear-gradient(90deg,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent)}
+ nav.tabs::-webkit-scrollbar{display:none}
+ nav.tabs>*{flex:0 0 auto!important;grid-column:auto!important;min-height:44px!important;padding:0 12px!important;scroll-snap-align:start;white-space:nowrap!important;font-size:.88rem!important}
+ nav.tabs #tabSettings{display:inline-flex!important}
+ #askPipBtn{min-height:44px;padding-top:2px;padding-bottom:2px}#askPipBtn img{width:28px;height:auto}
+}
