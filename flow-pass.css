@@ -25,3 +25,11 @@
 .ffstore{margin:2px 0 8px}.ffstore summary{font-size:.85rem;min-height:32px;display:flex;align-items:center}
 #shopView .ff-skein-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 #shopView .ff-skein-pill{display:inline-flex;align-items:center;font-size:.8rem;padding:4px 10px;min-height:36px;width:auto;border-radius:999px}
+/* Item 7: a shorter project page on phones: one-line counts and one row of jump links. */
+@media(max-width:560px){
+ #pSummary .stats{display:flex!important;flex-wrap:wrap;gap:6px!important}
+ #pSummary .stats li{display:inline-flex!important;flex-direction:row!important;align-items:baseline;gap:4px;padding:4px 10px!important;min-height:0!important;border-radius:999px;font-size:.85rem}
+ #pSummary .stats li b{font-size:1rem!important}
+ #pSummary nav.jump{display:flex!important;flex-wrap:wrap;gap:6px}
+ #pSummary nav.jump a{padding:6px 10px!important;min-height:36px;font-size:.85rem}
+}

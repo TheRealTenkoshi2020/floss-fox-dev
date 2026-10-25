@@ -282,15 +282,15 @@ const FLOW_STR={review:'Review colors',cmp:'Check my threads',ready:'Readiness',
  tip:{review:owned=>`Next: pick Have enough, Need to buy or Not sure for each color${owned?'':'. Or add the threads you own to My Thread Collection first, then compare'}.`,
   cmp:()=>'Next: compare these colors with your thread collection, then choose for any color that\'s still undecided.',
   shop:(o,n)=>`Next: open your shopping list (${n} to buy).`,
-  /* FF-1956 split by state (wording from Pixel's handoff note) */ready:(o,n,ready,aw)=>ready?'You have enough of every color. Ready to stitch!':aw?'Next: check in the threads you bought when they arrive.':'Next: sort out the colors under Needs attention.'}};
+  /* FF-1956 split by state (wording from Pixel's handoff note) */ready:(o,n,ready,aw,cf)=>ready?'You have enough of every color. Ready to stitch!':cf?`Next: look over the ${s2(cf)} still to check in Readiness${n&&n!=='0 colors'?`, then shop for the ${n} to buy`:''}.`:aw?'Next: check in the threads you bought when they arrive.':'Next: sort out the colors under Needs attention.'}};
 // 2.0A connected workflow: one strip that walks pattern -> compare -> readiness -> shopping using the existing sections (no new calculations).
 function renderFlow(p,P){const unchecked=p.items.filter(it=>!(p.decisions[it.code]||{}).status).length;const el=$('pFlow');if(!el)return;if(!p.items.length){el.hidden=true;return}el.hidden=false;
  const T=window.FlossFoxThreadsUI,owned=T?T.count({demo:!!p.demo}):0,toBuy=P.lines.filter(l=>!l.bought).length;
- const next=unchecked?(owned?'cmp':'review'):toBuy?'shop':'ready';
+ const next=unchecked?(owned?'cmp':'review'):P.sum.checkFirst?'ready':toBuy?'shop':'ready';
  const F=FLOW_STR,st=[['review',F.review,!unchecked],['cmp',F.cmp,!unchecked],['ready',F.ready,P.ready],['shop',F.shop,!unchecked&&!toBuy]];
- const tip=F.tip[next](owned,s2(toBuy),P.ready,P.sum.awaiting);
- el.innerHTML=`<ol>${st.map(([k,l,d],i)=>`<li><button type="button" class="pfstep${d?' done':''}" data-flow="${k}"${k===next?' aria-current="step"':''}><span class="pfn" aria-hidden="true">${d?'✓':i+1}</span>${l}${d?'<span class="sr"> ${F.done}</span>':''}</button></li>`).join('')}</ol><p class="hint pftip">${esc(tip)}</p>`;
- el.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>{const k=b.dataset.flow;if(k==='shop')return showView('shop');const t=k==='review'?$('pThreads'):k==='cmp'?($('pCmp').firstElementChild||$('pThreads')):$('pSummary');if(t){t.scrollIntoView({block:'start'});const h=t.querySelector('h3,h2,b,button');if(h&&!h.matches('button')){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}}})}
+ const tip=F.tip[next](owned,s2(toBuy),P.ready,P.sum.awaiting,P.sum.checkFirst);
+ el.innerHTML=`<ol>${st.map(([k,l,d],i)=>`<li><button type="button" class="pfstep${d?' done':''}" data-flow="${k}"${k===next?' aria-current="step"':''}><span class="pfn" aria-hidden="true">${d?'✓':i+1}</span>${l}${d?`<span class="sr"> ${F.done}</span>`:''}</button></li>`).join('')}</ol><p class="hint pftip">${esc(tip)}</p>`;
+ el.querySelectorAll('[data-flow]').forEach(b=>b.onclick=()=>{const k=b.dataset.flow;if(k==='shop')return showView('shop');if(k==='ready'){const r=$('pReady'),d=r&&r.querySelector('details');if(d&&!r.hidden){d.open=true;r.scrollIntoView({block:'start'});const sm=d.querySelector('summary');if(sm)sm.focus({preventScroll:true});return}}const t=k==='review'?$('pThreads'):k==='cmp'?($('pCmp').firstElementChild||$('pThreads')):$('pSummary');if(t){t.scrollIntoView({block:'start'});const h=t.querySelector('h3,h2,b,button');if(h&&!h.matches('button')){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}}})}
 /* Flow phase 3: folded project sections keep the open/closed state the user chose while the page re-renders. */
 var openSec={};const secOpen=(id,def)=>((id in openSec)?openSec[id]:def)?' open':'';
 document.addEventListener('click',e=>{const sm=e.target&&e.target.closest&&e.target.closest('summary');const d=sm&&sm.parentElement;if(d&&/^p(Details|AwBox|ReviewBox|HaveBox)$/.test(d.id))openSec[d.id]=!d.open},true);

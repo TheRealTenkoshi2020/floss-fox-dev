@@ -27,10 +27,12 @@ const STR=Object.freeze({
 });
 function storageMap(project){const T=root.FlossFoxThreadsUI;if(!T||typeof T.data!=='function')return{};const d=T.data()||{};return (project&&project.demo?d.demo:d.threads)||{}}
 /* One in-project readiness view. Takes the plan the project editor already computed (no second calculation). */
+/* Flow pass item 7: folded by default to keep the project page short; stays open once you open it. */
+const OPENR={};
 function renderInto(host,project,plan){if(!host)return;host.replaceChildren();let r;
  try{r=CORE.summarize(JSON.parse(JSON.stringify(project)),plan,storageMap(project))}catch{host.append(create('p','hint',STR.unavailable));return}
  if(!r.total){host.hidden=true;return}host.hidden=false;
- const det=create('details','ff-readiness ff-readiness-inline');det.open=!r.ready;const sum=create('summary','',STR.title+' ');sum.append(create('span','mut',`(${STR.counts(r)})`));det.append(sum,create('p','hint',STR.intro));
+ const det=create('details','ff-readiness ff-readiness-inline');det.open=!!OPENR[project.id];det.addEventListener('toggle',()=>{OPENR[project.id]=det.open});const sum=create('summary','',STR.title+' ');sum.append(create('span','mut',`(${STR.counts(r)})`));det.append(sum,create('p','hint',STR.intro));
  const rows=[['have',STR.confirmed,r.groups.have.concat(r.groups.received)],['buy',STR.buy,r.groups.buy],['awaiting',STR.awaiting,r.groups.awaiting],['review',STR.unknown,r.groups.review]];
  for(const [key,label,list] of rows){if(!list.length)continue;const g=create('div','ff-rg ff-rg-'+key);g.dataset.group=key;g.append(create('h4','',`${label} (${list.length})`));const ul=create('ul','ff-readiness-list');
   for(const t of list){const li=create('li');li.dataset.code=t.code;li.append(create('b','',`DMC ${t.code}`));if(t.remaining!==null&&t.remaining!==undefined)li.append(document.createTextNode(' · '+STR.toBuy(t.remaining)));

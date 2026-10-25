@@ -123,5 +123,22 @@ with sync_playwright() as p:
     ok('F6d switching shows that project\'s list, and a picked project stays picked', g.locator('#shopPick').input_value() == 'p-old' and 'Older' in g.text_content('#shopProj') and '333' in g.inner_text('#shopBody'))
     ok('F6e no page errors', not g.errs, g.errs)
     g.context.close()
+
+    # ---- Item 7: shorter project page; steps and Pip both point to the next step; F.done fix
+    g = page()
+    codes = ['310','321','666','797','820','905','208','413','3865','444']
+    g.evaluate("codes=>FlossFoxProjects.add({id:'p-7',name:'Autumn fox',items:codes.map((c,i)=>({code:c,qty:i<6?1:null})),decisions:Object.fromEntries(codes.map((c,i)=>[c,{status:i<3?'buy':i<5?'have':'check',owned:null}]))})", codes)
+    g.evaluate("FlossFoxProjects.open('p-7')"); g.wait_for_timeout(500)
+    ok('F7a the long readiness list starts folded', g.locator('#pReady details').count() == 1 and not g.evaluate("document.querySelector('#pReady details').open"))
+    ok('F7b the summary is compact on a phone (under 650px)', g.evaluate("document.getElementById('pSum').getBoundingClientRect().height") < 650, g.evaluate("document.getElementById('pSum').getBoundingClientRect().height"))
+    cur = g.get_attribute('#pFlow [aria-current=step]', 'data-flow'); tip = g.inner_text('#pFlow .pftip')
+    ok('F7c with colors still to check, Next points to Readiness, not Shopping', cur == 'ready' and '5 colors still to check' in tip and 'then shop' in tip, (cur, tip))
+    ok('F7d done steps read "(done)" to screen readers, not code', '${' not in g.inner_html('#pFlow') and g.locator('#pFlow .sr').count() >= 1 and g.text_content('#pFlow .sr').strip() == '(done)', g.inner_html('#pFlow')[:300])
+    g.click('#pFlow [data-flow=ready]'); g.wait_for_timeout(200)
+    ok('F7e tapping Readiness opens the list right there', g.evaluate("document.querySelector('#pReady details').open"))
+    g.evaluate("document.querySelector('#pReady details').open=true"); g.click('#pFlow [data-flow=review]'); g.wait_for_timeout(200)
+    ok('F7f the readiness list stays open once you opened it', g.evaluate("document.querySelector('#pReady details').open"))
+    ok('F7g no page errors', not g.errs, g.errs)
+    g.context.close()
     b.close()
 print(f'flow_pass: {sum(R)} passed, {len(R)-sum(R)} failed'); sys.exit(0 if all(R) else 1)
