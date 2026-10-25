@@ -16,7 +16,7 @@
   const stored = S.read();
   const wrap = document.createElement('section'); wrap.className = 'bknotice noprint ffdraft'; wrap.id = 'ffDraftRecovery'; wrap.hidden = true;
   wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Unfinished list');
-  const heading = document.createElement('p'); const hb = document.createElement('b'); hb.textContent = 'Continue an unfinished list?'; heading.append(hb);
+  const heading = document.createElement('p'); const hb = document.createElement('b'); hb.textContent = 'Pick up where you left off?'; heading.append(hb);
   const desc = document.createElement('p'); desc.className = 'hint';
   const buttons = document.createElement('div'); buttons.className = 'ffdraft-row'; buttons.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px';
   const restore = document.createElement('button'); restore.type = 'button'; restore.className = 'pri small'; restore.id = 'ffDraftRestore'; restore.textContent = 'Restore my list';
@@ -28,23 +28,23 @@
   const show = t => { desc.textContent = t; wrap.hidden = false; };
   const hide = () => { wrap.hidden = true; };
   if (stored.status === 'ok' && C.shouldOfferRecovery(box.value, stored, demo())) {
-    blocked = true; show('An unfinished color list is waiting in this browser. Your saved projects and threads were not changed. Backups do not include unfinished lists.');
+    blocked = true; show('You have an unfinished color list waiting in this browser. Your saved projects and threads weren\'t changed. Note: backups don\'t include unfinished lists.');
   } else if (stored.status === 'protected') {
-    blocked = true; restore.disabled = true; show('An unfinished list saved here could not be read, maybe by a newer Floss Fox. It was left untouched so nothing is lost, and new typing is not kept until you discard it.');
+    blocked = true; restore.disabled = true; show('We found an unfinished list here but couldn\'t read it. A newer version of Floss Fox may have saved it. We left it untouched so nothing is lost. Anything new you type won\'t be kept until you discard it.');
   } else if (stored.status === 'unavailable') {
-    blocked = true; restore.disabled = true; discard.disabled = true; show('This browser is not letting Floss Fox keep unfinished lists. Copy your text somewhere safe before you close this tab.');
+    blocked = true; restore.disabled = true; discard.disabled = true; show('This browser isn\'t letting us keep unfinished lists. Copy your text somewhere safe before you close this tab.');
   }
   function flush() {
     if (blocked || demo() || box.value === committedText || !box.value.trim()) return;
     const res = S.save(box.value, brand.value);
     if (res.ok) { if (warned) { warned = false; message(''); } return; }
-    if (res.reason === 'write-failed' || res.reason === 'unavailable') { warned = true; message('Your unfinished list could not be kept in this browser. Copy it somewhere safe before leaving.'); }
+    if (res.reason === 'write-failed' || res.reason === 'unavailable') { warned = true; message('We couldn\'t keep your unfinished list in this browser. Copy it somewhere safe before you leave.'); }
   }
   function queue() { if (blocked || demo()) return; if (box.value !== committedText) committedText = null; clearTimeout(timer); timer = setTimeout(flush, 600); }
   restore.addEventListener('click', async () => {
-    const data = S.read(); if (data.status !== 'ok') { message('The unfinished list could not be read. Nothing was changed.'); return; }
+    const data = S.read(); if (data.status !== 'ok') { message('We couldn\'t read the unfinished list. Nothing was changed.'); return; }
     if (box.value.trim() && box.value !== data.item.text) {
-      const ok = window.FlossFoxConfirm ? await FlossFoxConfirm.ask({pose: 'thinking', title: 'Replace the text in the box?', body: 'The text in the paste box now is swapped for your unfinished list.', go: 'Replace', keep: 'Keep my text'}) : window.confirm('Replace the text in the paste box with your unfinished list?');
+      const ok = window.FlossFoxConfirm ? await FlossFoxConfirm.ask({pose: 'thinking', title: 'Replace the text in the box?', body: 'The text in the paste box now will be replaced by your unfinished list.', go: 'Replace', keep: 'Keep my text'}) : window.confirm('Replace the text in the paste box with your unfinished list?');
       if (!ok) return;
     }
     box.value = data.item.text;
@@ -53,9 +53,9 @@
     message('Your list is back. Tap Add my colors to look it over.'); box.focus();
   });
   discard.addEventListener('click', async () => {
-    const ok = window.FlossFoxConfirm ? await FlossFoxConfirm.ask({pose: 'worried', title: 'Discard the unfinished list?', body: 'It cannot be brought back. Your saved projects and threads stay put.', go: 'Discard', keep: 'Keep it'}) : window.confirm('Discard the unfinished list? This cannot be undone.');
+    const ok = window.FlossFoxConfirm ? await FlossFoxConfirm.ask({pose: 'worried', title: 'Discard the unfinished list?', body: 'This can\'t be undone. Your saved projects and threads stay safe.', go: 'Discard', keep: 'Keep it'}) : window.confirm('Discard the unfinished list? This cannot be undone.');
     if (!ok) return;
-    const st = S.clear({force: true}); if (!st.ok) { message('The unfinished list could not be discarded. Browser storage may be blocked.'); return; }
+    const st = S.clear({force: true}); if (!st.ok) { message('We couldn\'t discard the unfinished list. Browser storage may be blocked.'); return; }
     blocked = false; hide(); message('Unfinished list discarded.');
     if (box.value.trim() && !demo()) flush();
   });
@@ -83,7 +83,7 @@
     if (e.key !== key || blocked || demo()) return;
     const other = S.read();
     if (other.status === 'ok' && box.value.trim() && other.item.text !== box.value) {
-      blocked = true; clearTimeout(timer); show('Your unfinished list changed in another tab. Copy the text you are editing first, then choose whether to restore the other one.');
+      blocked = true; clearTimeout(timer); show('Your unfinished list changed in another tab. Copy the text you\'re working on first, then choose whether to restore the other list.');
     }
   });
   window.FlossFoxDraftUI = {key, recovery: () => S.read()};

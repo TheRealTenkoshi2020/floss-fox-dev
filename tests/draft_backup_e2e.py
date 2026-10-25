@@ -27,7 +27,7 @@ with sync_playwright() as p:
         ok(f'{w}px DRAFT-1 typing keeps the exact text and brand', d and d['text'] == LIST and d['brand'] == 'anchor', d)
         g.reload(); g.wait_for_load_state('networkidle')
         ok(f'{w}px DRAFT-1 after refresh: Restore/Discard offered, no project made', g.locator('#ffDraftRecovery').is_visible() and g.locator('#ffDraftRestore').is_visible() and g.locator('#ffDraftDiscard').is_visible() and json.loads(ls(g, KEY) or '{"projects":[]}')['projects'] == [])
-        ok(f'{w}px DRAFT-1 card says backups leave unfinished lists out', 'Backups do not include unfinished lists' in g.inner_text('#ffDraftRecovery'))
+        ok(f'{w}px DRAFT-1 card says backups leave unfinished lists out', "backups don't include unfinished lists" in g.inner_text('#ffDraftRecovery'))
         g.click('#ffDraftRestore'); g.wait_for_timeout(200)
         ok(f'{w}px DRAFT-1 restore brings back the same text and brand', g.input_value('#inp') == LIST and g.input_value('#dest') == 'anchor' and g.locator('#ffDraftRecovery').is_hidden())
         sw = g.evaluate("document.documentElement.scrollWidth<=innerWidth+1")
@@ -73,7 +73,7 @@ with sync_playwright() as p:
         ok(f'{w}px DRAFT-5 failed project save keeps the draft, no "saved" claim', ls(g, SK) is not None and json.loads(ls(g, SK))['text'] == LIST and g.locator('#copymsg .ffsaved').count() == 0)
         g.evaluate("(()=>{Storage.prototype.setItem=function(k,v){throw new DOMException('full','QuotaExceededError')};return 1})()")
         g.fill('#inp', LIST + '\n898'); g.wait_for_timeout(900)
-        ok(f'{w}px DRAFT-5 draft write failing says so plainly', 'could not be kept' in g.inner_text('#ffDraftMsg'))
+        ok(f'{w}px DRAFT-5 draft write failing says so plainly', "couldn't keep your unfinished list" in g.inner_text('#ffDraftMsg'))
         g.evaluate("(()=>{Storage.prototype.setItem=window.__o;return 1})()")
         # BACKUP-1: demo threads -> no prompt; real thread -> once
         g.evaluate("localStorage.clear()"); fresh(g)
@@ -82,7 +82,7 @@ with sync_playwright() as p:
         g.evaluate(f"(()=>{{const d=JSON.parse(localStorage.getItem('{TK}'));d.threads['898']={{n:0,partial:false,restock:false,updated:''}};localStorage.setItem('{TK}',JSON.stringify(d));return 1}})()"); g.reload(); g.wait_for_load_state('networkidle'); g.evaluate("FlossFoxThreadsUI.set('898',{restock:true})"); g.wait_for_timeout(100)
         ok(f'{w}px BACKUP-1 zero-count row only: no prompt', g.locator('#bkFirst').is_hidden())
         g.evaluate("FlossFoxThreadsUI.addItems([{code:'310',qty:1}])"); g.wait_for_timeout(100)
-        ok(f'{w}px BACKUP-1 first real thread: gentle prompt once', g.locator('#bkFirst').is_visible() and json.loads(ls(g, FK))['schema'] == 1 and 'saved in this browser' in g.inner_text('#bkFirst'))
+        ok(f'{w}px BACKUP-1 first real thread: gentle prompt once', g.locator('#bkFirst').is_visible() and json.loads(ls(g, FK))['schema'] == 1 and 'live in this browser' in g.inner_text('#bkFirst'))
         ok(f'{w}px BACKUP-1 prompt fits the screen', g.evaluate("document.getElementById('bkFirst').getBoundingClientRect().right<=innerWidth+1"))
         # BACKUP-2: download start is not a confirmed backup
         with g.expect_download() as dl: g.click('#bkFirstExport')
