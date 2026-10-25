@@ -21,3 +21,7 @@
  nav.tabs #tabSettings{display:inline-flex!important}
  #askPipBtn{min-height:44px;padding-top:2px;padding-bottom:2px}#askPipBtn img{width:28px;height:auto}
 }
+/* Item 6: store links as small chips side by side; the store note is a one-line fold. */
+.ffstore{margin:2px 0 8px}.ffstore summary{font-size:.85rem;min-height:32px;display:flex;align-items:center}
+#shopView .ff-skein-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#shopView .ff-skein-pill{display:inline-flex;align-items:center;font-size:.8rem;padding:4px 10px;min-height:36px;width:auto;border-radius:999px}
