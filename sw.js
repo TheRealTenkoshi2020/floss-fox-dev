@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-54';
+const CACHE = 'flossfox-dev-v2.0a-ci005-55';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -52,6 +52,10 @@ const CORE = [
   "pip.js",
   "privacy.html",
   "projects.js",
+  "allocations.js",
+  "backup-allocation-merge.js",
+  "store-mode-core.js",
+  "kit-preview-core.js",
   "shop/merchants.js",
   "shop/merchants.mock.js",
   "shop/offers.js",
