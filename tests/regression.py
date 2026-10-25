@@ -762,7 +762,7 @@ with sync_playwright() as p:
     ok('T4f no highlight left behind', g.locator('.tour-target').count() == 0)
     g.wait_for_timeout(200); ok('C1 tour finished -> goodbye (walking off, waving)', g.evaluate("FlossFoxPip.current()") == 'goodbye' and g.evaluate("document.getElementById('pipImg').dataset.pose||document.getElementById('pipImg').currentSrc").find('goodbye') >= 0, g.evaluate("FlossFoxPip.current()"))
     st_keys = g.evaluate("Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])")
-    ok('T16 storage: only small prefs, never the thread list', all(k in (TK, HK, PFX + '.pip.v1') for k, v in st_keys) and not any('321' in v for k, v in st_keys), st_keys)
+    ok('T16 storage: only small prefs, never the thread list', all(k in (TK, HK, PFX + '.pip.v1', PFX + '.scratch.v1') for k, v in st_keys) and not any('321' in v for k, v in st_keys if k != PFX + '.scratch.v1'), st_keys)  # scratch = Phase 2 unfinished-list draft (local only, by design)
     g.reload(); ok('T4g after finishing, no re-ask on reload', g.locator('#tourInvite').count() == 0)
     # decline / skip
     d = tp(); d.click('#tourNo'); ok('T3 decline: invite gone, stored', d.locator('#tourInvite').count() == 0 and json.loads(d.evaluate(f"localStorage.getItem('{TK}')"))['status'] == 'dismissed'); d.reload(); ok('T3b no re-ask after reload', d.locator('#tourInvite').count() == 0 and d.locator('#tourCard').count() == 0)

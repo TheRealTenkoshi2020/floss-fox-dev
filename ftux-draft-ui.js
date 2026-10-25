@@ -18,7 +18,7 @@
   wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Unfinished list');
   const heading = document.createElement('p'); const hb = document.createElement('b'); hb.textContent = 'Continue an unfinished list?'; heading.append(hb);
   const desc = document.createElement('p'); desc.className = 'hint';
-  const buttons = document.createElement('div'); buttons.className = 'row';
+  const buttons = document.createElement('div'); buttons.className = 'ffdraft-row'; buttons.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:10px';
   const restore = document.createElement('button'); restore.type = 'button'; restore.className = 'pri small'; restore.id = 'ffDraftRestore'; restore.textContent = 'Restore my list';
   const discard = document.createElement('button'); discard.type = 'button'; discard.className = 'sec small'; discard.id = 'ffDraftDiscard'; discard.textContent = 'Discard it';
   const msg = document.createElement('p'); msg.className = 'hint'; msg.id = 'ffDraftMsg'; msg.setAttribute('role', 'status'); msg.setAttribute('aria-live', 'polite');
