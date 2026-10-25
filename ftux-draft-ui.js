@@ -26,7 +26,7 @@
   box.insertAdjacentElement('beforebegin', wrap); wrap.insertAdjacentElement('afterend', msg);
   const message = t => { msg.textContent = t; msg.style.margin = t ? '0 0 8px' : '0'; };
   /* While the recovery card is up, the tour's first-visit invite steps aside (Myke, 2026-10-25); it comes back when the card closes. */
-  const invite = on => { const i = document.getElementById('tourInvite'); if (i) i.style.display = on ? '' : 'none'; };
+  const invite = on => { const i = document.getElementById('tourInvite'), h = i && i.querySelector('#inviteH'); if (i && !(h && h.textContent === 'Pick up the tour?')) /* first-visit invite only; the mid-tour resume offer is left as is */ i.style.display = on ? '' : 'none'; };
   const syncInvite = () => invite(wrap.hidden);
   new MutationObserver(syncInvite).observe(document.querySelector('.hero') || document.body, {childList: true, subtree: true});
   const show = t => { desc.textContent = t; wrap.hidden = false; syncInvite(); };
