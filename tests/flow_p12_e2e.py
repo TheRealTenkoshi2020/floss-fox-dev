@@ -53,7 +53,7 @@ with sync_playwright() as p:
     ok('a11 empty collection: says so with Go to My threads, changes nothing', 'Your thread collection is empty' in g.inner_text('#pAuto') and g.is_visible('#pAutoThreads') and store(g)[0]['decisions']['310']['status'] is None, g.inner_text('#pAuto'))
     # (b) one shopping view
     g = page(seed([], threads=False)); g.click('#tabShop'); g.wait_for_timeout(200); t = g.inner_text('#shopCard')
-    ok('b1 empty Shopping guides you to import or add colors (not a dead end)', 'Nothing to shop for yet' in t and g.is_visible('#shopEmptyImport') and g.is_visible('#shopEmptyPaste'), t)
+    ok('b1 empty Shopping guides you to import or add colors (not a dead end)', 'Nothing in the basket yet' in t and g.is_visible('#shopEmptyImport') and g.is_visible('#shopEmptyPaste'), t)
     ok('b2 Plan shopping for several projects is hidden with 0 projects', not g.is_visible('#shopSeveral'))
     g.click('#shopEmptyImport'); ok('b3 Import from empty Shopping opens the importer', g.is_visible('#ffPatternDialog')); g.click('#ffPatternDialog .pat-header button')
     paste_save(g, '310 x1\n321 x2', 'Alpha'); paste_save(g, '815 x1', 'Beta')
@@ -84,7 +84,7 @@ with sync_playwright() as p:
     ok('d2 old label gone', 'Import a full pattern' not in g.inner_text('body'))
     # (e) save feedback + name prompt
     g = page(seed([])); paste_save(g, '310 x1'); m = g.inner_text('#copymsg')
-    ok('e1 Find floss save: one clear saved line, default name My project, name field offered', '✓ Saved “My project” in this browser on this device.' in m and g.input_value('#savedName') == 'My project', m)
+    ok('e1 Find floss save: one clear saved line, default name My project, name field offered', '✓ “My project” is safely tucked away in this browser on this device.' in m and g.input_value('#savedName') == 'My project', m)
     g.fill('#savedName', 'Fox sampler'); g.click('#savedRename'); g.wait_for_timeout(200); ok('e2 renaming from the prompt saves the name', store(g)[0]['name'] == 'Fox sampler')
     g.click('#openSaved'); g.wait_for_timeout(300); ok('e3 project shows the saved badge in the same wording', g.inner_text('#pSaved').startswith('Saved in this browser · '), g.inner_text('#pSaved'))
     g.click('#tabConvert'); g.click('#convertView .pat-launch'); g.set_input_files('#patFile', 'tests/fixtures/patterns/native-legend.pdf'); g.wait_for_timeout(2500)

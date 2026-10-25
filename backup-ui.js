@@ -22,7 +22,7 @@ function render(){
  $('bkSettingsStatus').textContent=!prefsWritable?'Backup reminder settings could not be read or saved. They were left untouched; exporting still works.':!stateWritable?'This browser could not save reminder history. Exporting still works.':'';
  const due=stateWritable?C.reminder(config,meta,Date.now(),hasData()):{due:false};
  $('bkReminder').hidden=!due.due;
- $('bkReminderMsg').textContent=due.reason==='major-edit'?'Your collection changed by a large amount. Save a fresh backup file to keep a copy.':'It\'s time to save another backup file. Your projects and collection live in this browser.';
+ $('bkReminderMsg').textContent=due.reason==='major-edit'?'Your collection changed by a large amount. Save a fresh backup file to keep a copy.':'Time to put a fresh backup file on the shelf. Your projects and collection live in this browser.';
  for(const id of ['settingsExport','bkReminderExport'])$(id).disabled=busy;
 }
 function changePrefs(){
@@ -38,7 +38,7 @@ function confirmed(snapshot){
  const unchanged=C.revision(P.fullBackup())===snapshot.revision;
  const next={...current.value,lastConfirmedAt:Date.now(),snoozedUntil:null,majorToken:unchanged?null:current.value.majorToken};
  const ok=putState(next);
- feedback(!ok?'A file copy was saved, but reminder history could not be stored.':unchanged?'Backup file save confirmed. Keep the file somewhere safe.':'Backup file save confirmed. Your data changed after that copy was prepared; save another copy to include the newest changes.');
+ feedback(!ok?'A file copy was saved, but reminder history could not be stored.':unchanged?'Backup file save confirmed. Your memories now have a second home. Store the file where you will find it again.':'Backup file save confirmed. Your data changed after that copy was prepared; save another copy to include the newest changes.');
  render();if(ok&&window.FlossFoxPipB2)window.FlossFoxPipB2.backup();return ok;
 }
 async function exportBackup(options={}){

@@ -135,7 +135,7 @@ with sync_playwright() as p:
 
     # ---------- Projects ----------
     conv(pg, REAL, 'dmc'); pg.fill('#newProjName', 'Real pattern'); pg.click('#saveProj')
-    ok('save as project', 'Saved “Real pattern” in this browser on this device.' in pg.inner_text('#copymsg'), pg.inner_text('#copymsg'))
+    ok('save as project', '“Real pattern” is safely tucked away in this browser on this device.' in pg.inner_text('#copymsg'), pg.inner_text('#copymsg'))
     pg.click('#tabProjects'); ok('project listed', 'Real pattern' in pg.inner_text('#projList') and '10 colors' in pg.inner_text('#projList'), pg.inner_text('#projList'))
     pg.click('[data-open]'); pg.wait_for_timeout(100)
     expand(pg, '310'); expand(pg, 'WHITE')
@@ -283,10 +283,10 @@ with sync_playwright() as p:
     # ---------- Milestone 1.2: welcome, example mode, search/filter, shopping mode, a11y ----------
     CJS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'contrast.js'), encoding='utf-8').read()
     h = page(412, True); h.goto(B)
-    ok('N1 welcome headline, label, 3 steps, actions', 'Your thread list, made simple.' in h.inner_text('h1') and h.inner_text('label[for=inp]') == 'Paste your DMC color list' and h.locator('.hero .steps li').count() == 3 and h.inner_text('#go') == 'Add my colors' and h.inner_text('#sample') == 'Try an example')
+    ok('N1 welcome headline, label, 3 steps, actions', 'Watch your colors come to light.' in h.inner_text('h1') and h.inner_text('label[for=inp]') == 'Paste your DMC color list' and h.locator('.hero .steps li').count() == 3 and h.inner_text('#go') == 'Add my colors' and h.inner_text('#sample') == 'Try an example')
     ok('N1b nav current state (aria-pressed + aria-current)', h.get_attribute('#tabConvert', 'aria-current') == 'page' and h.get_attribute('#tabProjects', 'aria-pressed') == 'false')
     h.click('#tabHelp'); ok('N1c help view opens, others hidden', h.locator('#helpView').is_visible() and h.locator('#convertView').is_hidden() and h.get_attribute('#tabHelp', 'aria-current') == 'page')
-    h.click('#tabConvert'); h.click('#openProj'); ok('N1d Open my projects + welcoming empty state', h.locator('#projectsView').is_visible() and 'No projects yet' in h.inner_text('#projList') and h.locator('#emptyAdd').is_visible())
+    h.click('#tabConvert'); h.click('#openProj'); ok('N1d Open my projects + welcoming empty state', h.locator('#projectsView').is_visible() and 'Every masterpiece begins with a single stitch' in h.inner_text('#projList') and h.locator('#emptyAdd').is_visible())
     h.click('#emptyAdd'); ok('N1e empty-state action returns to paste box', h.locator('#convertView').is_visible() and h.evaluate('document.activeElement.id') == 'inp')
     h.fill('#inp', '699 x3'); h.click('#sample')
     ok('N2 example shows banner and keeps draft safe', h.locator('#exampleBanner').is_visible() and 'DMC 310 Black x2' in h.input_value('#inp') and h.inner_text('#exitExample') == 'Back to my list')
@@ -470,7 +470,7 @@ with sync_playwright() as p:
     c0 = pr.locator('#pCel').count()
     pr.evaluate("()=>{for(let k=0;k<20;k++){const c=[...document.querySelectorAll('.cards [data-st][value=have]')].find(r=>!r.checked);if(!c)break;c.click()}}")
     pr.wait_for_timeout(100); rdy = pr.evaluate("document.getElementById('pSummary').dataset.ready")
-    ok('Q5 project turning ready shows one celebrating Pip', c0 == 0 and rdy == 'true' and pr.locator('#pCel img').count() == 1 and "You're ready to stitch!" in pr.inner_text('#pSummary'), (c0, rdy, pr.locator('#pCel').count()))
+    ok('Q5 project turning ready shows one celebrating Pip', c0 == 0 and rdy == 'true' and pr.locator('#pCel img').count() == 1 and 'Your hoop is ready!' in pr.inner_text('#pSummary'), (c0, rdy, pr.locator('#pCel').count()))
     pr.wait_for_timeout(4300); ok('Q5b celebration settles (animation class removed, no loop)', pr.locator('#pCel.pip-cheer').count() == 0 and pr.locator('#pCel').count() == 1)
     pr.evaluate("document.querySelector('.cards [data-st][value=have]').click()"); pr.wait_for_timeout(100)
     ok('Q5c re-render while still ready: no repeat celebration', pr.locator('#pCel.pip-cheer').count() == 0)
@@ -604,7 +604,7 @@ with sync_playwright() as p:
     if PREVIEW:
         a.evaluate("FLOSS_FOX_SHOP.mockMerchants=[]"); a.click('#go'); a.wait_for_timeout(100)
     sec = a.locator('#wtb .wtb')
-    ok('S5 approved merchant: section appears after the list, heading exact', sec.count() == 1 and a.inner_text('#wtb h3') == 'Where to buy your missing supplies' and a.evaluate("document.getElementById('shop').compareDocumentPosition(document.getElementById('wtb'))&4") > 0)
+    ok('S5 approved merchant: section appears after the list, heading exact', sec.count() == 1 and a.inner_text('#wtb h3') == "Places to find what's still missing" and a.evaluate("document.getElementById('shop').compareDocumentPosition(document.getElementById('wtb'))&4") > 0)
     ok('S5b disclosure exact, visible, before the first link', 'Floss Fox may earn a commission if you buy through these links, at no extra cost to you.' in a.inner_text('#wtb .wtbdisc') and a.evaluate("(()=>{const d=document.querySelector('#wtb .wtbdisc'),l=document.querySelector('#wtb a.wtblink');return !!(d.compareDocumentPosition(l)&4)&&d.offsetHeight>0})()"))
     ex = a.locator('#wtb a[data-level=A]')
     ok('S6 exact product link: "View DMC 310 6-strand cotton at …", only for 310', ex.count() == 1 and ex.first.inner_text().startswith('View DMC 310 6-strand cotton at Fixture Floss Store'), [ex.nth(k).inner_text() for k in range(ex.count())])
@@ -922,7 +922,7 @@ with sync_playwright() as p:
     ov = sv.evaluate("(()=>{const t=document.querySelector('#copymsg .savedtoast').getBoundingClientRect();return [...document.querySelectorAll('button,input,select,textarea,a')].filter(e=>e.offsetParent).filter(e=>{const r=e.getBoundingClientRect();return !(r.right<=t.left||r.left>=t.right||r.bottom<=t.top||r.top>=t.bottom)}).map(e=>e.id||e.tagName)})()")
     ok('B5b toast never covers controls (inline in the status line)', not ov, ov)
     sv.wait_for_timeout(3800); ok('B5c toast auto-dismisses; status text stays', toast('#copymsg') is None and 'Copied' in sv.inner_text('#copymsg'))
-    sv.fill('#newProjName', 'Toast'); sv.click('#saveProj'); sv.wait_for_timeout(150); ok('B5d project saved -> saved toast', toast('#copymsg') is not None and 'Saved' in sv.inner_text('#copymsg'))
+    sv.fill('#newProjName', 'Toast'); sv.click('#saveProj'); sv.wait_for_timeout(150); ok('B5d project saved -> saved toast', toast('#copymsg') is not None and 'safely tucked away' in sv.inner_text('#copymsg'))
     sv.click('#openSaved'); sv.wait_for_timeout(150); sv.click('#pCopy'); sv.wait_for_timeout(200); ok('B5e project copied -> saved toast', toast('#pMsg') is not None)
     sv.click('#pAddBox summary') if not sv.locator('#pAdd').is_visible() else None; sv.fill('#pAdd', '3865'); sv.click('#pAddBtn'); sv.wait_for_timeout(150)
     ok('B5f colors added -> saved toast with a short note', toast('#pMsg') is not None and 'Added 1 color' in sv.inner_text('#pMsg'))
