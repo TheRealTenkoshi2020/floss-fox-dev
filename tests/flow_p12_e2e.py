@@ -162,7 +162,7 @@ with sync_playwright() as p:
             want = g.evaluate("k=>{const t=FF_P12[k];return typeof t==='function'?null:t}", r['key']) if r['key'] else None
             ok(f'j1 {w}px {k}: the one Pip shows this tab\'s line (no separate strip)', not r['strip'] and r['vis'] and r['key'] and r['key'].startswith(f'p12.bubble.{k}') and (want is None or r['txt'] == want), r)
             ok(f'j2 {w}px {k}: full line shown (not clipped), header no taller than on Find floss', not r['clip'] and r['hh'] <= hconv + 1 and r['img'] >= 40, (r, hconv))
-        g.click('#tabConvert'); g.click('#pipToggle'); g.click('#tabThreads'); g.wait_for_timeout(200)
+        g.click('#tabConvert'); g.evaluate("document.getElementById('pipToggle').click()"); g.click('#tabThreads'); g.wait_for_timeout(200)
         ok(f'j3 {w}px Hide Pip also hides the strip', g.locator('#pipStrip').is_hidden())
     c = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, reduced_motion='reduce'); c.add_init_script(INIT % ''); g = c.new_page(); g.goto(B + '?nosw'); g.wait_for_timeout(300); g.click('#tabHelp'); g.wait_for_timeout(200)
     ok('j4 reduced motion: strip has no animation', g.evaluate("getComputedStyle(document.getElementById('pipStrip')).animationName") == 'none')

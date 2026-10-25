@@ -52,7 +52,7 @@ window.FF_P12={
   "p12.bubble.project.todo.1":v=>{const {name,have,total,u,b,n,i,time}=v||{};return `${s2(n)} still to check before your list is complete.`},
   "p12.bubble.project.todo.2":"Let's take the steps at the top one at a time.",
   "p12.bubble.project.ready.1":"Every color is covered and checked. Ready to stitch!",
-  "p12.bubble.shop.empty.1":"Open a project and I'll show you what to buy.",
+  "p12.bubble.shop.empty.1":"Open a project and I'll show you what's left to get.",
   "p12.bubble.shop.has.1":"Tap Bought it as each thread goes in your basket.",
   "p12.bubble.shop.has.2":"Check threads in when they arrive, so they count as yours.",
   "p12.bubble.shop.none.1":"Nothing left to buy for this project.",

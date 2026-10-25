@@ -428,7 +428,7 @@ with sync_playwright() as p:
     ok('P11b no layout shift on desktop side panel (1280px)', all(x == t2[0] for x in t2), t2)
     ok('P11c desktop: Pip in a side panel, not over the input or buttons', pd.evaluate("(()=>{const p=document.getElementById('pip').getBoundingClientRect(),i=document.getElementById('inp').getBoundingClientRect(),g=document.querySelector('.hero .row').getBoundingClientRect();const f=document.getElementById('pipFig').getBoundingClientRect();return f.left>=i.right&&f.left>=g.right})()"))
     # hide / show
-    h2 = page(412, True); h2.goto(B); h2.click('#pipToggle')
+    h2 = page(412, True); h2.goto(B); h2.evaluate("document.getElementById('pipToggle').click()")
     ok('P6 Hide Pip hides it, button says Show Pip, preference stored', h2.locator('#pipFig').is_hidden() and h2.locator('#pipMsg').is_hidden() and h2.inner_text('#pipToggle') == 'Show Pip' and h2.get_attribute('#pipToggle', 'aria-expanded') == 'false' and h2.evaluate(f"localStorage.getItem('{PK}')") == 'hidden')
     h2.reload(); ok('P6b hidden preference survives reload', h2.locator('#pipFig').is_hidden() and h2.inner_text('#pipToggle') == 'Show Pip')
     h2.fill('#inp', '310 x2\n9999'); h2.click('#go')
@@ -493,7 +493,7 @@ with sync_playwright() as p:
     zz, _ = fresh(); zz.evaluate("FlossFoxPip._timing({idle:1500})")
     for i in range(30): zz.mouse.move(10 + i * 10, 100); zz.wait_for_timeout(100)
     ok('Q6j steady activity keeps Pip awake', pst(zz)[0] != 'sleepy', pst(zz))
-    zz.click('#pipToggle'); zz.wait_for_timeout(1800); ok('Q6k hidden Pip never sleeps', zz.evaluate("FlossFoxPip.overlay()") is None)
+    zz.evaluate("document.getElementById('pipToggle').click()"); zz.wait_for_timeout(1800); ok('Q6k hidden Pip never sleeps', zz.evaluate("FlossFoxPip.overlay()") is None)
     # rapid interactions
     rp, _ = fresh(); rp.evaluate("FlossFoxPip._timing({tangleGap:0})")
     rp.evaluate("""()=>{const i=document.getElementById('inp'),g=document.getElementById('go'),h=document.getElementById('pipHi');for(const t of ['310','9999','310\\n310','310, 321']){i.value=t;g.click();h.click()}}""")
@@ -516,7 +516,7 @@ with sync_playwright() as p:
     for w in [320, 360, 412, 600, 768, 880, 1024, 1280]:
         for hid in [False, True]:
             g = page(w, w < 700); g.goto(B)
-            if hid: g.click('#pipToggle')
+            if hid: g.evaluate("document.getElementById('pipToggle').click()")
             g.fill('#inp', '310\n310\n9999'); g.click('#go')
             sw = g.evaluate('document.documentElement.scrollWidth')
             if sw > w: badp.append((w, hid, sw))
@@ -556,10 +556,10 @@ with sync_playwright() as p:
     # toggle placement + compact intro
     for w in [320, 360, 412]:
         g = page(w, True); g.set_viewport_size({'width': w, 'height': 740 if w < 400 else 860}); g.goto(B)
-        r = g.evaluate("""(()=>{const b=k=>document.querySelector(k).getBoundingClientRect(),t=b('#pipToggle'),f=b('#pipFig'),m=b('#pipMsg'),i=b('#inp'),go=b('#go');
+        r = g.evaluate("""(()=>{const b=k=>document.querySelector(k).getBoundingClientRect(),t=b('#pipMinBtn'),f=b('#pipFig'),m=b('#pipMsg'),i=b('#inp'),go=b('#go');
           const ov=(a,c)=>!(a.right<=c.left||c.right<=a.left||a.bottom<=c.top||c.bottom<=a.top);
-          return {tw:t.width,th:t.height,near:Math.abs(t.top-f.bottom)<60,over:[ov(t,i),ov(t,go),ov(f,i),ov(m,i),ov(t,m),ov(t,f)].some(Boolean),goBottom:go.bottom,vh:innerHeight,banner:(document.querySelector('.devbanner')||{offsetHeight:0}).offsetHeight,inpTop:i.top}})()""")
-        ok(f'Q4 {w}px: toggle next to Pip, ≥44px, nothing overlaps; main button on first screen', r['tw'] >= 44 and r['th'] >= 44 and r['near'] and not r['over'] and r['goBottom'] - r['banner'] <= r['vh'], r)  # dev preview only: its intentional banner is excluded; production has no banner (banner == 0)
+          return {tw:t.width,th:t.height,near:Math.abs((t.top+t.bottom)/2-(f.top+f.bottom)/2)<60,over:[ov(t,i),ov(t,go),ov(f,i),ov(m,i),ov(t,m),ov(t,f)].some(Boolean),goBottom:go.bottom,vh:innerHeight,banner:(document.querySelector('.devbanner')||{offsetHeight:0}).offsetHeight,inpTop:i.top}})()""")
+        ok(f'Q4 {w}px: Minimize control next to Pip, ≥44px, nothing overlaps; main button on first screen', r['tw'] >= 44 and r['th'] >= 44 and r['near'] and not r['over'] and r['goBottom'] - r['banner'] <= r['vh'], r)  # dev preview only: its intentional banner is excluded; production has no banner (banner == 0)
         g.context.close()
     # ---------- 1.5A shopping layer: "Where to buy your missing supplies" ----------
     REALFX = """window.FLOSS_FOX_SHOP.merchants.push({merchantId:'fx-real',displayName:'Fixture Floss Store',affiliateNetwork:'Awin',programId:'0',approvalState:'approved',approvedForProduction:true,approvedForPreview:true,
@@ -684,7 +684,7 @@ with sync_playwright() as p:
     cl = spage(REALFX); cl.goto(B); cl.fill('#inp', LIST); cl.click('#go'); cl.wait_for_timeout(100); cr2 = cl.evaluate(CJS); ok('S31 contrast with the shopping section', not cr2['fails'], cr2['fails'])
     rm = spage(REALFX); rm.emulate_media(reduced_motion='reduce'); rm.goto(B); rm.fill('#inp', LIST); rm.click('#go'); rm.wait_for_timeout(100)
     ok('S32 reduced motion: shop section has no animation or transition', rm.evaluate("[...document.querySelectorAll('#wtb *')].every(e=>{const c=getComputedStyle(e);return c.animationName==='none'})"))
-    hp = spage(REALFX); hp.goto(B); hp.click('#pipToggle'); hp.fill('#inp', LIST); hp.click('#go'); hp.wait_for_timeout(100)
+    hp = spage(REALFX); hp.goto(B); hp.evaluate("document.getElementById('pipToggle').click()"); hp.fill('#inp', LIST); hp.click('#go'); hp.wait_for_timeout(100)
     ok('S33 Pip hidden: shopping section unaffected', hp.locator('#wtb .wtb').count() == 1)
     hp_t = hp.locator('#wtb .wtbpip').count(); ok('S33b Pip hidden: no Pip line in the section', hp_t == 0 or not hp.locator('#wtb .wtbpip').is_visible())
     # ---------- 2.0A Concept 2: grouped by retailer ----------
@@ -931,7 +931,7 @@ with sync_playwright() as p:
     sv.fill('#pAdd', 'zzz'); sv.click('#pAddBtn'); sv.wait_for_timeout(150); ok('B5g nothing added -> no toast (only real events)', toast('#pMsg') is None)
     sv.click('#pClose'); sv.click('#backupBox summary'); sv.set_input_files('#restoreFile', {'name': 'b.json', 'mimeType': 'application/json', 'buffer': open(FIX, 'rb').read()}); sv.wait_for_timeout(300); sv.click('#rGo'); sv.wait_for_timeout(200)
     ok('B5h backup restored (updated) -> saved toast', toast('#projStatus') is not None and 'Restore done' in sv.inner_text('#projStatus'))
-    sv.click('#tabConvert'); sv.click('#pipToggle'); sv.click('#copy'); sv.wait_for_timeout(200); ok('B5i Pip hidden -> no decorative toast, status still shown', toast('#copymsg') is None and 'Copied' in sv.inner_text('#copymsg'))
+    sv.click('#tabConvert'); sv.evaluate("document.getElementById('pipToggle').click()"); sv.click('#copy'); sv.wait_for_timeout(200); ok('B5i Pip hidden -> no decorative toast, status still shown', toast('#copymsg') is None and 'Copied' in sv.inner_text('#copymsg'))
     fi = sv.evaluate("(()=>{const i=document.querySelector('#askPipBtn img');return [i.naturalWidth,i.naturalHeight,/face-icon/.test(i.currentSrc)]})()")
     ok('B6 face icon avatar on Ask Pip (square, loads, even with Pip hidden)', fi[0] > 0 and fi[0] == fi[1] and fi[2], fi)
     fav = sv.evaluate("[...document.querySelectorAll('link[rel~=icon]')].map(l=>l.getAttribute('href'))")

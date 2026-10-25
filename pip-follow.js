@@ -1,24 +1,24 @@
 /* One Pip per page (dev only). The single companion follows the reader section by section.
    Phones (<880px): slim bar docked at the bottom, page gets matching bottom padding, hidden while typing or while a dialog is open.
    Wide (>=880px): side column beside the active section, never above the tab bar.
-   Section lines are PLACEHOLDERS for Pixel (see pip-follow/STRINGS_FOR_PIXEL.md). Section changes are visual only (not announced);
+   Section lines are APPROVED by Pixel (see pip-follow/STRINGS_FOR_PIXEL.md). Section changes are visual only (not announced);
    events keep their existing single polite announcement. Reads the Pip level, never writes storage. */
 (function(){'use strict';
 const KEY='flossfox-dev.pip.v1',LEVEL_KEY='flossfox-dev.pipLevel.v1';
-const STR={ // PLACEHOLDER lines (Pixel owns wording). null = keep the tab's existing approved line, change pose only.
+const STR={ // APPROVED lines (Pixel, Oct 25). null = keep the tab's existing approved line, change pose only.
  'pf.threads':null,
- 'pf.planCard':'One list for all your projects. Buy once, stitch them all.',
+ 'pf.planCard':'One list for all your projects, so nothing gets bought twice.',
  'pf.projList':null,
  'pf.projEdit':null, // the approved readiness line (Ready to stitch etc.) stays
- 'pf.patCheck':'I compared your pattern with your list. Have a look at what I found.',
- 'pf.skein':'Tell me your fabric and stitches, and I can guess how much floss you need.',
- 'pf.backup':'A backup keeps your projects safe on this device.',
+ 'pf.patCheck':'I compared your pattern with your list. Here\'s what I found.',
+ 'pf.skein':'Tell me your fabric and stitch count, and I\'ll estimate how much floss you need.',
+ 'pf.backup':'Download a backup so your projects stay safe if this browser gets cleared.',
  'pf.shop':null,
  'pf.settings':null,
  'pf.help':null,
  'pf.fcCalc':null,
- 'pf.fcOthers':'Here are the other fabric counts, side by side.',
- 'pf.fcTips':'A few tips for measuring your fabric.'};
+ 'pf.fcOthers':'Here\'s your design on other fabric counts, side by side.',
+ 'pf.fcTips':'A few tips for measuring and cutting your fabric.'};
 // section -> existing pose (no new art anywhere, including Shopping)
 const SECTIONS=[['#thCard','organizing','pf.threads'],['#planCard','presenting','pf.planCard'],['#projListCard','organizing','pf.projList'],
  ['#projEdit','presenting','pf.projEdit'],['#patCheck','pattern-reader','pf.patCheck'],['#pSkein','thinking','pf.skein'],['#backupBox','postmaster','pf.backup'],
