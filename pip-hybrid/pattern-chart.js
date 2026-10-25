@@ -29,15 +29,15 @@ function labelProblems(labels){if(labels.length<5)return{repeat:[],missing:[]};c
 // Key entries: symbol, optional "=", optional "DMC", code, then name words, then (if the page has a Stitches column) a count.
 function keyEntries(rows,validCodes){const out=[];const countCol=rows.some(r=>r.toks.some(t=>/^(stitches|count)$/i.test(t.t)));
  for(const r of rows){const T=r.toks;for(let i=0;i<T.length;i++){let j=i;const sym=T[j].t;if(sym.length>2||/^\d+$/.test(sym)||/^dmc$/i.test(sym))continue;if(/^[x×]$/i.test(sym)&&i>0&&/\d$/.test(T[i-1].t))continue;/* "24 x 18" is a size */j++;
-  if(T[j]&&T[j].t==='='&&sym!=='=')j++;if(T[j]&&/^dmc$/i.test(T[j].t))j++;if(!T[j]||!CODE.test(T[j].t))continue;let code=T[j].t.toUpperCase();/* '1 White' means DMC 01: single digits are 01-09, same as the paste parser */if(/^\d$/.test(code)&&validCodes&&validCodes['0'+code])code='0'+code;
+  if(T[j]&&T[j].t==='='&&sym!=='=')j++;if(T[j]&&/^dmc$/i.test(T[j].t))j++;if(!T[j]||!CODE.test(T[j].t))continue;let code=T[j].t.toUpperCase();if(code==='BLANC'&&validCodes&&validCodes.WHITE)code='WHITE';/* '1 White' means DMC 01: single digits are 01-09, same as the paste parser */if(/^\d$/.test(code)&&validCodes&&validCodes['0'+code])code='0'+code;
   const valid=!validCodes||!!validCodes[code];if(!valid&&!/^\d{3,4}$/.test(code))continue;if(T[j+1]&&/^(stitch|stitches|ct)\b/i.test(T[j+1].t))continue;let k=j+1;const name=[];let count=null;
   while(k<T.length){const t=T[k].t;if(t.length<=2&&!/^\d+$/.test(t)&&T[k+1]&&(CODE.test(T[k+1].t)||T[k+1].t==='='||/^dmc$/i.test(T[k+1].t)))break;if(/^\d+$/.test(t)){if(countCol&&count===null)count=+t;k++;break}name.push(t);k++}
-  for(let q=i;q<k;q++)T[q].used=true;out.push({sym,code,valid,name:name.join(' '),count});i=k-1}}
+  /* Flow pass: a symbol and a bare number with no color name and no DMC or = mark is a chart cell, not a key entry */if(!name.some(w=>/[A-Za-z]{3,}/.test(w))&&!T.slice(i,j).some(t=>t.t==='='||/^dmc$/i.test(t.t)))continue;for(let q=i;q<k;q++)T[q].used=true;out.push({sym,code,valid,name:name.join(' '),count});i=k-1}}
  return out}
 function statedSize(pages){for(const p of pages||[]){const m=/\b(\d{2,4})\s*[x×]\s*(\d{2,4})\s*stitch/i.exec(p.text||'');if(m)return{w:+m[1],h:+m[2]}}return null}
 function check(pages,validCodes){const res={status:'none',extra:[],unused:[],counts:[],symMulti:[],codeMulti:[],labels:{repeat:[],missing:[]},size:null,sum:null};
- if(!Array.isArray(pages)||!pages.length)return res;let key=[],cells=[],labels=[],grid=null,dims=null;
- for(const p of pages){const rows=tokenRows(p.items);key.push(...keyEntries(rows,validCodes));const g=findGrid(rows);if(g){grid=true;cells.push(...g.cells);labels.push(...g.labels);dims=dims||{w:g.width,h:0};dims.h+=g.height}}
+ if(!Array.isArray(pages)||!pages.length)return res;let key=[],cells=[],labels=[],grid=null,dims=null;const loose=new Set();
+ for(const p of pages){const rows=tokenRows(p.items);key.push(...keyEntries(rows,validCodes));const g=findGrid(rows);if(g){grid=true;for(const r of rows)for(const t of r.toks)if(!t.used)loose.add(t.t);cells.push(...g.cells);labels.push(...g.labels);dims=dims||{w:g.width,h:0};dims.h+=g.height}}
  if(!key.length)return res;
  // One symbol, one code (and the reverse). Exact repeats of the same pair are left to the duplicate check.
  const bySym=new Map(),byCode=new Map();for(const e of key){(bySym.get(e.sym)||bySym.set(e.sym,new Set()).get(e.sym)).add(e.code);(byCode.get(e.code)||byCode.set(e.code,new Set()).get(e.code)).add(e.sym)}
@@ -48,7 +48,7 @@ function check(pages,validCodes){const res={status:'none',extra:[],unused:[],cou
  if(!grid){res.status='no-chart';return res}
  res.status='checked';const tally=new Map();for(const s of cells)tally.set(s,(tally.get(s)||0)+1);
  for(const [s,n] of tally)if(!bySym.has(s))res.extra.push({sym:s,n});
- for(const [s,codes] of bySym)if(!tally.has(s))for(const c of codes)if(!res.unused.some(u=>u.code===c))res.unused.push({code:c,sym:s});
+ /* Flow pass: sparse chart rows can fall outside the grid; a symbol still printed on a chart page is in use */for(const [s,codes] of bySym)if(!tally.has(s)&&!loose.has(s))for(const c of codes)if(!res.unused.some(u=>u.code===c))res.unused.push({code:c,sym:s});
  // Counts are compared only when one symbol means exactly one code and the key gives that code one count.
  for(const [c,syms] of byCode){if(syms.size!==1)continue;const s=[...syms][0];if(bySym.get(s).size!==1)continue;const ls=[...new Set(key.filter(e=>e.code===c&&e.count!=null).map(e=>e.count))];if(ls.length!==1)continue;const n=tally.get(s)||0;if(n&&differs(ls[0],n))res.counts.push({code:c,sym:s,listed:ls[0],counted:n})}
  res.labels=labelProblems(labels);

@@ -54,7 +54,7 @@ const SYM_RE=new RegExp('^'+SYM_SRC+'$');
 function splitSegments(line,validCodes){const t=String(line||'').trim().replace(/[\u00a0\t]+/g,' ').split(' ');
  const starts=i=>SYM_RE.test(t[i]||'')&&(validCode(t[i+1],validCodes)||(/^DMC$/i.test(t[i+1]||'')&&validCode(t[i+2],validCodes)));
  if(t.length<5||!starts(0))return [t.join(' ')];const cut=[0];
- for(let i=2;i<t.length-1;i++)if(starts(i)&&/^(?:\d{1,8}|skeins?|stitches)$/i.test(t[i-1]))cut.push(i);
+ for(let i=2;i<t.length-1;i++)if(starts(i)&&!(t[i]==='-'&&/^[A-Za-z]/.test(t[i+1]||''))/* 'DMC 01 - White Tin' is a name, not a second row */&&/^(?:\d{1,8}|skeins?|stitches)$/i.test(t[i-1]))cut.push(i);
  if(cut.length<2)return [t.join(' ')];return cut.map((c,k)=>t.slice(c,cut[k+1]).join(' '))}
 // A legend-shaped row whose number isn't a DMC code ("# 9999 Bogus 10 1"): list it so it is never silently dropped.
 const UNKNOWN_ROW=new RegExp('^'+SYM_SRC+'\\s+\\d{1,4}\\b(?!\\s*(?:x|×|by|ct|count|strands?|stitch(?:es)?|cm|mm|in|inch(?:es)?|aida|linen|evenweave)\\b)');
@@ -73,11 +73,16 @@ function stripChartRun(line){const t=String(line).trim().split(/\s+/);let i=0;co
  while(i<t.length&&t[i].length<=2&&!(i>0&&codeish(t[i+1])&&!/^\d+$/.test(t[i])))i++;if(i>=6)return t.slice(i).join(' ');
  // An empty chart row's label in front of a key line beside the chart ("5 * 370 Name 39"): drop the label.
  return /^\d{1,2}\s+[^\s\d]{1,2}\s+(?:=\s*)?(?:DMC\s*)?(?:\d{1,4}|BLANC|ECRU|B5200)\b/i.test(String(line).trim())?String(line).trim().replace(/^\d{1,2}\s+/,''):line}
+// Flow pass: letter-spaced title text ("1 0 8 x 5 9 S t i t c h e s") is one word per letter in the PDF. Join it back up.
+function unspace(line){const t=String(line).trim().split(/\s+/);if(t.length<6)return line;const one=t.filter(x=>x.length===1).length;if(one<0.8*t.length)return line;const j=t.join('');return /[a-z]{4,}/.test(j)?j:line}
+// Flow pass: chart row and column labels ("48 48", "1 2 3 4 5 ...") are not colors.
+function gridLabel(line){const t=String(line).trim().split(/\s+/);if(!t.every(x=>/^\d{1,3}$/.test(x)))return false;if(t.length===2&&t[0]===t[1])return true;if(t.length>=5){let up=0;for(let i=1;i<t.length;i++)if(+t[i]===+t[i-1]+1)up++;return up>=0.8*(t.length-1)}return false}
+const keyText=l=>String(l).trim().toLowerCase().replace(/^\S{1,2}\s+(?=(?:dmc\s*)?(?:\d|blanc|white|ecru|b5200))/,'');
 function parsePages(pages,validCodes){
  if(!Array.isArray(pages)||pages.length>100)throw new Error('That page list isn\'t valid.');
  let checked=0;const raw=[];const warnings=[];const skipped=[];
  for(const p of pages){let text=String(p.text||'');if(text.length>MAX_TEXT)text=text.slice(0,MAX_TEXT);
-  const src=text.split(/\r?\n/);let lines=src.map(stripChartRun);
+  const src=text.split(/\r?\n/).map(unspace).filter(l=>!gridLabel(l));let lines=src.map(stripChartRun);
   // A chart with row numbers on the left (5+ chart rows that start with a number): any other line starting with a 1 or 2 digit
   // number followed by a word is a row label beside text ("1 FLOSS LEGEND ..."), not DMC 1. Drop the label.
   if(src.filter((l,i)=>lines[i]!==l&&/^\s*\d{1,2}\s/.test(l)).length>=5)lines=lines.map(l=>l.replace(/^\s*\d{1,2}\s+(?=[A-Za-z])(?!(?:BLANC|ECRU|B5200|DMC)\b)/i,''));
@@ -97,7 +102,10 @@ function parsePages(pages,validCodes){
  if(new Set(kept.map(x=>x.code)).size>CATALOG_MIN){kept=[];warnings.push('catalog-document')}
  raw.length=0;raw.push(...kept);
  for(const x of raw){delete x.lineCodes}
- const byCode=new Map();for(const x of raw){const r=byCode.get(x.code);if(r){r.duplicates.push({page:x.sourcePage,line:x.sourceLine});r.warnings.push('duplicate-color-rows');r.needsReview=true; // Do not sum duplicate stitch counts across page legends
+ const byCode=new Map(),same=(a,b)=>a.sourcePage!==b.sourcePage&&!(a.repeats||[]).includes(b.sourcePage)&&keyText(a.sourceLine)===keyText(b.sourceLine)&&a.qty==b.qty&&a.stitchCount==b.stitchCount;for(const x of raw){const r=byCode.get(x.code);
+  // Flow pass: the same key printed again on another page (word for word) is a repeat, not a second amount.
+  if(r&&same(r,x)){(r.repeats=r.repeats||[]).push(x.sourcePage);continue}
+  if(r){r.duplicates.push({page:x.sourcePage,line:x.sourceLine});r.warnings.push('duplicate-color-rows');r.needsReview=true; // Do not sum duplicate stitch counts across page legends
   r.qty=null;r.stitchCount=null;
  }else byCode.set(x.code,{...x,duplicates:[]})}
  return {version:1,rows:[...byCode.values()],skipped,warnings:[...new Set(warnings)],metadata:{sourcePages:pages.length,matchedLines:raw.length,catalogPages},trustedForAutomaticImport:false};
