@@ -56,9 +56,9 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
    else if(parsed.warnings.includes('catalog-document'))parts.push((window.FF_STR&&FF_STR.left&&FF_STR.left.catalog)||'It looks like a full DMC color chart that lists every color, not this pattern\'s color key.');
    if(noText)parts.push('This PDF has no text we can read, so it\'s probably scanned pages.');
    parts.push('Paste the pattern\'s color key in the box below instead.');const msg=parts.join(' ');
-   info(`Processed ${out.pages.length} page${out.pages.length===1?'':'s'} locally. ${limited.join(' ')} Nothing was sent online.`.replace(/\s+/g,' '));
+   info(`Read ${out.pages.length} page${out.pages.length===1?'':'s'} on your device. ${limited.join(' ')} Nothing was sent online.`.replace(/\s+/g,' '));
    const d=dialog.querySelector('details.pat-manual');if(d){const m=N('p','errbox pat-unreadable',msg);m.id='patUnreadable';m.setAttribute('role','alert');d.parentElement.insertBefore(m,d);if(noText)pipKnot(m);d.open=true;m.scrollIntoView({block:'start'})}}
-  else{const catMsg=cat.length?`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`:'';info(`Selected ${f.name}. ${catMsg} ${out.warnings.join(' ')} Processed ${out.pages.length} page${out.pages.length===1?'':'s'} locally. Nothing was sent online.`)}
+  else{const catMsg=cat.length?`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`:'';info(`Selected ${f.name}. ${catMsg} ${out.warnings.join(' ')} Read ${out.pages.length} page${out.pages.length===1?'':'s'} on your device. Nothing was sent online.`)}
  }catch(e){info(e&&e.pdfOnly?String(e.message):'Import stopped: '+String(e.message||e));if(e&&e.pdfOnly){const md=dialog&&dialog.querySelector('details.pat-manual');if(md)md.open=true}setRows([])}}
  /* new-15 grumpy-knot: only for Pip's own struggle with a scanned PDF (never a user error). Decorative art, hidden when Pip is off or quiet.
     Line approved by Pixel (review of 6377560). */
