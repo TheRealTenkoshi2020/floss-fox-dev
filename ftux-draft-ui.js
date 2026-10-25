@@ -14,7 +14,7 @@
   const demo = () => { const b = document.getElementById('exampleBanner'); return !!b && !b.hidden; };
   let blocked = false, timer = null, committedText = null, warned = false;
   const stored = S.read();
-  const wrap = document.createElement('section'); wrap.className = 'bknotice noprint ffdraft'; wrap.id = 'ffDraftRecovery'; wrap.hidden = true; wrap.style.margin = '0 0 8px'; wrap.style.padding = '10px 12px'; /* spacing only: keeps the paste box closer to the first screen */
+  const wrap = document.createElement('section'); wrap.className = 'bknotice noprint ffdraft'; wrap.id = 'ffDraftRecovery'; wrap.hidden = true; wrap.style.margin = '0 0 4px'; wrap.style.padding = '10px 12px'; /* spacing only: keeps the paste box closer to the first screen */
   wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Unfinished list');
   const heading = document.createElement('p'); const hb = document.createElement('b'); hb.textContent = 'Pick up where you left off?'; heading.append(hb);
   const desc = document.createElement('p'); desc.className = 'hint';
