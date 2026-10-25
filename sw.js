@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-48';
+const CACHE = 'flossfox-dev-v2.0a-ci005-49';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -190,6 +190,8 @@ const CORE = [
   "assets/pip/pip-postmaster-160.png",
   "assets/pip/pip-postmaster-160.webp",
   "pip-b2.js",
+  "pip-follow.js",
+  "pip-follow.css",
   "offline.html",
   'manifest.webmanifest'
 ];

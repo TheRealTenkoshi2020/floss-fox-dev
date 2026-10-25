@@ -151,15 +151,16 @@ with sync_playwright() as p:
     small = g.evaluate("[...document.querySelectorAll('.ffnext button,.ffbanner button,.ffterm,#shopPick,.pat-launch')].filter(e=>e.offsetParent).map(e=>e.getBoundingClientRect()).filter(r=>r.height<44).length")
     ok('w2 new controls are at least 44px tall', small == 0, small)
     txt = g.evaluate("JSON.stringify(window.FF_P12)+JSON.stringify(FF_STR)"); ok('w3 no em dashes in the new strings', '\u2014' not in txt)
-    # Pip strip: visible on every tab with that tab's line, no layout push, not clipped, reduced motion respected
+    # Pip line: on every tab the single companion carries that tab's line (strip art retired in the one-Pip build), no layout push, not clipped, reduced motion respected
     for w in (344, 390):
         g = page(seed([], threads=False), w); hconv = g.evaluate("document.querySelector('header').getBoundingClientRect().height")
         ok(f'j0 {w}px Find floss keeps the full Pip (strip hidden there)', g.locator('#pipStrip').count() == 0 or g.locator('#pipStrip').is_hidden())
         for tab, k in (('#tabThreads', 'threads'), ('#tabProjects', 'projects'), ('#tabShop', 'shop'), ('#tabHelp', 'help')):
             g.click(tab); g.wait_for_timeout(250)
-            r = g.evaluate("(()=>{const s=document.getElementById('pipStrip'),m=s.querySelector('.pipstripmsg'),h=document.querySelector('header').getBoundingClientRect();return{vis:!s.hidden&&s.getBoundingClientRect().height>0,txt:m.textContent,clip:m.scrollHeight>m.clientHeight+1,hh:h.height,key:FFHelp.bubbleLine(),img:s.querySelector('img').getBoundingClientRect().width}})()")
+            # one-Pip build: the strip art is gone; the tab's approved line now shows in the single companion Pip (bottom bar)
+            r = g.evaluate("(()=>{const s=document.getElementById('pipStrip'),c=document.querySelector('.pipc'),m=document.getElementById('pipMsg'),h=document.querySelector('header').getBoundingClientRect();return{strip:!!s&&!s.hidden&&s.getBoundingClientRect().height>0,vis:!!c&&c.getBoundingClientRect().height>0,txt:m.textContent.trim(),clip:m.scrollHeight>m.clientHeight+1,hh:h.height,key:FFHelp.bubbleLine(),img:document.getElementById('pipImg').getBoundingClientRect().width}})()")
             want = g.evaluate("k=>{const t=FF_P12[k];return typeof t==='function'?null:t}", r['key']) if r['key'] else None
-            ok(f'j1 {w}px {k}: Pip strip visible with this tab\'s line', r['vis'] and r['key'] and r['key'].startswith(f'p12.bubble.{k}') and (want is None or r['txt'] == want) and r['txt'] == g.inner_text('#pipMsg').strip(), r)
+            ok(f'j1 {w}px {k}: the one Pip shows this tab\'s line (no separate strip)', not r['strip'] and r['vis'] and r['key'] and r['key'].startswith(f'p12.bubble.{k}') and (want is None or r['txt'] == want), r)
             ok(f'j2 {w}px {k}: full line shown (not clipped), header no taller than on Find floss', not r['clip'] and r['hh'] <= hconv + 1 and r['img'] >= 40, (r, hconv))
         g.click('#tabConvert'); g.click('#pipToggle'); g.click('#tabThreads'); g.wait_for_timeout(200)
         ok(f'j3 {w}px Hide Pip also hides the strip', g.locator('#pipStrip').is_hidden())

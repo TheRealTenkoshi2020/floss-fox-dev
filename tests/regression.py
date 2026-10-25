@@ -435,10 +435,10 @@ with sync_playwright() as p:
     ok('P6c app fully works with Pip hidden (results + errors in normal UI)', 'DMC 310' in h2.inner_text('#results') and '9999' in h2.inner_text('#errs'))
     ok('P6d Pip preference never touches project storage', h2.evaluate(f"localStorage.getItem('{KEY}')") is None)
     h2.locator('#pipToggle').focus(); h2.keyboard.press('Enter'); ok('P9 keyboard toggles Pip back on; state is current', h2.locator('#pipFig').is_visible() and h2.evaluate(f"localStorage.getItem('{PK}')") == 'shown' and pst(h2)[0] == 'error', pst(h2))
-    ok('P9b only the Hide/Show toggle is focusable inside Pip (no focus trap)', h2.evaluate("[...document.querySelectorAll('#pip a,#pip button,#pip input,#pip [tabindex]')].map(e=>e.id)") == ['pipHi', 'pipToggle'] and h2.get_attribute('#pipHi', 'aria-label') == 'Say hi to Pip')
+    ok('P9b only plain buttons are focusable inside Pip: hi, Hide/Show, Minimize, face restore (no focus trap)', h2.evaluate("[...document.querySelectorAll('#pip a,#pip button,#pip input,#pip [tabindex]')].map(e=>e.id)") == ['pipHi', 'pipToggle', 'pipMinBtn', 'pipFaceBtn'] and h2.get_attribute('#pipHi', 'aria-label') == 'Say hi to Pip')
     rmp = br.new_context(viewport={'width': 412, 'height': 900}, reduced_motion='reduce').new_page(); rmp.goto(B); rmp.fill('#inp', '9999'); rmp.click('#go')
     ok('P8 reduced motion: no Pip animation', rmp.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") == 'none')
-    ok('P8b with motion: gentle whole-image animation only', pp.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") in ('pippop', 'piptilt', 'pipfade', 'none'))
+    ok('P8b with motion: gentle whole-image animation only', pp.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") in ('pippop', 'piptilt', 'pipfade', 'pfin', 'none'))  # pfin = one-Pip soft pose crossfade (opacity/transform only)
     # ---------- Pip phase 2 ----------
     def fresh(w=412, rm=False):
         c = br.new_context(viewport={'width': w, 'height': 900}, reduced_motion='reduce' if rm else 'no-preference'); g = c.new_page(); rq = []
@@ -782,7 +782,9 @@ with sync_playwright() as p:
     addlist(v, '310\n310 x2'); ok('T8c duplicates during the tour: combined, card still true', v.evaluate("state.items[0].qty") == 3 and 'added 1 color' in v.inner_text('#tourCard'), v.inner_text('#tourCard'))
     v.evaluate("FlossFoxPip._timing({idle:300,tangleGap:0})"); addlist(v, '310, 321'); v.wait_for_timeout(5000)
     ok('T17 sleepy never interrupts a tour step', v.evaluate("FlossFoxPip.overlay()") != 'sleepy' and step(v) == 0, v.evaluate("FlossFoxPip.overlay()"))
-    v.click('#pipHi'); ok('T17b tangled never interrupts a tour step', v.evaluate("FlossFoxPip.current()") != 'tangled')
+    # one-Pip build: on phones the companion bar steps aside during the tour (the tour card speaks for Pip), so it cannot be tapped
+    if v.locator('#pipHi').is_visible(): v.click('#pipHi')
+    ok('T17b tangled never interrupts a tour step', v.evaluate("FlossFoxPip.current()") != 'tangled')
     # switching views mid-tour
     v.click('#tabProjects'); ok('T18 switching views mid-tour: card stays with Add colors, page fine', v.locator('#tourCard').is_hidden() and step(v) == 0)
     v.click('#askPipBtn'); ok('T18b Ask Pip offers Back to the tour', v.locator('#askPip [data-a=resume]').count() == 1 and 'step 1 of 5' in v.inner_text('#askPip'))
@@ -863,9 +865,9 @@ with sync_playwright() as p:
     ok('M1 all 138 Pip images (23 poses) load, have an alpha channel and transparent corners', not noalpha, noalpha)
     ok('M1b no JPG Pip assets referenced anywhere', pp.request.get(B + 'assets/pip/pip-greeting-320.jpg').status == 404 and '.jpg' not in pp.evaluate("document.getElementById('pipImg').srcset+document.getElementById('pipImg').src"))
     tile = pp.evaluate("(()=>{const f=getComputedStyle(document.getElementById('pipFig'));const r=document.getElementById('pipFig').getBoundingClientRect();return [f.backgroundColor,f.borderTopColor,Math.round(r.width),Math.round(r.height)]})()")
-    ok('M2 no white tile: frame transparent, same 84x118 frame on phones', tile[0] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[1] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[2:] == [84, 118], tile)
+    ok('M2 no white tile: frame transparent; one-Pip phone bar frame 56x64', tile[0] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[1] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[2:] == [56, 64], tile)  # one-Pip build: hero frame moved into the bottom bar
     pdm = page(1280); pdm.goto(B); fr = pdm.evaluate("(()=>{const r=document.getElementById('pipFig').getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)]})()")
-    ok('M2b same 140x196 frame on desktop', fr == [140, 196], fr)
+    ok('M2b one-Pip side column frame 132x180 on desktop', fr == [132, 180], fr)
     fv = tp(1280); ok('M3 first visit keeps the original greeting', fv.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose]") == ['welcome', 'greeting'])
     rv = tp(412, fresh=False); ok('M4 returning visitor (tour done/dismissed): welcome back with greeting-alt', rv.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose]") == ['welcomeBack', 'greeting-alt'])
     rv.click('#inp'); f1 = rv.evaluate("FlossFoxPip.current()"); rv.click('#heroH'); f2 = rv.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose]")
@@ -873,7 +875,7 @@ with sync_playwright() as p:
     rv.fill('#inp', '310'); rv.click('#go'); ok('M5b a real list still wins over idle', rv.evaluate("FlossFoxPip.current()") in ('listReady', 'celebrating'))
     rv.click('#tabHelp'); rv.wait_for_timeout(400); pk = rv.evaluate("""(()=>{const p=document.getElementById('helpPip').getBoundingClientRect(),i=document.querySelector('#helpPip .apeek img');if(!i||!i.offsetParent)return null;const r=i.getBoundingClientRect();
       const hit=[...document.querySelectorAll('#helpPip button,#helpPip input,#helpPip label')].filter(b=>{const q=b.getBoundingClientRect();return !(q.right<=r.left||q.left>=r.right||q.bottom<=r.top||q.top>=r.bottom)}).length;return [Math.round(p.right-r.right),hit,/pip-peeking-160/.test(i.currentSrc||i.src)]})()""")
-    ok('M6 phone Ask Pip: peeking Pip pinned flush right, covers no control', pk is not None and 0 <= pk[0] <= 1 and pk[1] == 0 and pk[2], pk)
+    ok('M6 phone Ask Pip (one-Pip build): card keeps its text, no second peeking Pip; the companion is the only Pip', pk is None and rv.locator('#pipFig').is_visible())
     ok('M6b Ask Pip button avatar is the face icon', 'pip-face-icon-' in rv.evaluate("document.querySelector('#askPipBtn img').currentSrc"))
     rv.click('#helpPip [data-a=alts]'); rv.wait_for_timeout(400); th = rv.evaluate("[document.querySelector('#helpPip .ahead').dataset.pose,/pip-thinking-160/.test(document.querySelector('#helpPip .ahead img').currentSrc||document.querySelector('#helpPip .ahead img').src),!!document.querySelector('#helpPip .apeek')]")
     ok('M7 Ask Pip answer -> thinking (a real "let me check" moment), no double Pip', th == ['thinking', True, False], th)
@@ -899,7 +901,7 @@ with sync_playwright() as p:
         g2.context.close()
     ok('M10 new poses: no layout shift or overflow 320-1280', not lay2, lay2)
     rmn = tp(412, fresh=False, rm=True); rmn.evaluate("FlossFoxPip.show('idle')"); ok('M11 reduced motion on new poses', rmn.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") == 'none')
-    hdn = tp(412, fresh=False, init=f"localStorage.setItem('{PFX}.pip.v1','hidden')"); hdn.click('#tabHelp'); ok('M12 Pip hidden: Help Pip section still shows its peeking Pip', hdn.locator('#helpPip .apeek img').is_visible() and hdn.locator('#pipFig').is_hidden())
+    hdn = tp(412, fresh=False, init=f"localStorage.setItem('{PFX}.pip.v1','hidden')"); hdn.click('#tabHelp'); ok('M12 Pip hidden (one-Pip build): no peeking Pip on Help either, companion art hidden', hdn.locator('#helpPip .apeek img').is_hidden() and hdn.locator('#pipFig').is_hidden())
     # ---------- Milestone 1.4 batch 2: reassuring / puzzled / presenting / discovery / saved / face icon ----------
     b2 = tp(412, fresh=False)
     def b2s(t): b2.fill('#inp', t); b2.click('#go'); b2.wait_for_timeout(60); return b2.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose,document.getElementById('pipMsg').textContent]")
@@ -939,10 +941,11 @@ with sync_playwright() as p:
     c = page(412, True, init=SEED); c.goto(B); c.wait_for_timeout(200)
     c.click('#tabProjects'); c.wait_for_timeout(150)
     og = c.evaluate("(()=>{const i=document.querySelector('#projectsView .empty img[data-pose=organizing]');if(!i)return null;const r=i.getBoundingClientRect(),p=i.closest('.card').getBoundingClientRect();return [i.naturalWidth>0,Math.round(r.height-r.width*566/480),r.width,r.bottom<=p.bottom]})()")
-    ok('C2 empty projects -> organizing, full image (bottom spools not cropped), ~200px', og and og[0] and abs(og[1]) <= 1 and 180 <= og[2] <= 240 and og[3], og)
+    cp = c.evaluate("document.getElementById('pip').dataset.pose")
+    ok('C2 empty projects -> organizing pose, carried by the one companion Pip (card art hidden)', og is not None and og[2] == 0 and cp == 'organizing', (og, cp))
     c.click('#tabHelp') if c.locator('#tabHelp').count() else c.evaluate("document.getElementById('helpView').hidden=false")
     c.wait_for_timeout(100); hn = c.evaluate("(()=>{const i=document.querySelector('#helpView .helphead img');return i?[i.dataset.pose,i.naturalWidth>0,Math.round(i.getBoundingClientRect().width)]:null})()")
-    ok('C3 Help (how-to) header uses needle at ~80-120px', hn and hn[0] == 'needle' and hn[1] and 80 <= hn[2] <= 120, hn)
+    ok('C3 Help (how-to) header keeps needle markup but its art is hidden; the companion carries the Help pose', hn and hn[0] == 'needle' and hn[2] == 0 and c.evaluate("document.getElementById('pip').dataset.pose") in ('helpful', 'needle'), (hn, c.evaluate("document.getElementById('pip').dataset.pose")))
     c.goto(B); c.click('#tabHelp'); poses = []
     for _ in range(2):
         c.click('#helpPip [data-a=enter]'); c.wait_for_timeout(80); poses.append(c.get_attribute('#helpPip .ahead', 'data-pose'))

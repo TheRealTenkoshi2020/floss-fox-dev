@@ -18,7 +18,7 @@ ok('held poses (mosaic-master, rescue-mission) are not used anywhere', 'mosaic-m
 ok('no new batch 2 pose in shop/*.js', not any(n in t for f, t in src.items() if os.sep + 'shop' + os.sep in f for n in NEW))
 other = [p for p in re.findall(r'pip-([a-z-]+)-(?:160|320|480)\.', open(os.path.join(ROOT, 'pip-b2.js')).read() + open(os.path.join(ROOT, 'offline.html')).read())]
 sw = open(os.path.join(ROOT, 'sw.js')).read()
-ok('sw cache bumped to ci005-48', "'flossfox-dev-v2.0a-ci005-48'" in sw)
+ok('sw cache bumped to ci005-49', "'flossfox-dev-v2.0a-ci005-49'" in sw)
 ok('sw lists the 8 new poses (160 png+webp) and pip-b2.js, and the files exist', all(f'"assets/pip/pip-{n}-160.{e}"' in sw for n in NEW for e in ('png', 'webp')) and '"pip-b2.js"' in sw)
 ok('160/320/480 png+webp exist for each new pose', all(os.path.exists(os.path.join(ROOT, f'assets/pip/pip-{n}-{w}.{e}')) for n in NEW for w in (160, 320, 480) for e in ('png', 'webp')))
 ok('404.html keeps explorer, offline.html uses rainy-day', 'pip-explorer-160' in src[os.path.join(ROOT, '404.html')] and 'pip-rainy-day-160' in src[os.path.join(ROOT, 'offline.html')] and 'pip-explorer' not in src[os.path.join(ROOT, 'offline.html')])
@@ -90,8 +90,10 @@ with sync_playwright() as p:
     for lv, want in (('chatty', 1), (None, 1), ('quiet', 1), ('off', 0)):
         g = page(lv, 'fabric.html'); g.wait_for_timeout(300)
         if n(g, '#ffFabricAsk'): g.click('#ffFabricAsk'); g.wait_for_timeout(200)
+        # one-Pip build: the card's own 160px art is hidden; the single companion carries the measuring-fabric pose
         wd = g.evaluate("(()=>{const i=document.querySelector('#ffFabricPanel .pipb2-fabric img');return i?i.getBoundingClientRect().width:0})()")
-        ok(f'07 measuring-fabric in the Fabric card at level {lv or "default"}: {want} (160 px)', n(g, '#ffFabricPanel .pipb2-fabric') == want and (not want or abs(wd - 160) < 1), wd); g.context.close()
+        cp = g.evaluate("(()=>{const i=document.querySelector('#pipFollow img');return i&&i.getBoundingClientRect().width>0?i.src.split('/').pop():''})()")
+        ok(f'07 measuring-fabric at level {lv or "default"}: card art hidden, companion pose {"measuring-fabric" if want else "none"}', n(g, '#ffFabricPanel .pipb2-fabric') == want and wd == 0 and (('measuring-fabric' in cp) if want else cp == ''), (wd, cp)); g.context.close()
     # ---- 15 postmaster: Backup export success only, never with Shopping open
     for lv, want in (('chatty', 1), (None, 1), ('quiet', 0), ('off', 0)):
         g = page(lv); g.evaluate("Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true,writable:true})")
