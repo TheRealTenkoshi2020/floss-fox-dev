@@ -77,5 +77,23 @@ with sync_playwright() as p:
     ok('F4g project choices were not changed', g.evaluate("FlossFoxProjects._store().projects.find(x=>x.id==='p-autumn').decisions['797'].status") == 'buy')
     ok('F4h no page errors', not g.errs, g.errs)
     g.context.close()
+
+    # ---- Item 5: correct "to buy" count, one tap fills missing amounts (Estimated), Undo
+    g = page()
+    codes = ['310','321','666','797','820','905','208','413','3865','444']
+    g.evaluate("codes=>FlossFoxProjects.add({id:'p-ten',name:'Ten to buy',items:codes.map(c=>({code:c,qty:null})),decisions:Object.fromEntries(codes.map(c=>[c,{status:'buy',owned:null}]))})", codes)
+    g.evaluate("FlossFoxProjects.open('p-ten')"); g.wait_for_timeout(400)
+    ok('F5a 10 marked Need to buy shows 10 to buy, not 0', g.inner_text('#sBuy') == '10', g.inner_text('#sBuy'))
+    fb = g.locator('#pFillBtn')
+    ok('F5b one button offers to fill the 10 missing amounts, marked Estimated', fb.count() == 1 and 'Estimated' in fb.inner_text() and '10 colors' in g.inner_text('#pFill'), g.locator('#pFill').all_inner_texts())
+    fb.click(); g.wait_for_timeout(300)
+    its = g.evaluate("FlossFoxProjects._store().projects.find(x=>x.id==='p-ten').items.map(i=>[i.qty,i.assumed])")
+    ok('F5c every missing amount is now 1 skein, kept as assumed', all(q == 1 and a == 1 for q, a in its), its)
+    ok('F5d the shopping list marks them Estimated', g.locator('#pPlan .ffest').count() >= 1 and g.inner_text('#sBuy') == '10')
+    g.click('[data-fillundo]'); g.wait_for_timeout(300)
+    its = g.evaluate("FlossFoxProjects._store().projects.find(x=>x.id==='p-ten').items.map(i=>i.qty)")
+    ok('F5e Undo puts the amounts back to unknown', all(q is None for q in its) and g.locator('#pFillBtn').count() == 1, its)
+    ok('F5f no page errors', not g.errs, g.errs)
+    g.context.close()
     b.close()
 print(f'flow_pass: {sum(R)} passed, {len(R)-sum(R)} failed'); sys.exit(0 if all(R) else 1)
