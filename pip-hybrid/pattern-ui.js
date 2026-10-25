@@ -58,8 +58,7 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
    parts.push('Paste the pattern\'s color key in the box below instead.');const msg=parts.join(' ');
    info(`Processed ${out.pages.length} page${out.pages.length===1?'':'s'} locally. ${limited.join(' ')} Nothing was sent online.`.replace(/\s+/g,' '));
    const d=dialog.querySelector('details.pat-manual');if(d){const m=N('p','errbox pat-unreadable',msg);m.id='patUnreadable';m.setAttribute('role','alert');d.parentElement.insertBefore(m,d);if(noText)pipKnot(m);d.open=true;m.scrollIntoView({block:'start'})}}
-  else{const catMsg=cat.length?`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`:'';info(`Selected ${f.name}. ${catMsg} ${out.warnings.join(' ')} ${out.kind==='pdf'?'Processed '+out.pages.length+' pages locally.':'Image selected. No image has been uploaded.'} Nothing was sent online.`)}
-  if(out.kind==='image')await showPreview();
+  else{const catMsg=cat.length?`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`:'';info(`Selected ${f.name}. ${catMsg} ${out.warnings.join(' ')} Processed ${out.pages.length} page${out.pages.length===1?'':'s'} locally. Nothing was sent online.`)}
  }catch(e){info(e&&e.pdfOnly?String(e.message):'Import stopped: '+String(e.message||e));if(e&&e.pdfOnly){const md=dialog&&dialog.querySelector('details.pat-manual');if(md)md.open=true}setRows([])}}
  /* new-15 grumpy-knot: only for Pip's own struggle with a scanned PDF (never a user error). Decorative art, hidden when Pip is off or quiet.
     Line approved by Pixel (review of 6377560). */

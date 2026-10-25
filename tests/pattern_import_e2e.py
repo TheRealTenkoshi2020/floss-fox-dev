@@ -157,4 +157,13 @@ with sync_playwright() as p:
     chk('\u2014' not in p.inner_text('#ffPatternDialog'), 'P7 no em dashes in the dialog')
     errs = g.errs + h.errs + k.errs + s.errs + z.errs + t.errs
     ok('I13 no page errors', not errs, errs)
+    # 10 AI off: the import dialog never shows AI, image, PNG or JPG wording (PDF, PNG and scanned-PDF paths)
+    import re as _re
+    BAD = _re.compile(r'\bAI\b|image|\bPNG\b|\bJPE?G\b', _re.I)
+    for name in ('native-legend.pdf', 'legend-scan.png', 'scanned-image-only.pdf', 'fake.pdf'):
+        a = page(); load(a, name)
+        for d in a.locator('#ffPatternDialog details').all(): d.evaluate('e=>e.open=true')
+        vis = a.inner_text('#ffPatternDialog').replace(name, ''); hits = sorted(set(m.group(0) for m in BAD.finditer(vis)))
+        ok(f'X1 AI off, {name}: dialog shows no AI/image/PNG/JPG wording', not hits and not a.errs, (hits, a.errs))
+        a.context.close()
 print(f'{sum(R)} passed, {len(R)-sum(R)} failed'); sys.exit(0 if all(R) else 1)
