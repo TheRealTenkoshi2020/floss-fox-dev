@@ -12,6 +12,4 @@
 
 .ffill{display:flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center;margin:.5rem 0}
 .ffill .hint{flex:1 1 14rem}
-.thqrow{flex-wrap:wrap;min-width:0}
-.thqrow textarea{min-width:0;flex:1 1 9rem}
-.thqrow #thAddBtn{max-width:100%;white-space:normal}
+@media(max-width:360px){.thqrow{flex-wrap:wrap}.thqrow textarea{flex:1 1 100%}.thqrow #thAddBtn{flex:1 1 100%}}
