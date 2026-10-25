@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-44';
+const CACHE = 'flossfox-dev-v2.0a-ci005-45';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -173,6 +173,23 @@ const CORE = [
   "assets/pip/pip-worried-160.webp",
   "assets/pip/pip-surprised-160.png",
   "assets/pip/pip-surprised-160.webp",
+  "assets/pip/pip-pattern-reader-160.png",
+  "assets/pip/pip-pattern-reader-160.webp",
+  "assets/pip/pip-checklist-160.png",
+  "assets/pip/pip-checklist-160.webp",
+  "assets/pip/pip-encouraging-coach-160.png",
+  "assets/pip/pip-encouraging-coach-160.webp",
+  "assets/pip/pip-measuring-fabric-160.png",
+  "assets/pip/pip-measuring-fabric-160.webp",
+  "assets/pip/pip-whispering-tip-160.png",
+  "assets/pip/pip-whispering-tip-160.webp",
+  "assets/pip/pip-cozy-companion-160.png",
+  "assets/pip/pip-cozy-companion-160.webp",
+  "assets/pip/pip-rainy-day-160.png",
+  "assets/pip/pip-rainy-day-160.webp",
+  "assets/pip/pip-postmaster-160.png",
+  "assets/pip/pip-postmaster-160.webp",
+  "pip-b2.js",
   "offline.html",
   'manifest.webmanifest'
 ];

@@ -8,7 +8,7 @@ let config=C.defaults(),meta=C.emptyState(),prefsWritable=true,stateWritable=tru
 let lastThreads=JSON.parse(JSON.stringify(T.data().threads));
 function read(key,normalize,fallback){try{const raw=localStorage.getItem(key);if(raw===null)return{value:fallback(),writable:true};const value=normalize(JSON.parse(raw));return value?{value,writable:true}:{value:fallback(),writable:false};}catch(e){return{value:fallback(),writable:false};}}
 function load(){const p=read(PREFKEY,C.prefs,C.defaults),s=read(STATEKEY,C.state,C.emptyState);config=p.value;meta=s.value;prefsWritable=p.writable;stateWritable=s.writable;if(config.enabled&&stateWritable&&meta.enabledSince===null)putState({...meta,enabledSince:Date.now()});}
-function feedback(text,confirmation=false){$('bkFeedback').hidden=false;$('bkFeedbackMsg').textContent=text;$('bkConfirmSave').hidden=!confirmation;$('bkDownloadInstead').hidden=true;}
+function feedback(text,confirmation=false){document.querySelectorAll('.pipb2-backup').forEach(x=>x.remove());$('bkFeedback').hidden=false;$('bkFeedbackMsg').textContent=text;$('bkConfirmSave').hidden=!confirmation;$('bkDownloadInstead').hidden=true;}
 function putState(next){
  const latest=read(STATEKEY,C.state,C.emptyState);if(!latest.writable){stateWritable=false;return false;}
  try{localStorage.setItem(STATEKEY,JSON.stringify(next));meta=next;stateWritable=true;return true;}catch(e){stateWritable=false;return false;}
@@ -39,7 +39,7 @@ function confirmed(snapshot){
  const next={...current.value,lastConfirmedAt:Date.now(),snoozedUntil:null,majorToken:unchanged?null:current.value.majorToken};
  const ok=putState(next);
  feedback(!ok?'A file copy was saved, but reminder history could not be stored.':unchanged?'Backup file save confirmed. Keep the file somewhere safe.':'Backup file save confirmed. Your data changed after that copy was prepared; save another copy to include the newest changes.');
- render();return ok;
+ render();if(ok&&window.FlossFoxPipB2)window.FlossFoxPipB2.backup();return ok;
 }
 async function exportBackup(options={}){
  if(busy)return{status:'busy'};
