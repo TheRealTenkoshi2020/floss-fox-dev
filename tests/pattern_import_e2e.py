@@ -26,6 +26,7 @@ with sync_playwright() as p:
     ok('I1c Create stays disabled until the one confirmation, and says why next to the button', g.locator('#patImport').is_disabled() and 'Tick the box above to create your project.' in g.inner_text('#patWhy') and g.locator('#patWhy a[href="#patAll"]').count() == 1, g.inner_text('#patWhy'))
     ok('I1c2 no per-color checkboxes (only the one confirmation)', g.locator('#patRows .pat-row input[type=checkbox]').count() == 0 and g.locator('#patAll').count() == 1)
     for t in g.locator('#patRows input[type=checkbox]').all(): t.check()
+    if g.locator('#patAll').count() and not g.locator('#patAll').is_checked(): g.check('#patAll')  # flow pass: the one tick now sits in the pinned bar
     g.fill('#patName', 'Synthetic sampler'); g.click('#patImport'); g.wait_for_timeout(400)
     pr = projects(g)
     ok('I1d save: one project with stated amounts only', len(pr) == 1 and {i['code']: i['qty'] for i in pr[0]['items']} == {'310': 2, '321': 1, '666': None, '3865': None}, pr)
@@ -35,6 +36,7 @@ with sync_playwright() as p:
     h = page("localStorage.setItem('%s.threads.v1',JSON.stringify({schema:2,threads:{'310':{n:3,partial:false,restock:false,updated:'2026-10-01T00:00:00Z'},'321':{n:0,partial:true,restock:false,updated:'2026-10-01T00:00:00Z'}}}))" % PFX)
     load(h, 'native-legend.pdf')
     for t in h.locator('#patRows input[type=checkbox]').all(): t.check()
+    if h.locator('#patAll').count() and not h.locator('#patAll').is_checked(): h.check('#patAll')  # flow pass: tick is in the pinned bar
     h.click('#patImport'); h.wait_for_timeout(400)
     ok('I2 after import Pip checks the collection automatically (banner shown)', 'Pip checked your threads' in h.inner_text('#pAuto'), h.inner_text('#pAuto'))
     h.click('#pFlow [data-flow=cmp]'); h.wait_for_timeout(200)

@@ -37,9 +37,11 @@ function drawFill(){const p=P();if(!p||!p.missingCount)return;const id=p.openId&
 function tabInView(){const n=document.querySelector('nav.tabs');if(!n||n.scrollWidth<=n.clientWidth)return;const a=n.querySelector('[aria-pressed=true]');if(a&&a.scrollIntoView){const r=a.getBoundingClientRect(),m=n.getBoundingClientRect();if(r.left<m.left||r.right>m.right)n.scrollLeft+=r.left-m.left-12}}
 // ---- Item 6: Shopping opens your last-used project; the store note folds to one line.
 let shopWasOpen=false;
+/* Flow pass: a Shopping auto-pick should not leave the Projects tab sitting inside that project */let autoPicked=null;
+function autoBackToList(){const p=P(),id=autoPicked;autoPicked=null;if(!id||!p||!p.openId||p.openId()!==id)return;setTimeout(()=>{const c=$('pClose');if(c&&c.offsetParent)c.click()},0)}
 function shopAuto(){const v=$('shopView'),open=v&&!v.hidden;if(open&&!shopWasOpen){const sel=$('shopPick'),p=P();
   if(sel&&!sel.value&&p&&p._store){const ps=p._store().projects.slice().sort((a,b)=>String(b.updated).localeCompare(String(a.updated))),last=ps.find(x=>!x.demo)||ps[0];
-   if(last&&[...sel.options].some(o=>o.value===last.id)){sel.value=last.id;sel.dispatchEvent(new Event('change',{bubbles:true}))}}}
+   if(last&&[...sel.options].some(o=>o.value===last.id)){const pe=$('projEdit'),wasList=!(pe&&!pe.hidden&&p.openId&&p.openId());sel.value=last.id;sel.dispatchEvent(new Event('change',{bubbles:true}));autoPicked=wasList?last.id:null}}}
  shopWasOpen=!!open;
  document.querySelectorAll('#shopView p.ff-skein-direct').forEach(n=>{if(n.parentElement.classList.contains('ffstore'))return;const d=document.createElement('details');d.className='ffmore ffstore noprint';
   d.innerHTML='<summary>About these store links</summary>';n.before(d);d.appendChild(n)})}
@@ -47,7 +49,7 @@ function shopAuto(){const v=$('shopView'),open=v&&!v.hidden;if(open&&!shopWasOpe
 function grow(){const a=$('thAdd');if(!a)return;a.style.height='auto';a.style.height=Math.min(160,Math.max(44,a.scrollHeight+2))+'px'}
 let q=0;function refresh(){if(q)return;q=requestAnimationFrame(()=>{q=0;drawFrom();drawProjAdd();drawFill();tabInView();shopAuto();FF.after.forEach(f=>{try{f()}catch(e){}})})}
 const FF=window.FlossFoxFlow={offerUndo,refresh,after:[]};
-function init(){const a=$('thAdd');if(a)a.addEventListener('input',grow);
+function init(){{const t=$('tabProjects');if(t)t.addEventListener('click',autoBackToList)}{const sp=$('shopPick');if(sp)sp.addEventListener('input',()=>{autoPicked=null})}const a=$('thAdd');if(a)a.addEventListener('input',grow);
  const mo=new MutationObserver(refresh);{const e=$('projEdit');if(e)mo.observe(e,{childList:true,subtree:true})}['thList','pCmp','projEdit','projList','shopBody','shopCard'].forEach(i=>{const e=$(i);if(e)mo.observe(e,{childList:true})});
  ['threadsView','projectsView','shopView'].forEach(i=>{const e=$(i);if(e)mo.observe(e,{attributes:true,attributeFilter:['hidden']})});refresh()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
