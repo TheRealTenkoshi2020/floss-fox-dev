@@ -1,12 +1,12 @@
 /* Pip art batch 2 (Pixel, dev only). Decorative art (alt="") at 8 spots. Every spot follows the Pip level setting.
-   All lines below are PLACEHOLDERS for Pixel (see pip-art/new-batch2/STRINGS_FOR_PIXEL.md). Never shown on the Shopping screen. */
+   All lines below are APPROVED by Pixel (see pip-art/new-batch2/STRINGS_FOR_PIXEL.md). Never shown on the Shopping screen. */
 (function(){'use strict';
 const KEY='flossfox-dev.pip.v1'; // DEV PREVIEW ONLY
 const LEVEL_KEY=KEY.replace(/\.pip\.v1$/,'.pipLevel.v1'),TIP_KEY=KEY.replace(/\.pip\.v1$/,'.pipTipShown.v1'); // TIP_KEY lives in sessionStorage
-const STR={ // PLACEHOLDER copy, not final
+const STR={ // APPROVED by Pixel (batch 2 final)
  'b2.reading':"I'm reading your pattern now.",
- 'b2.checkOk':"I checked every color on this pattern. Everything looks right.",
- 'b2.fixSheet':"A few small fixes and this pattern is good to go. I'll walk through them with you.",
+ 'b2.checkOk':"Nothing caught my eye. Still give each color a quick look against your pattern.",
+ 'b2.fixSheet':"Let's fix this together. Your pattern file stays the same.",
  'b2.helpTip':"Little tip: in My threads, you can find a color by its DMC number or its name."};
 // spot -> pose, size, levels that show it
 const SPOT={reading:{pose:'pattern-reader',lv:['chatty','important']},checkOk:{pose:'checklist',lv:['chatty','important']},fixSheet:{pose:'encouraging-coach',lv:['chatty','important']},
