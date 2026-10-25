@@ -17,6 +17,7 @@ with sync_playwright() as p:
         ok(f'[{w}] standalone readiness panel with its own picker is gone', g.locator('#pipProjectReadiness').count() == 0 and g.locator('#ffReadinessProject').count() == 0)
         ok(f'[{w}] readiness details live inside the project, after the summary', g.evaluate("document.getElementById('pReady').previousElementSibling.id") == 'pSum' and g.locator('#pReady details').count() == 1)
         g.check('#st-310-have'); g.check('#st-321-buy'); g.check('#st-3865-buy'); g.wait_for_timeout(150)
+        g.evaluate("document.querySelector('#pReady details').open=true"); g.wait_for_timeout(100)  # flow pass: folded by default
         txt = g.inner_text('#pReady')
         grp = g.evaluate("Object.fromEntries([...document.querySelectorAll('#pReady [data-group]')].map(x=>[x.dataset.group,[...x.querySelectorAll('li')].map(l=>l.dataset.code)]))")
         ok(f'[{w}] groups: confirmed 310, buy 321+3865, not sure 699', grp == {'have': ['310'], 'buy': ['321', '3865'], 'review': ['699']}, grp)
