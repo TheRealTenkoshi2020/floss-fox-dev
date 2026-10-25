@@ -84,8 +84,9 @@ test('never mutate need record or hardcode stock, cart or prices',()=>{
  assert.ok(r.every(l=>!('price'in l)&&!('inStock'in l)&&!('cart'in l)));
 });
 test('named shades WHITE, ECRU, B5200 normalize and link (Blanc and 5200 aliases)',()=>{
- for(const [inp,out] of [['WHITE','WHITE'],['white','WHITE'],['Blanc','WHITE'],['BLANC','WHITE'],['ecru','ECRU'],['B5200','B5200'],['b5200','B5200'],['5200','B5200'],[' 5200 ','B5200']])
+ for(const [inp,out] of [['WHITE','WHITE'],['white','WHITE'],['Blanc','WHITE'],['BLANC','WHITE'],['BLANC (White)','WHITE'],['ecru','ECRU'],['B5200','B5200'],['b5200','B5200'],['5200','B5200'],[' 5200 ','B5200']])
   assert.equal(S.normalize(inp),out,inp);
+ assert.equal(S.normalize('BLANC(White)'),null);assert.equal(S.normalize('WHITE (Blanc)'),null);
  for(const c of ['WHITE','ECRU']){const l=S.linksFor(valid({code:c}),preview);assert.equal(l.length,2);assert.ok(l.every(x=>x.exact&&x.code===c))}
  const b=S.linksFor(valid({code:'5200'}),preview);assert.equal(b[0].exact,false);assert.equal(b[1].exact,true);assert.equal(b[1].code,'B5200');
  assert.match(b[1].label,/View DMC B5200 skein/);
