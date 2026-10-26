@@ -57,7 +57,7 @@ with sync_playwright() as p:
         # ---- 2. Need to buy vs Check first ----
         plan = g.inner_text('#pPlan'); nb = plan.split('Check first')[0]; cf = g.inner_text('#pCheck')
         ok(f'S1 {T} screen: Check first (16) is its own section', g.inner_text('#pCheckH') == 'Check first (16)' and g.locator('#pCheck li').count() == 16)
-        ok(f'S2 {T} plain note (Pixel approved, ci005-62)', g.inner_text('#pCfNote').strip() == "This color isn't on your list or in your cost estimate yet. Tap Have enough or Need to buy.")
+        ok(f'S2 {T} plain note (Pixel final, n>1, ci005-63)', g.inner_text('#pCfNote').strip() == "These colors aren't on your list or in your cost estimate yet. Tap Have enough or Need to buy for each one.")
         ok(f'S3 {T} Need to buy holds only known short/missing (321 + 6 missing), no check-first color', all(f'DMC {c}' in nb for c in MISS) and 'DMC 321' in nb and not any(f'DMC {c} ' in nb for c in OWN[2:]), nb[:500])
         ok(f'S4 {T} check-first colors explain why (owned, quantity not verified -> Not sure)', 'marked Not sure' in cf and 'DMC 815' in cf)
         tot = g.inner_text('#pPlan .totals')

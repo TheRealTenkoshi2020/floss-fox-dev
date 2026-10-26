@@ -17,7 +17,8 @@ def mk(g, name, text):
     g.fill('#inp', text); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(120)
     g.fill('#newProjName', name); g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
     return g.evaluate("FlossFoxProjects.lastProject().id")
-NOTE = "This color isn't on your list or in your cost estimate yet. Tap Have enough or Need to buy."
+NOTE = "These colors aren't on your list or in your cost estimate yet. Tap Have enough or Need to buy for each one."
+NOTE1 = "This color isn't on your list or in your cost estimate yet. Tap Have enough or Need to buy."
 BUYNOTE = "This color isn't in your cost estimate yet. Opening a store won't mark it as Need to buy or Bought."
 TXT = '310\nBLANC\n321 x1\n498 x1\n666 x1\n700 x2\n725 x1\n796 x1\n820 x1\n898 x1\n3799 x2\n3865 x1\nB5200 x1\n415 x1\n762 x1'
 def proj(g, pid): return [x for x in json.loads(g.evaluate(f"localStorage.getItem({json.dumps(KEY)})"))['projects'] if x['id'] == pid][0]
@@ -82,6 +83,7 @@ with sync_playwright() as p:
         ok(t + 'Store Mode: Check first colors have Buy', g.locator('#smCheck [data-cfbuy]').count() == 15)
         ok(t + 'Store Mode: no Bought button on Check first colors', g.locator('#smCheck [data-smb]').count() == 0)
         ok(t + 'Store Mode: summary does not claim everything is bought', g.inner_text('#smSum') == '15 colors still need checking before this list is complete.', g.inner_text('#smSum'))
+        ok(t + 'Store Mode n>1 line uses plural wording', g.evaluate("document.getElementById('smCheckH').nextElementSibling.textContent") == NOTE)
         ok(t + 'Store Mode: plain-links note shown', g.locator('#smBuyNote').count() == 1)
         b2 = json.dumps(proj(g, pid), sort_keys=True)
         g.click('#smCheck li:has-text("DMC 310") [data-cfbuy]'); g.wait_for_timeout(100)
@@ -90,6 +92,7 @@ with sync_playwright() as p:
         ok(t + 'Store Mode Buy changed no data', json.dumps(proj(g, pid), sort_keys=True) == b2)
         g.fill('#smFind', '310'); g.wait_for_timeout(150)
         ok(t + 'Store Mode search filters Check first too', g.locator('#smCheck > li').count() == 1)
+        ok(t + 'Store Mode n=1 line uses singular wording', g.inner_text('#smCheck').strip() != '' and g.evaluate("document.getElementById('smCheckH').nextElementSibling.textContent") == NOTE1)
         g.fill('#smFind', ''); g.wait_for_timeout(150)
         g.click('#smCheck li:has-text("DMC 415") [data-cfst][data-v=buy]'); g.wait_for_timeout(200)
         ok(t + 'Store Mode: Need to buy moves the color to Still to find', g.locator('#smLeft .ffsm-row').count() == 1 and proj(g, pid)['decisions']['415']['status'] == 'buy' and not proj(g, pid).get('purchased'))
@@ -99,6 +102,12 @@ with sync_playwright() as p:
         if not g.evaluate("document.getElementById('pDetails').open"): g.click('#pDetails > summary')
         g.select_option('#pDest', 'anchor'); g.wait_for_timeout(200)
         ok(t + 'non-DMC brand: no Buy links, status buttons stay', g.locator('#pCheck [data-cfbuy]').count() == 0 and g.locator('#pCheck [data-cfst]').count() > 0)
+        # n=1 / n>1 in Shop tab list and project shop view
+        p1 = mk(g, 'One left', '310 x1\n321 x1'); g.evaluate(f"FlossFoxProjects.open({json.dumps(p1)})"); g.wait_for_timeout(200)
+        g.evaluate("FlossFoxProjects.showView('shop')"); g.wait_for_timeout(250)
+        ok(t + 'Shop list n=2 uses plural wording', g.inner_text('#pCheckH') == 'Check first (2)' and g.inner_text('#pCfNote').strip() == NOTE, g.inner_text('#pCfNote'))
+        g.click('#pCheck li:has-text("DMC 321") [data-cfst][data-v=have]'); g.wait_for_timeout(200)
+        ok(t + 'Shop list n=1 uses singular wording', g.inner_text('#pCheckH') == 'Check first (1)' and g.inner_text('#pCfNote').strip() == NOTE1, g.inner_text('#pCfNote'))
         ctx.close()
     br.close()
 ok('no page errors', not errs, errs[:3])
