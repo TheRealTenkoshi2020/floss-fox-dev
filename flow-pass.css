@@ -69,3 +69,5 @@
 #smCheck .ffsm-row{flex-wrap:wrap}
 #smCheck .ffcf-acts,#smCheck .ffcf-buy{flex-basis:100%}
 #pCheck li{padding:.45rem 0}
+/* ci005-62: Buy on Check first rows sits on its own line below the status buttons */
+.ffcf-acts .ffcf-buyrow{flex-basis:100%;display:flex}

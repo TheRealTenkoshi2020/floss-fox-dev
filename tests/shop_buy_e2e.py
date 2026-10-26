@@ -17,8 +17,8 @@ def mk(g, name, text):
     g.fill('#inp', text); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(120)
     g.fill('#newProjName', name); g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
     return g.evaluate("FlossFoxProjects.lastProject().id")
-NOTE = 'Not on your list or in the cost yet. Pick Have enough or Need to buy.'
-BUYNOTE = "Not in your cost estimate yet. Buying here doesn't change this color."
+NOTE = "This color isn't on your list or in your cost estimate yet. Tap Have enough or Need to buy."
+BUYNOTE = "This color isn't in your cost estimate yet. Opening a store won't mark it as Need to buy or Bought."
 TXT = '310\nBLANC\n321 x1\n498 x1\n666 x1\n700 x2\n725 x1\n796 x1\n820 x1\n898 x1\n3799 x2\n3865 x1\nB5200 x1\n415 x1\n762 x1'
 def proj(g, pid): return [x for x in json.loads(g.evaluate(f"localStorage.getItem({json.dumps(KEY)})"))['projects'] if x['id'] == pid][0]
 with sync_playwright() as p:
@@ -39,6 +39,9 @@ with sync_playwright() as p:
         ok(t + 'every Check first row has Have enough + Need to buy', all(r['have'] == 1 and r['need'] == 1 for r in rows), rows)
         ok(t + 'every Check first row has a Buy button (DMC destination)', all(r['buy'] == 1 for r in rows), rows)
         ok(t + 'row reason text kept (needs ... : why)', all(' · needs ' in r['t'] for r in rows), rows[:2])
+        sty = g.evaluate("""(()=>{const li=[...document.querySelectorAll('#pCheck > li')].find(l=>l.textContent.includes('DMC 321'));const b=li.querySelector('[data-cfbuy]'),h=li.querySelector('[data-v=have]'),n=li.querySelector('[data-v=buy]');const cb=getComputedStyle(b),ch=getComputedStyle(h);return {cls:b.className,bw:cb.borderTopWidth,bs:cb.borderTopStyle,bg:cb.backgroundColor,hbg:ch.backgroundColor,top:b.getBoundingClientRect().top,below:Math.max(h.getBoundingClientRect().bottom,n.getBoundingClientRect().bottom)}})()""")
+        ok(t + 'Buy uses secondary outline style (sec, not pri; outlined, same fill as status buttons)', 'sec' in sty['cls'].split() and 'pri' not in sty['cls'].split() and sty['bs'] == 'solid' and sty['bw'] != '0px' and sty['bg'] == sty['hbg'], sty)
+        ok(t + 'Buy sits below Have enough and Need to buy', sty['top'] >= sty['below'], sty)
         ok(t + 'chooser hidden until tapped', g.locator('#pCheck .ffcf-buy:visible').count() == 0)
         before = json.dumps(proj(g, pid), sort_keys=True)
         g.click('#pCheck li:has-text("DMC 321") [data-cfbuy]'); g.wait_for_timeout(120)
