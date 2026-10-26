@@ -208,8 +208,8 @@ with sync_playwright() as p:
     ok('T4 partial receipt does not cover need', not ready(m) and summ(m)['sBuy'] == '1' and 'DMC 310 × 2' in pl and '1 already received' in pl and not m.is_checked('#pb-dmc\\:310'), (summ(m), pl[:300]))
     newproj(m, '415 x?', 'Unknown'); ok4 = []
     for st in ['have', 'check', 'buy']:
-        m.check(f'#st-415-{st}'); ok4.append(not ready(m) and summ(m)['sRev'] == '1')
-    ok('T5 unknown needed stays unresolved for Have/Check/Buy', all(ok4), ok4)
+        m.check(f'#st-415-{st}'); ok4.append(summ(m)['sRev'] == '0' if st == 'have' else (not ready(m) and summ(m)['sRev'] == '1'))
+    ok('T5 unknown needed: explicit Have enough is accepted (ci005-64); Check/Buy stay unresolved', all(ok4), ok4)
     newproj(m, 'BLANC, 321', 'Subs'); m.select_option('#pDest', 'anchor'); m.check('#st-WHITE-have'); m.check('#st-321-buy')
     ok('T6 unapproved substitution blocks ready (disputed + multi-option)', not ready(m) and summ(m)['sRev'] == '2', summ(m))
     expand(m, 'WHITE'); m.select_option('#anc-WHITE', '2'); expand(m, '321'); m.select_option('#anc-321', '47'); m.check('#pb-anchor\\:47'); m.click('#rb-anchor_47'); m.fill('#rq-anchor_47', '1'); m.click('#rc-anchor_47')

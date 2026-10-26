@@ -61,7 +61,7 @@ let last=null,lastKey=null,lastL=null,lastB=false;function bubble(){const k=scre
  if(g==='convert'||g==='results'){lastKey=null;if(Pp&&Pp.screen)Pp.screen(null);return}
  const l=pickLine(g);lastKey=l&&l.key;lastL=l;if(g==='fabric'){fabricLine(l);return}if(!Pp||!Pp.screen)return;if(l)Pp.screen(g,l.text,bk?'meditating':l.pose);else Pp.screen(null)}
 /* refresh the project/shop line when its condition changes (e.g. becomes ready), still one line per condition */
-let lastCond='';function bubbleCond(){const g=last;if(!['project','shop','threads','projects'].includes(g))return;const c=bubbleKeys(g).map(x=>x[0]).join('|');if(c===lastCond)return;const first=!lastCond;lastCond=c;if(first)return;last=null;bubble()}
+let lastCond='';function bubbleCond(){const g=last;if(!['project','shop','threads','projects'].includes(g))return;const c=bubbleKeys(g).map(x=>x[0]+JSON.stringify(x[1]||'')).join('|');if(c===lastCond)return;const first=!lastCond;lastCond=c;if(first)return;last=null;bubble()}
 function fabricLine(l){const slot=$('ffFabricPip');if(!slot||!l)return;slot.querySelector('.ffpipline').textContent=l.text;slot.dataset.key=l.key}
 /* Find floss results: one Next to save */
 function findNext(){const w=$('findNext'),r=$('results');if(!w||!r)return;w.hidden=r.hidden;const b=$('findNextBtn');const l=(S().next||{}).find;if(b&&l&&b.textContent!==l+' →'){b.textContent=l+' →';b.onclick=()=>{const sb=$('saveBox');if(sb)sb.scrollIntoView({block:'center'});const n=$('newProjName');if(n)n.focus()}}}

@@ -100,7 +100,7 @@ function plan(p){const dest=p.buyBrand,threads=[];
   const K=(k,w)=>{t.kind=k;t.why=w};
   if(needsPick){t.cau='match';K('match',r.review?'Sources disagree on the Anchor match for white. Choose the one you want in Details.':'The chart lists more than one Anchor match. Choose the one you want in Details.');return}
   if(d.status==='have'){if(t.estimated||rq.source==='unavailable'&&it.qty!==null&&asmOf(it)>0){t.state='have';t.recheck=!t.estimated||d.estimateChecked!==SK.fingerprint(it,p.skeinEstimator,rq.estimate);return}
-   if(req===null)K(rq.source==='unavailable'?'estimate':'amount',rq.reason||"We can't tell if you have enough until the amount needed is entered. Add it in Details.");else if(own!==null&&own<req)t.cau='have',K('other',`You noted ${own} skein${own===1?'':'s'}, but the pattern needs ${req}. Choose Need to buy, or update what you have.`);else t.state='have';return}
+   if(req===null){t.state='have';t.noAmt=true}else if(own!==null&&own<req)t.cau='have',K('other',`You noted ${own} skein${own===1?'':'s'}, but the pattern needs ${req}. Choose Need to buy, or update what you have.`);else t.state='have';return}
   if(d.status==='check'){K('unsure',`Check your threads, then choose Have enough or Need to buy.${own!==null?` (You noted ${own}.)`:''}${req===null?" The amount needed isn't entered.":''}`);return}
   if(d.status!=='buy'){K('unchecked','Choose Have enough, Need to buy or Not sure.');return}
   if(!r.ok){t.cau='match';K('other',plainWhy(it,r));return}
@@ -136,8 +136,8 @@ function cfActs(t,L,pre){const c=esc(t.it.code),n=esc(lab(t.it.code)),id=pre+'-'
 function setStatus(p,code,v){const it=p.items.find(x=>x.code===code),d=p.decisions[code];if(!it||!d)return false;const rq=reqOf(p,it);d.status=v;d.estimateChecked=v==='have'&&rq.source==='estimated'?SK.fingerprint(it,p.skeinEstimator,rq.estimate):null;return true}
 document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-cfbuy],[data-cfst]');if(!b)return;
  if(b.dataset.cfbuy){const c=document.getElementById(b.dataset.cfbuy);if(!c)return;const o=c.hidden;c.hidden=!o;b.setAttribute('aria-expanded',String(o));if(o){const a=c.querySelector('a');if(a)a.focus({preventScroll:true})}return}
- const p=openId&&proj(openId);if(!p||!setStatus(p,b.dataset.cfst,b.dataset.v))return;const code=b.dataset.cfst,inStore=!!b.closest('#pStore'),inShop=!!b.closest('#shCheck');edited(p);touch(p);renderEditor();renderList();
- const m=$(inStore?'smSum':inShop?'shMsg':'pMsg');if(m)m.textContent=`DMC ${lab(code)}: ${b.dataset.v==='have'?CFS.have:CFS.buy}.`;const f=$(inStore?'smFind':inShop?'shH':'pCheckH')||$('pShopH');if(f)f.focus({preventScroll:true})});
+ const p=openId&&proj(openId),li=b.closest('li'),nx=li&&(li.nextElementSibling||li.previousElementSibling),nxc=nx&&(nx.querySelector('[data-cfst]')||{dataset:{}}).dataset.cfst,ul=li&&li.parentElement&&li.parentElement.id;if(!p||!setStatus(p,b.dataset.cfst,b.dataset.v))return;const code=b.dataset.cfst,inStore=!!b.closest('#pStore'),inShop=!!b.closest('#shCheck');edited(p);touch(p);renderEditor();renderList();
+ const m=$(inStore?'smSum':inShop?'shMsg':'pMsg');if(m)m.textContent=`DMC ${lab(code)}: ${b.dataset.v==='have'?CFS.have:CFS.buy}.`;const nb=nxc&&ul&&document.querySelector(`#${ul} [data-cfst="${CSS.escape(nxc)}"][data-v="have"]`);const f=nb||$(inStore?'smFind':inShop?'shH':'pCheckH')||$('pShopH');if(f)f.focus({preventScroll:true})});
 const cfNote=n=>`${s2(n)} still need${n===1?'s':''} checking before this list is complete.`;
 // Pip celebrates once per real not-ready -> ready transition (pose only, no bubble: the headline right beside it already says it).
 const CEL=()=>{setTimeout(()=>{const f=document.getElementById('pCel');if(f){f.classList.remove('pip-cheer')}},4000);
@@ -373,8 +373,8 @@ function renderKit(p){const host=$('pThreads');if(!host||!AL()||!window.FlossFox
  {const a=$('kAll');if(a)a.onclick=()=>{const n=can.reduce((x,r)=>x+r.mayReserveNow,0);apply(can.map(r=>[r.code,r.reservedForThisProject+r.mayReserveNow]),`Set aside ${plural(n,'skein')} across ${plural(can.length,'color')}.`)}}
  {const u=$('kUndo');if(u)u.onclick=()=>{const k=kitUndo;kitUndo=null;let ok=true;for(const [c,q] of k.prev){if(!S.update({projectId:p.id,code:c,qty:q},ctx).ok)ok=false}renderKit(p);$('kMsg').textContent=ok?'Undone. Set-aside amounts are back to how they were.':'Part of the undo couldn\'t be saved. Check the amounts above.'}}}
 const kitCount=id=>{const S=ALS();return S?S.read().allocations.filter(r=>r.projectId===id).reduce((a,r)=>a+r.qty,0):0};
-function renderEditor(){if(mode==='shop')return renderShop();{const sb=$('shopBody');if(sb)sb.textContent=''}const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
- const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
+function renderEditor(){if(mode==='shop')return renderShop();const y=window.scrollY;{const sb=$('shopBody');if(sb)sb.textContent=''}const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}
+ const focusId=document.activeElement&&document.activeElement.id,P=plan(p);
  const unchecked=p.items.filter(it=>!p.decisions[it.code].status).length;
  E.innerHTML=`<div class="noprint"><div class="ptitle"><button type="button" class="ghost" id="pClose">← All projects</button><button type="button" class="pri" id="pShop"><span aria-hidden="true">🛒</span> Shop my list</button></div><p class="ffsaved" id="pSaved">${canSave?esc(FX(FS('savedBadge'),{time:new Date(p.updated).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})})):''}</p>
  <h2 class="ptname" id="pTitle">${esc(p.name)}</h2><nav class="pflow" id="pFlow" aria-label="Project steps"></nav><div class="ffbanner" id="pAuto" role="status" hidden></div></div><div id="pSum"></div><div id="pReady" class="noprint"></div><div id="pTrust" class="noprint"></div>
