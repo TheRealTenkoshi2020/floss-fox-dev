@@ -43,7 +43,7 @@ with sync_playwright() as p:
     cmp = h.inner_text('#pCmp')
     ok('I2b comparison uses the existing engine: 310 owned, others short/missing', 'Compared with my thread collection' in cmp and '1 owned' in cmp.replace('\n', ' ').replace('✓ ', ''), cmp[:300])
     if h.locator('#pUseColl').count():
-        h.click('#pUseColl'); h.wait_for_timeout(200)
+        h.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); h.click('#pUseColl'); h.wait_for_timeout(200)
         if h.locator('#pApplyColl').count(): h.click('#pApplyColl'); h.wait_for_timeout(200)
     h.screenshot(path=os.path.join(SHOTS, '12-import-compared.png'), full_page=False)
     ok('I2c imported items flow into the shopping list without re-entry', h.locator('#pPlan').count() == 1)

@@ -57,7 +57,7 @@ with sync_playwright() as playwright, tempfile.TemporaryDirectory() as temp:
     check('manual Have enough survives higher estimated requirement',page.evaluate("FlossFoxProjects.plan(FlossFoxProjects._store().projects[0]).have.some(t=>t.it.code==='310')"))
     page.locator('#seCount').fill('18');page.locator('#seSave').click()
     check('changed estimate keeps manual choice and shows a recheck note',page.locator('#st-310-have').is_checked() and page.locator('#card-310 .skein-note').is_visible())
-    page.locator('#pUseColl').click();page.locator('#pApplyColl').click()
+    page.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); page.locator('#pUseColl').click();page.locator('#pApplyColl').click()
     check('partial stock remains Check first',page.evaluate("FlossFoxProjects.plan(FlossFoxProjects._store().projects[0]).checkFirst.some(t=>t.it.code==='310')"))
     check('legacy collection count remains unverified',page.locator('#st-321-check').is_checked())
     page.locator('#pUndoColl').click()

@@ -38,7 +38,7 @@ with sync_playwright() as p:
         dec = lambda: json.loads(ls(KEY))['projects'][0]['decisions']
         vh = g.evaluate('innerHeight')
         # ---- 1. compact preview ----
-        g.click('#pUseColl'); g.wait_for_timeout(150)
+        g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); g.click('#pUseColl'); g.wait_for_timeout(150)
         sm = g.inner_text('#pPrevSum')
         ok(f'C1 {T} compact summary: "Will mark 1 Have enough, 16 Not sure, 7 Need to buy"', sm.startswith('Will mark 1 Have enough, 16 Not sure, 7 Need to buy'), sm)
         ok(f'C2 {T} full list is behind a closed "Show all 24 changes" expander', g.inner_text('#pPrevAll summary') == 'Show all 24 changes' and not g.evaluate("document.getElementById('pPrevAll').open") and g.locator('#pPrevAll li').count() == 24)
@@ -48,10 +48,10 @@ with sync_playwright() as p:
         if A.shots and W == 390: os.makedirs(A.shots, exist_ok=True); g.screenshot(path=f'{A.shots}/compact-preview-390{"-webkit" if A.webkit else ""}.png')
         g.click('#pPrevAll summary'); ok(f'C5 {T} expander lists every change', g.locator('#pPrevAll li:visible').count() == 24 and 'DMC 699 (missing)' in g.inner_text('#pPrevAll'))
         g.click('#pCancelColl'); ok(f'C6 {T} Cancel changes nothing', dec() == {} or all(not v.get('status') for v in dec().values()))
-        g.click('#pUseColl'); g.click('#pApplyColl'); g.wait_for_timeout(150); d = dec()
+        g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); g.click('#pUseColl'); g.click('#pApplyColl'); g.wait_for_timeout(150); d = dec()
         ok(f'C7 {T} Apply: 1 have, 16 not sure, 7 buy', sum(v['status'] == 'have' for v in d.values()) == 1 and sum(v['status'] == 'check' for v in d.values()) == 16 and sum(v['status'] == 'buy' for v in d.values()) == 7)
         g.click('#pUndoColl'); g.wait_for_timeout(100); ok(f'C8 {T} Undo still restores the previous state', all(not v.get('status') for v in dec().values()))
-        g.click('#pUseColl'); g.click('#pApplyColl'); g.wait_for_timeout(100); g.click('#st-310-buy'); g.wait_for_timeout(100)
+        g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); g.click('#pUseColl'); g.click('#pApplyColl'); g.wait_for_timeout(100); g.click('#st-310-buy'); g.wait_for_timeout(100)
         ok(f'C9 {T} manual edit still clears Undo', g.locator('#pUndoColl').count() == 0)
         g.click('#st-310-have'); g.wait_for_timeout(100)
         # ---- 2. Need to buy vs Check first ----

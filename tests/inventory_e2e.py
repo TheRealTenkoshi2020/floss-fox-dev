@@ -25,7 +25,7 @@ with sync_playwright() as p:
     e = ls(g, TKEY)['threads']['310']; print('S-001 collection entry:', e)
     g.click('#tabProjects'); g.click('[data-open="s1"]'); g.wait_for_timeout(150)
     own, unv = g.inner_text('#cmpOwned'), g.inner_text('#cmpUnver'); print('S-001 compare:', own, '|', unv)
-    g.click('#pUseColl'); g.wait_for_timeout(100); print('S-001 preview:', g.inner_text('#pPrevSum')); g.click('#pApplyColl'); g.wait_for_timeout(150)
+    g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); g.click('#pUseColl'); g.wait_for_timeout(100); print('S-001 preview:', g.inner_text('#pPrevSum')); g.click('#pApplyColl'); g.wait_for_timeout(150)
     d = ls(g, KEY)['projects'][0]['decisions']['310']; body = g.inner_text('#pSum'); print('S-001 decision:', d); print('S-001 summary:', body[:200].replace('\n', ' / '))
     shot(g, 's001.png')
     ok('S-001a unconfirmed stock is unverified, not owned', own.startswith('✓ 0') and unv.startswith('? 1'), own + ' ' + unv)

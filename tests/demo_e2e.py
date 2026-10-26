@@ -27,7 +27,7 @@ with sync_playwright() as p:
         g.evaluate("FlossFoxProjects.open(FlossFoxProjects._store().projects.find(x=>x.demo).id)"); g.wait_for_timeout(150)
         ok(f'{w}px Demogorgon (demo): 13 owned, 0 short, 6 missing', g.inner_text('#cmpOwned').startswith('✓ 13') and g.inner_text('#cmpShort').startswith('◐ 0') and g.inner_text('#cmpMissing').startswith('✗ 6'), g.inner_text('#pCmp'))
         ok(f'{w}px demo project has 19 colors with stitch counts', g.evaluate("FlossFoxProjects._store().projects.find(x=>x.demo).items.length") == 19 and g.evaluate("FlossFoxProjects._store().projects.find(x=>x.demo).items.every(i=>i.stitchCount>0)"))
-        ok(f'{w}px demo project tagged Demo; my real project still compares with my real threads', 'Demo' in g.inner_text('#pCmpBox').replace('demo threads', 'Demo') )
+        g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); ok(f'{w}px demo project tagged Demo; my real project still compares with my real threads', 'Demo' in g.inner_text('#pCmpBox').replace('demo threads', 'Demo') )
         if w in (390, 1280):
             os.makedirs('/workspace/floss-converter/feedback-shots/cf', exist_ok=True); g.screenshot(path=f'/workspace/floss-converter/feedback-shots/cf/demo-project-{w}.png')
         ok(f'{w}px no sideways scrolling', g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))

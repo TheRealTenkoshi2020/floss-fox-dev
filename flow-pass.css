@@ -43,3 +43,22 @@
  nav.tabs.th-l::before,nav.tabs.th-r::after{opacity:1;pointer-events:auto;cursor:pointer}
 }
 @media(prefers-reduced-motion:reduce){nav.tabs::before,nav.tabs::after{transition:none}}
+/* ci005-59 projects scroll pass: compact cards, collapsed compare, compact summary */
+#pCards .tcard{padding:8px 10px;margin-bottom:6px}
+#pCards .tcard .top{gap:8px}
+#pCards .tcard .ident{display:flex;flex-wrap:wrap;column-gap:6px;align-items:baseline}
+#pCards .tcard .code{font-size:1.05rem}#pCards .tcard .cname{font-size:.85rem}
+#pCards .tcard .need{order:3;flex-basis:100%;margin:0}
+#pCards .tcard .stat{order:4;margin:2px 0 0;padding:1px 8px;font-size:.78rem}
+#pCards .tcard .seg{margin-top:6px}
+.tcard .caut{font-size:.82rem;font-weight:700;color:var(--warn-ink,#8a2f17);margin-top:4px}
+.tcard .caut::before{content:"! ";}
+.tdet>.why{margin:0 0 var(--s2,8px)}
+.pcmp>summary{cursor:pointer;list-style:none}.pcmp>summary::-webkit-details-marker{display:none}
+.pcmp>summary>b::before{content:"\25B8  ";display:inline-block}.pcmp[open]>summary>b::before{content:"\25BE  "}
+.pcmp>summary:focus-visible{outline:3px solid var(--focus,#2f6f9f);outline-offset:2px;border-radius:6px}
+.pcmp>summary .cnt{margin:4px 0 0}
+#pAutoMore{margin-top:4px;min-height:44px}
+#pSummary .stats{margin:6px 0!important}
+.psum .skeins{font-size:.88rem;margin:4px 0}
+.psum ul.next{margin:6px 0}.psum ul.next li{padding:6px 10px;gap:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
