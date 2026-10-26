@@ -62,3 +62,10 @@
 #pSummary .stats{margin:6px 0!important}
 .psum .skeins{font-size:.88rem;margin:4px 0}
 .psum ul.next{margin:6px 0}.psum ul.next li{padding:6px 10px;gap:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
+/* ci005-61: Check first rows: quick status buttons + Buy chooser (same pills as Store Mode) */
+.ffcf-acts{display:flex;flex-wrap:wrap;gap:.4rem;margin:.4rem 0 .2rem}
+.ffcf-acts button{white-space:nowrap}
+.ffcf-buy .ffcf-buynote{flex-basis:100%;margin:0 0 .25rem}
+#smCheck .ffsm-row{flex-wrap:wrap}
+#smCheck .ffcf-acts,#smCheck .ffcf-buy{flex-basis:100%}
+#pCheck li{padding:.45rem 0}
