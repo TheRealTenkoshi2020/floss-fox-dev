@@ -57,9 +57,9 @@ with sync_playwright() as p:
         # ---- 2. Need to buy vs Check first ----
         plan = g.inner_text('#pPlan'); nb = plan.split('Check first')[0]; cf = g.inner_text('#pCheck')
         ok(f'S1 {T} screen: Check first (16) is its own section', g.inner_text('#pCheckH') == 'Check first (16)' and g.locator('#pCheck li').count() == 16)
-        ok(f'S2 {T} plain note (Pixel final, n>1, ci005-63)', g.inner_text('#pCfNote').strip() == "These colors aren't on your list or in your cost estimate yet. Tap Have enough or Need to buy for each one.")
+        ok(f'S2 {T} plain note (Pixel final, n>1, ci005-65)', g.inner_text('#pCfNote').strip() == "These colors still need a look. Check them in My threads, or buy any you already know you need.")
         ok(f'S3 {T} Need to buy holds only known short/missing (321 + 6 missing), no check-first color', all(f'DMC {c}' in nb for c in MISS) and 'DMC 321' in nb and not any(f'DMC {c} ' in nb for c in OWN[2:]), nb[:500])
-        ok(f'S4 {T} check-first colors explain why (owned, quantity not verified -> Not sure)', 'marked Not sure' in cf and 'DMC 815' in cf)
+        ok(f'S4 {T} owned, quantity not verified color is listed under Check first (ci005-65: color only, no reason line)', 'DMC 815' in cf and 'marked Not sure' not in cf)
         tot = g.inner_text('#pPlan .totals')
         ok(f'S5 {T} estimate is labelled "Need to buy only" and says check-first colors are not included', 'Need to buy only' in tot and 'Not included: 16 colors in Check first' in tot, tot)
         ok(f'S6 {T} headline not ready; Check first counted in the summary', g.get_attribute('#pSummary', 'data-ready') == 'false' and g.inner_text('#sCf') == '16')
