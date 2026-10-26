@@ -15,7 +15,7 @@
 @media(max-width:360px){.thqrow{flex-wrap:wrap}.thqrow textarea{flex:1 1 100%}.thqrow #thAddBtn{flex:1 1 100%}}
 /* Item 1: phones get one row of tabs that scrolls sideways (Settings included) and a smaller Ask Pip. */
 @media(max-width:560px){
- nav.tabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;padding-top:4px;padding-bottom:4px;mask-image:linear-gradient(90deg,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent)}
+ nav.tabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px!important;padding-top:4px;padding-bottom:4px;position:relative}
  nav.tabs::-webkit-scrollbar{display:none}
  nav.tabs>*{flex:0 0 auto!important;grid-column:auto!important;min-height:44px!important;padding:0 12px!important;scroll-snap-align:start;white-space:nowrap!important;font-size:.88rem!important}
  nav.tabs #tabSettings{display:inline-flex!important}
@@ -33,3 +33,13 @@
  #pSummary nav.jump{display:flex!important;flex-wrap:wrap;gap:6px}
  #pSummary nav.jump a{padding:6px 10px!important;min-height:36px;font-size:.85rem}
 }
+
+/* Tab row scroll hint: soft fade + chevron only on a side with more tabs (classes set by tab-hint.js). */
+@media(max-width:560px){
+ nav.tabs{padding-left:0!important;padding-right:0!important}
+ nav.tabs::before,nav.tabs::after{content:'';position:sticky;z-index:2;flex:0 0 30px;width:30px;align-self:stretch;opacity:0;pointer-events:none;transition:opacity .2s ease;background-repeat:no-repeat}
+ nav.tabs::before{left:0;order:-1;margin-right:calc(var(--s4,16px) - 36px);scroll-snap-align:start;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M10 3 5 8l5 5' fill='none' stroke='%233D5C48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(90deg,var(--canvas,#F8F4EB) 40%,transparent);background-size:14px 14px,100% 100%;background-position:2px center,0 0}
+ nav.tabs::after{right:0;order:99;margin-left:calc(var(--s4,16px) - 36px);scroll-snap-align:end;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6 3l5 5-5 5' fill='none' stroke='%233D5C48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(270deg,var(--canvas,#F8F4EB) 40%,transparent);background-size:14px 14px,100% 100%;background-position:calc(100% - 2px) center,0 0}
+ nav.tabs.th-l::before,nav.tabs.th-r::after{opacity:1;pointer-events:auto;cursor:pointer}
+}
+@media(prefers-reduced-motion:reduce){nav.tabs::before,nav.tabs::after{transition:none}}

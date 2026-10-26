@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-57';
+const CACHE = 'flossfox-dev-v2.0a-ci005-58';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -73,6 +73,7 @@ const CORE = [
   "flow-p3.js",
   "flow-pass.js",
   "flow-pass.css",
+  "tab-hint.js",
   "flow-strings.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",
