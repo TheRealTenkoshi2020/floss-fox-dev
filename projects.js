@@ -97,9 +97,12 @@ const needOf=(p,it)=>{const r=reqOf(p,it);return r.amount===null?'amount not ent
 // with no decision yet (blank), so an explicit status always wins. Skeins set aside for other projects are not counted (allocations).
 // Covered -> Have enough, short -> Need to buy the shortfall; owned with no amount set -> Have enough (Myke, Oct 26) unless partial/estimated/assumed.
 // Missing and caution cases (not confirmed, partial, match to check) are left as they are.
+// My threads minus skeins set aside for other projects (shared by the Shop overlay and the new-project auto-apply, ci005-69).
+function allocE(p,T){let E=p.demo?(T.data().demo||{}):T.data().threads;
+ if(!p.demo&&AL()){const data=ALS().read(),col=COL();E=Object.fromEntries(Object.entries(E).map(([c,e])=>{const a=AL().summary(data,col,c,p.id);return[c,a&&a.availableForProject!==null&&a.availableForProject<e.n?{...e,n:a.availableForProject}:e]}))}
+ return E}
 function collOverlay(p){const T=window.FlossFoxThreadsUI;if(!T||!T.core)return null;
- try{if(!p.items.some(it=>p.decisions[it.code]&&blank(p.decisions[it.code])))return null;let E=p.demo?(T.data().demo||{}):T.data().threads;
-  if(!p.demo&&AL()){const data=ALS().read(),col=COL();E=Object.fromEntries(Object.entries(E).map(([c,e])=>{const a=AL().summary(data,col,c,p.id);return[c,a&&a.availableForProject!==null&&a.availableForProject<e.n?{...e,n:a.availableForProject}:e]}))}
+ try{if(!p.items.some(it=>p.decisions[it.code]&&blank(p.decisions[it.code])))return null;const E=allocE(p,T);
   const {r,ch}=cmpPlan(p,T,E),o={},nu=new Set(r.unverified.filter(x=>(x.need===null||x.need===undefined)&&!x.estimated&&!x.partial&&!x.assumed&&x.have>0).map(x=>x.code));
   ch.forEach(c=>{if(!blank(p.decisions[c.code]))return;if(c.why==='owned'||c.why==='short')o[c.code]=c.to;else if(nu.has(c.code))o[c.code]={...c.to,status:'have'}});
   return Object.keys(o).length?o:null}catch(e){return null}}
@@ -282,7 +285,7 @@ const AUTOKEY=()=>KEY.replace(/\.v1$/,'')+'.autocmp-off.v1',autoOff=()=>{try{ret
 const AUTOHID=()=>KEY.replace(/\.v1$/,'')+'.autocmp-hidden.v1',autoHid=()=>{try{return JSON.parse(localStorage.getItem(AUTOHID())||'[]')}catch(e){return[]}};
 function setAutoHid(id){try{const a=autoHid();if(!a.includes(id)){a.push(id);localStorage.setItem(AUTOHID(),JSON.stringify(a.slice(-200)))}}catch(e){}}
 function setAutoOff(id){try{const a=autoOff();if(!a.includes(id)){a.push(id);localStorage.setItem(AUTOKEY(),JSON.stringify(a.slice(-200)))}}catch(e){}}
-function autoPlan(p){const T=window.FlossFoxThreadsUI;if(!T||!p.items.length||!T.count({demo:!!p.demo}))return null;const {r,ch}=cmpPlan(p,T);
+function autoPlan(p){const T=window.FlossFoxThreadsUI;if(!T||!p.items.length||!T.count({demo:!!p.demo}))return null;let E=null;try{E=T.core?allocE(p,T):null}catch(e){E=null}const {r,ch}=cmpPlan(p,T,E||undefined);
  const safe=ch.filter(c=>blank(c.from));return{have:r.owned.length,total:p.items.length,safe,all:ch.length,u:safe.filter(c=>c.to.status==='check').length,b:safe.filter(c=>c.to.status==='buy').length}}
 function autoCmp(p){if(window.FF_NO_AUTOCMP)return; /* test-only hook for legacy suites that drive Use my collection by hand */if(autoBan[p.id]&&autoBan[p.id].kind!=='offer')return;const T=window.FlossFoxThreadsUI;if(!T||!p.items.length)return;
  const fresh=String(p.created||'')>=AUTO_SINCE&&!autoOff().includes(p.id);
