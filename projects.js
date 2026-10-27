@@ -93,9 +93,19 @@ function estimateInput(it){
 const estimateProject=p=>({...p,items:p.items.map(estimateInput)});
 const reqOf=(p,it)=>SK.requirement(estimateInput(it),p.skeinEstimator,DMC,fam(it.code),p.buyBrand);
 const needOf=(p,it)=>{const r=reqOf(p,it);return r.amount===null?'amount not entered':r.source==='estimated'?`about ${SK.fmt(r.amount)} skeins (Pip estimate, including extra)`:plural(r.amount,'skein')+asmTxt(it.qty,asmOf(it))};
-function plan(p){const dest=p.buyBrand,threads=[];
+// ci005-67: readiness from My threads, derived when the plan is drawn (never saved). Reuses cmpPlan ("Use my collection") on colors
+// with no decision yet (blank), so an explicit status always wins. Skeins set aside for other projects are not counted (allocations).
+// Covered -> Have enough, short -> Need to buy the shortfall; owned with no amount set -> Have enough (Myke, Oct 26) unless partial/estimated/assumed.
+// Missing and caution cases (not confirmed, partial, match to check) are left as they are.
+function collOverlay(p){const T=window.FlossFoxThreadsUI;if(!T||!T.core)return null;
+ try{if(!p.items.some(it=>p.decisions[it.code]&&blank(p.decisions[it.code])))return null;let E=p.demo?(T.data().demo||{}):T.data().threads;
+  if(!p.demo&&AL()){const data=ALS().read(),col=COL();E=Object.fromEntries(Object.entries(E).map(([c,e])=>{const a=AL().summary(data,col,c,p.id);return[c,a&&a.availableForProject!==null&&a.availableForProject<e.n?{...e,n:a.availableForProject}:e]}))}
+  const {r,ch}=cmpPlan(p,T,E),o={},nu=new Set(r.unverified.filter(x=>(x.need===null||x.need===undefined)&&!x.estimated&&!x.partial&&!x.assumed&&x.have>0).map(x=>x.code));
+  ch.forEach(c=>{if(!blank(p.decisions[c.code]))return;if(c.why==='owned'||c.why==='short')o[c.code]=c.to;else if(nu.has(c.code))o[c.code]={...c.to,status:'have'}});
+  return Object.keys(o).length?o:null}catch(e){return null}}
+function plan(p){const dest=p.buyBrand,threads=[],ov=collOverlay(p);
  // Per-thread state (derived, deterministic): have | received | buy | awaiting | review
- p.items.forEach(it=>{const d=p.decisions[it.code],r=resolve(it,dest,d.anchor),rq=reqOf(p,it),req=rq.amount,own=d.owned;const t={it,d,r,req:rq,estimated:rq.source==='estimated',state:'review',why:'',q:0,rem:0,recv:0,recvOther:false};threads.push(t);
+ p.items.forEach(it=>{const d=ov&&ov[it.code]?{...p.decisions[it.code],...ov[it.code]}:p.decisions[it.code],r=resolve(it,dest,d.anchor),rq=reqOf(p,it),req=rq.amount,own=d.owned;const t={it,d,r,req:rq,estimated:rq.source==='estimated',state:'review',why:'',q:0,rem:0,recv:0,recvOther:false};threads.push(t);
   const needsPick=dest==='anchor'&&fam(it.code)==='solid'&&!d.anchor&&(r.review||DMC[it.code].anchor.length>1);
   const K=(k,w)=>{t.kind=k;t.why=w};
   if(needsPick){t.cau='match';K('match',r.review?'Sources disagree on the Anchor match for white. Choose the one you want in Details.':'The chart lists more than one Anchor match. Choose the one you want in Details.');return}
@@ -164,7 +174,7 @@ function summaryText(P){const s=P.sum;return`${s.sufficient-P.have.filter(x=>x.c
 function readyText(P,p){if(!p.items.length)return'No colors in this project yet.';if(!P.ready&&!P.sum.toBuy&&!P.sum.awaiting&&P.sum.checkFirst)return`Not ready yet: ${cfNote(P.sum.checkFirst)}`;return P.ready?(P.hasEstimates?'Thread plan covered using Pip’s estimates. Actual use can vary.':"Ready to stitch: all your threads are accounted for."):`Not ready yet: ${s2(P.sum.toBuy)} to buy, ${P.sum.awaiting} bought (waiting to check in), ${P.sum.review} need attention.`}
 const s2=n=>plural(n,'color');
 function receive(p,key,n){const P=plan(p),l=P.lines.find(x=>x.key===key);if(!l)return'';let left=n;
- l.ts.forEach(t=>{const take=Math.min(left,t.rem);if(take>0){const prev=(t.d.recv&&t.d.recv.brand===P.dest&&t.d.recv.to===t.r.to)?t.d.recv.qty:0;t.d.recv={brand:P.dest,to:t.r.to,qty:prev+take};left-=take}});
+ l.ts.forEach(t=>{const take=Math.min(left,t.rem);if(take>0){const prev=(t.d.recv&&t.d.recv.brand===P.dest&&t.d.recv.to===t.r.to)?t.d.recv.qty:0;p.decisions[t.it.code].recv={brand:P.dest,to:t.r.to,qty:prev+take};left-=take}});
  delete p.purchased[key];touch(p);const nm=`${BRAND[P.dest]} ${disp(P.dest,l.to)}`;return n>=l.q?`✓ ${nm} checked in: ${plural(n,'skein')} received. You have enough now.`:`${plural(n,'skein')} of ${nm} received. ${l.q-n} more still needed, so it's back on your shopping list.`}
 
 // ---- Rendering ----
@@ -237,8 +247,8 @@ let cmpPreview=null;const undoBy={};
 // compact preview line, e.g. "Will mark 13 Have enough, 4 Not sure, 2 Need to buy"
 const prevSum=ch=>{const n={have:0,check:0,buy:0};ch.forEach(c=>{n[c.to.status]++});const o=n2=>Object.entries(n2).filter(([,v])=>v).map(([k,v])=>`${v} ${STW[k]}`);
  const extra=ch.filter(c=>c.from.status===c.to.status).length;return`Will mark ${o(n).join(', ')}${extra?` (${extra} only update “you already have”)`:''}.`};
-function cmpPlan(p,T){const r=T.compare(p.items,{demo:!!p.demo}),ch=[];
- const entries=p.demo?(T.data().demo||{}):T.data().threads,er=SK.compareProject(p.items.map(estimateInput),p.skeinEstimator,DMC,fam,entries,p.buyBrand),changed=new Set(Object.values(er).flat().map(x=>x.code));
+function cmpPlan(p,T,E){const r=E?T.core.compare(p.items,p.demo?{demo:E,threads:{}}:{threads:E},{demo:!!p.demo}):T.compare(p.items,{demo:!!p.demo}),ch=[];
+ const entries=E||(p.demo?(T.data().demo||{}):T.data().threads),er=SK.compareProject(p.items.map(estimateInput),p.skeinEstimator,DMC,fam,entries,p.buyBrand),changed=new Set(Object.values(er).flat().map(x=>x.code));
  for(const k in r)r[k]=r[k].filter(x=>!changed.has(x.code)).concat(er[k]);
  const want=(x,status,owned,why)=>{const d=p.decisions[x.code],ownedSource=(x.ownedConfirmed===true||entries[x.code]&&entries[x.code].confirmed===true)?'collection':'unverified',ownedPartial=!!x.partial;
   if(d.status!==status||d.owned!==owned||d.ownedSource!==ownedSource||d.ownedPartial!==ownedPartial)ch.push({code:x.code,from:{status:d.status,owned:d.owned,ownedSource:d.ownedSource,ownedPartial:d.ownedPartial,estimateChecked:d.estimateChecked},to:{status,owned,ownedSource,ownedPartial,estimateChecked:x.estimated&&status==='have'?SK.fingerprint(p.items.find(i=>i.code===x.code),p.skeinEstimator,reqOf(p,p.items.find(i=>i.code===x.code)).estimate):null},why})};
@@ -449,7 +459,9 @@ function shopPicker(){const h=$('shopPickRow');if(!h)return;const ps=store.proje
  $('shopPick').onchange=e=>{const id=e.target.value;if(!id||!proj(id))return;if(openId!==id){expanded.clear();filt='all';query='';shopPanel=null}const sw=openId!==id;openId=id;mode='edit';{const pp=proj(id);if(pp)autoCmp(pp)}if(sw){const sb=$('shopBody');if(sb)sb.textContent=''}ensureShop();const s=$('shopPick');if(s)s.focus()}}
 function shopState(){shopPicker();const sb=$('shopBody'),p=openId&&proj(openId),has=!!(p&&sb&&sb.querySelector('#pPlan'));$('shopEmpty').hidden=has;sb.hidden=!has;$('shopProj').hidden=!has||!!$('shopPick');{const sv=$('shopSeveral');if(sv)sv.hidden=!store.projects.length}{const nx=$('shopBack');if(nx){nx.hidden=!has;nx.textContent=FS('next').shop}}
  const n=has?sb.querySelectorAll('#pPlan > ul:first-of-type [data-bought]:not(:checked)').length:0;$('shopCount').textContent=n?`(${n})`:''}
-function ensureShop(){const p=openId&&proj(openId);if(!p){const sb=$('shopBody');if(sb)sb.textContent='';shopState();return}if(!$('shopBody').querySelector('#pPlan')||mode==='shop'){const m=mode;mode='edit';renderEditor();mode=m;if(m==='shop')renderEditor()}shopState()}
+// ci005-67: redraw when My threads (or what's set aside) changed since the Shop was drawn, so the derived readiness catches up with no reload.
+let shopColl=null;const collSig=()=>{try{const T=window.FlossFoxThreadsUI;return JSON.stringify(T?T.data():null)+(AL()?JSON.stringify(ALS().read()):'')}catch(e){return null}};
+function ensureShop(){const p=openId&&proj(openId);if(!p){const sb=$('shopBody');if(sb)sb.textContent='';shopState();return}const cs=collSig(),stale=cs!==shopColl;shopColl=cs;if(!$('shopBody').querySelector('#pPlan')||mode==='shop'||stale){const m=mode;mode='edit';renderEditor();mode=m;if(m==='shop')renderEditor()}shopState()}
 function openShop(p){mode='shop';shopPanel=null;query='';renderEditor();window.scrollTo(0,0);const h=$('shH');if(h)h.focus({preventScroll:true})}
 function renderShop(){const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;return}const focusId=document.activeElement&&document.activeElement.id,y=window.scrollY,P=plan(p);
  const tb=P.lines.filter(l=>!l.bought),aw=P.lines.filter(l=>l.bought),co=P.threads.filter(t=>t.kind==='amount'&&t.d.status==='buy'),done=P.have.filter(t=>!t.cf),need=P.sum.toBuy+co.length;

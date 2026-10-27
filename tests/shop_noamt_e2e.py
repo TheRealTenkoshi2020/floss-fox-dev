@@ -46,7 +46,7 @@ with sync_playwright() as p:
     ok('Not quite done My threads link (tap) opens My threads', g.locator('#threadsView').is_visible() and not g.locator('#shopView').is_visible())
     g.locator('#thAdd').tap(); g.keyboard.type('310 x3, 415 x2'); g.locator('#thAddBtn').tap(); g.wait_for_timeout(400)
     g.locator('#tabShop').tap(); g.wait_for_timeout(500)
-    ok('adding threads in My threads does not change Check first by itself (why the line says "come back here")', g.inner_text('#pCheckH') == 'Check first (15)' and st()['decisions'] == p0['decisions'])
+    ok('ci005-67: owned colors count as checked on return to Shop, derived without saving', g.inner_text('#pCheckH') == 'Check first (13)' and st()['decisions'] == p0['decisions'])
     # Buy: real tap, scroll stays, no data change
     b = g.locator('#pCheck > li').nth(3).locator('[data-cfbuy]'); b.scroll_into_view_if_needed(); g.wait_for_timeout(150); y0 = g.evaluate('scrollY')
     b.tap(); g.wait_for_timeout(300)
@@ -63,7 +63,7 @@ with sync_playwright() as p:
     g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300); g.locator(f'label:has(#st-{code}-buy)').click(); g.wait_for_timeout(300)
     ok('Need to buy still works in Projects (existing logic)', st()['decisions'][code]['status'] == 'buy')
     g.click('#tabShop'); g.wait_for_timeout(400)
-    h, n, pip, sc = counts(); ok(f'counts agree at 14 (Pip {pip})', h == n == sc == 14 and pip in (14, None), (h, n, pip, sc))
+    h, n, pip, sc = counts(); ok(f'counts agree at 13, 310 already counted from My threads (Pip {pip})', h == n == sc == 13 and pip in (13, None), (h, n, pip, sc))
     ok('it shows under Need to buy as amount not entered', re.search(r'DMC \S+ · amount not entered', g.inner_text('#pPlan')) is not None)
     ok('no page errors', not errs, errs); br.close()
 print(f"\nshop_noamt (simulated): {R['pass']} passed, {R['fail']} failed"); sys.exit(1 if R['fail'] else 0)
