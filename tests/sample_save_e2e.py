@@ -23,6 +23,7 @@ with sync_playwright() as p:
         ok(f'{w}px saved example shows the Demo tag in My Projects', g.locator('#projList .demotag').count() == 1)
         ok(f'{w}px removeDemo removes it', g.evaluate("FlossFoxProjects.removeDemo()") == 1 and json.loads(g.evaluate(f"localStorage.getItem('{KEY}')"))['projects'] == [])
         # DEMO-2: own text, user-typed name "Example project" stays real
+        g.wait_for_timeout(800)  # projects.js ignores a second Save within 800ms of the first; without this the run races that guard (seen at 1280 after the refresh)
         g.click('#tabConvert')
         if g.locator('#exitExample').is_visible(): g.click('#exitExample')
         g.fill('#inp', '310 x2\n898 x1'); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(150)

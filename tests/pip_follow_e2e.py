@@ -31,7 +31,8 @@ with sync_playwright() as p:
             ok(f'[{w}] {t}: companion clear of tab bar', g.evaluate(OVER + "('.tabs')") == [], g.evaluate(OVER + "('.tabs')"))
             # last button reachable: scroll to bottom, last visible button in the view not under the bar
             g.evaluate("scrollTo(0,document.documentElement.scrollHeight)"); g.wait_for_timeout(300)
-            last = g.evaluate("""(()=>{const v=[...document.querySelectorAll('main button, .view button, main a.btn, footer a, footer button, .wrap a')].filter(b=>b.offsetParent&&!b.closest('.pipc'));const b=v[v.length-1];if(!b)return null;const r=b.getBoundingClientRect(),c=document.querySelector('.pipc').getBoundingClientRect();return r.bottom<=c.top+1||r.right<=c.left+1||!c.height})()""")
+            # visual refresh: on Find floss the companion is docked in the hero, so a link below it is clear too
+            last = g.evaluate("""(()=>{const v=[...document.querySelectorAll('main button, .view button, main a.btn, footer a, footer button, .wrap a')].filter(b=>b.offsetParent&&!b.closest('.pipc'));const b=v[v.length-1];if(!b)return null;const r=b.getBoundingClientRect(),c=document.querySelector('.pipc').getBoundingClientRect();return r.bottom<=c.top+1||r.right<=c.left+1||!c.height||(document.body.classList.contains('pipc-hero')&&r.top>=c.bottom-1)})()""")
             ok(f'[{w}] {t}: last button / footer link not under Pip', last in (True, None), last)
             g.evaluate("scrollTo(0,0)")
         if w < 880:
