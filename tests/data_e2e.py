@@ -143,7 +143,7 @@ with sync_playwright() as p:
     ok('S2 thread card shows "1,500 stitches" apart from "2 skeins needed"', '1,500 stitches' in g.inner_text('#pCards') and '2 skeins needed' in g.inner_text('#pCards'), g.inner_text('#pCards')[:300])
     ok('Q1 counts kept apart: 1 owned, 1 quantity not verified, 1 short, 1 missing', g.inner_text('#cmpOwned').startswith('✓ 1') and g.inner_text('#cmpUnver').startswith('? 1') and g.inner_text('#cmpShort').startswith('◐ 1') and g.inner_text('#cmpMissing').startswith('✗ 1'), box)
     ok('Q2 assumed + owned says "Color owned, quantity not verified", not have enough', 'quantity not verified' in box.lower(), box)
-    ok('Q3 independence note in plain words', "Each project is checked against your whole collection; floss isn't reserved between projects." in box, box)
+    ok('Q3 independence note in plain words', "Each project is checked against your whole collection, minus any skeins set aside for other projects." in box, box)
     before = proj(g)[0]['decisions']; collBefore = ls(g, TKEY)
     g.evaluate("(()=>{const d=document.getElementById('pCmpBox');if(d&&!d.open)d.querySelector('summary').click()})()"); g.click('#pUseColl'); g.wait_for_timeout(100); pv = g.inner_text('#pCmpPrev')
     ok('U1 preview shows a compact summary before anything is applied', 'Will mark 1 Have enough, 1 Not sure, 2 Need to buy' in pv and proj(g)[0]['decisions'] == before, pv)

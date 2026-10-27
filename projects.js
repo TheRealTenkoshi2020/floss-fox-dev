@@ -242,8 +242,9 @@ function nextSteps(P){const k={};P.threads.forEach(t=>{if(t.state==='review')k[t
  if(k.other)o.push(['att',`${s2(k.other)} need${k.other===1?'s':''} a second look.`,k.other===1?'Show it':'Show them','att']);
  if(s.awaiting)o.push(['wait',`${plural(s.awaiting,'thread')} ${s.awaiting===1?'was':'were'} bought but ${s.awaiting===1?"hasn't":"haven't"} been checked in yet.`,'Check them in','shop']);
  if(s.toBuy)o.push(['buy',`${s2(s.toBuy)} to buy.`,'Shop my list','shop']);return o}
-// 1.7: compare with My Thread Collection. This box and its Apply button compare with the whole collection (set-asides are not subtracted here);
-// the new-project auto-apply and the Shop overlay pass allocE(), which leaves out skeins set aside for other projects.
+// 1.7: compare with My Thread Collection. This box, its Apply button, the new-project auto-apply and the Shop overlay all compare with
+// allocE(): the whole collection minus skeins set aside for OTHER projects (this project's own set-asides still count). cmpA falls back to the whole collection on error.
+function cmpA(p,T){let E=null;try{E=T.core?allocE(p,T):null}catch(e){E=null}return cmpPlan(p,T,E||undefined)}
 // Buckets: owned (verified: amount needed is stated and covered) | unverified (owned, but amount needed unknown or assumed) | short | missing.
 // "Use my collection" shows a preview first and can be undone; it changes only this project's Have/Need choices, never the collection.
 const STW={have:'Have enough',buy:'Need to buy',check:'Not sure'},stWord=d=>d.status?STW[d.status]:'Not checked',ownWord=d=>d.owned===null?'Not entered':plural(d.owned,'skein');
@@ -262,19 +263,19 @@ function renderCmp(p){const el=$('pCmp'),T=window.FlossFoxThreadsUI;if(!el||!T)r
  if(!p.items.length){el.innerHTML='';return}
  const U=undoBy[p.id],undoBtn=U?`<div class="row"><button type="button" class="sec" id="pUndoColl">Undo “Use my collection”</button><span class="hint">Puts back the ${s2(U.length)} it changed.</span></div>`:'';
  if(!n){el.innerHTML=`<div class="pcmp"><b>Compare with my thread collection</b><p class="hint">${p.demo?'There are no demo threads in the collection.':`Your collection is empty. Add the threads you own in <button type="button" class="ghost small" id="pGoThreads">My Thread Collection</button>, then come back here.`}</p>${undoBtn}</div>`;const g=$('pGoThreads');if(g)g.onclick=()=>showView('threads');bindUndo(p);return}
- const {r,ch}=cmpPlan(p,T),need=x=>x.need===null||x.need===undefined?'amount needed not entered':x.estimated?`estimated need about ${SK.fmt(x.need)} skeins with extra`:x.assumed>=x.need?`amount needed not given (assumed ${plural(x.need,'skein')})`:`need ${plural(x.need,'skein')}`;
+ const {r,ch}=cmpA(p,T),need=x=>x.need===null||x.need===undefined?'amount needed not entered':x.estimated?`estimated need about ${SK.fmt(x.need)} skeins with extra`:x.assumed>=x.need?`amount needed not given (assumed ${plural(x.need,'skein')})`:`need ${plural(x.need,'skein')}`;
  const L=a=>a.map(x=>`DMC ${esc(lab(x.code))} (${need(x)}, have ${plural(x.have,'skein')}${x.partial?' + a partial':''})`).join(', ');
  el.innerHTML=`<details class="pcmp" id="pCmpBox"${secOpen('pCmpBox',cmpPreview===p.id)}><summary><b>Compared with my ${p.demo?'demo threads':'thread collection'}</b><div class="cnt"><span id="cmpOwned">✓ <b>${r.owned.length}</b> owned</span><span id="cmpUnver">? <b>${r.unverified.length}</b> owned, amount not confirmed</span><span id="cmpShort">◐ <b>${r.short.length}</b> short</span><span id="cmpMissing">✗ <b>${r.missing.length}</b> missing</span></div></summary>
  ${r.unverified.length?`<p class="small"><b>Color owned, amount not confirmed:</b> ${L(r.unverified)}. Add the amount your pattern needs to check it.</p>`:''}
  ${r.short.length?`<p class="small"><b>Short:</b> ${L(r.short)}</p>`:''}${r.missing.length?`<p class="small"><b>Missing:</b> ${r.missing.map(x=>'DMC '+esc(lab(x.code))).join(', ')}</p>`:''}
- <p class="hint">Each project is checked against your whole collection; floss isn't reserved between projects.</p>
+ <p class="hint">Each project is checked against your whole collection, minus any skeins set aside for other projects.</p>
  <div id="pCmpTip" class="piptip" hidden></div>
  ${cmpPreview===p.id?`<div class="notes cmpprev" id="pCmpPrev">${ch.length?`<p id="pPrevSum"><b>${esc(prevSum(ch))}</b></p><p class="hint">Your thread collection won't change, and you can undo this afterwards.</p><div class="row"><button type="button" class="pri" id="pApplyColl">Apply these changes</button><button type="button" class="ghost" id="pCancelColl">Cancel</button></div><details id="pPrevAll"><summary>Show all ${ch.length} changes</summary><ul>${ch.map(c=>`<li>DMC ${esc(lab(c.code))} (${esc(c.why)}): ${stWord(c.from)} → <b>${stWord(c.to)}</b>${c.from.owned!==c.to.owned?`; you already have: ${ownWord(c.from)} → ${ownWord(c.to)}`:''}</li>`).join('')}</ul></details>`:`<p><b>Nothing to change: this project already matches your collection.</b></p><div class="row"><button type="button" class="ghost" id="pCancelColl">Close</button></div>`}</div>`
   :`<div class="row"><button type="button" class="sec" id="pUseColl">Use my collection for this project…</button></div><p class="hint">Shows what would change first. Owned colors become <b>Have enough</b> only when the amount needed is known; otherwise <b>Not sure</b>. Short and missing colors become <b>Need to buy</b>.</p>`}</details>${undoBtn}`;
  if(T.tip)T.tip('compare',$('pCmpTip'));
  const u=$('pUseColl');if(u)u.onclick=()=>{cmpPreview=p.id;renderCmp(p);const pv=$('pCmpPrev');if(pv){pv.scrollIntoView({block:'nearest'});const b=$('pApplyColl')||$('pCancelColl');b.focus()}};
  const c=$('pCancelColl');if(c)c.onclick=()=>{cmpPreview=null;renderCmp(p);$('pUseColl').focus()};
- const a=$('pApplyColl');if(a)a.onclick=()=>{if(a.disabled)return;a.disabled=true;const now=cmpPlan(p,T).ch;
+ const a=$('pApplyColl');if(a)a.onclick=()=>{if(a.disabled)return;a.disabled=true;const now=cmpA(p,T).ch;
   now.forEach(x=>Object.assign(p.decisions[x.code],x.to));undoBy[p.id]=now;cmpPreview=null;
   touch(p);renderEditor();renderList();if(T.tipDone)T.tipDone('compare');const o=$('pUndoColl');if(o)o.focus();pstatus(`Used your collection: changed ${s2(now.length)}. You can undo this.`)};
  bindUndo(p)}
