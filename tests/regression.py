@@ -446,7 +446,7 @@ with sync_playwright() as p:
     q, qrq = fresh()
     # all 8 states load the right art
     loaded = q.evaluate("""async()=>{const out={};for(const n of ['welcome','listReady','error','duplicate','helpful','tangled','celebrating','sleepy']){FlossFoxPip.show(n,{items:[{src:['a','a']}],errs:[{t:'x',kind:'code'}]});const i=document.getElementById('pipImg');await new Promise(r=>{if(i.complete&&i.naturalWidth)r();else{i.onload=r;i.onerror=r}});out[n]=[document.getElementById('pip').dataset.pose,i.naturalWidth>0,/pip-([a-z]+)-/.exec(i.currentSrc)[1]]}return out}""")
-    ok('Q1 core states load their own artwork', all(v[1] and v[0] == v[2] for v in loaded.values()) and {v[0] for v in loaded.values()} == {'greeting', 'presenting', 'reassuring', 'duplicates', 'discovery', 'tangled', 'celebrating', 'sleepy'}, loaded)
+    ok('Q1 core states load their own artwork (visual refresh: resting poses in the hero show the gardener theme art)', all(v[1] and (v[0] == v[2] or (v[0] in ('greeting', 'greeting-alt', 'neutral') and v[2] == 'gardener')) for v in loaded.values()) and {v[0] for v in loaded.values()} == {'greeting', 'presenting', 'reassuring', 'duplicates', 'discovery', 'tangled', 'celebrating', 'sleepy'}, loaded)
     ok('Q1b fake "processing" state still never shown (thinking only for real checks)', q.evaluate("FlossFoxPip.STATES.processing.pose==='thinking'"))
     old = q.evaluate("['welcome','attentive','empty','listReady','duplicate','error'].map(n=>[n,typeof FlossFoxPip.STATES[n].pose==='function'?FlossFoxPip.STATES[n].pose({items:[],errs:[{kind:'code'}]}):FlossFoxPip.STATES[n].pose])")
     ok('Q1c old states keep their poses', old == [['welcome', 'greeting'], ['attentive', 'curious'], ['empty', 'curious'], ['listReady', 'presenting'], ['duplicate', 'duplicates'], ['error', 'reassuring']], old)
@@ -865,7 +865,7 @@ with sync_playwright() as p:
     ok('M1 all 138 Pip images (23 poses) load, have an alpha channel and transparent corners', not noalpha, noalpha)
     ok('M1b no JPG Pip assets referenced anywhere', pp.request.get(B + 'assets/pip/pip-greeting-320.jpg').status == 404 and '.jpg' not in pp.evaluate("document.getElementById('pipImg').srcset+document.getElementById('pipImg').src"))
     tile = pp.evaluate("(()=>{const f=getComputedStyle(document.getElementById('pipFig'));const r=document.getElementById('pipFig').getBoundingClientRect();return [f.backgroundColor,f.borderTopColor,Math.round(r.width),Math.round(r.height)]})()")
-    ok('M2 no white tile: frame transparent; one-Pip phone bar frame 56x64', tile[0] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[1] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[2:] == [56, 64], tile)  # one-Pip build: hero frame moved into the bottom bar
+    ok('M2 no white tile: frame transparent; one-Pip phone hero frame 76x92', tile[0] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[1] in ('rgba(0, 0, 0, 0)', 'transparent') and tile[2:] == [76, 92], tile)  # visual refresh: on Find floss the hero Pip is the companion (76x92 on phones); other tabs keep the bottom bar
     pdm = page(1280); pdm.goto(B); fr = pdm.evaluate("(()=>{const r=document.getElementById('pipFig').getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)]})()")
     ok('M2b one-Pip side column frame 132x180 on desktop', fr == [132, 180], fr)
     fv = tp(1280); ok('M3 first visit keeps the original greeting', fv.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose]") == ['welcome', 'greeting'])
@@ -986,9 +986,9 @@ with sync_playwright() as p:
     # ---------- Release review: art delivery and usability ----------
     ld = page(412, True, init=SEED); reqs = []; ld.on('request', lambda r: reqs.append(r.url) if '/assets/pip/' in r.url else None); ld.goto(B); ld.wait_for_timeout(600)
     poses = sorted({re.sub(r'-(\d+)\.(webp|png)$', '', u.split('/pip-')[-1]) for u in reqs})
-    ok('A1 first screen loads only the Pip images it shows (current pose + Ask Pip face, one size each)', set(poses) - {'curious', 'presenting', 'reassuring', 'puzzled'} <= {'greeting', 'greeting-alt', 'neutral', 'face-icon'} and len([u for u in reqs if 'face-icon' in u]) == 1, reqs)  # returning visitors also fetch the HTML default greeting once (known, ~15 KB)
+    ok('A1 first screen loads only the Pip images it shows (current pose + Ask Pip face, one size each)', set(poses) - {'curious', 'presenting', 'reassuring', 'puzzled'} <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight'} and len([u for u in reqs if 'face-icon' in u]) == 1, reqs)  # returning visitors also fetch the HTML default greeting once (known, ~15 KB)
     ld.wait_for_timeout(3600); poses = {re.sub(r'-(\d+)\.(webp|png)$', '', u.split('/pip-')[-1]) for u in reqs}
-    ok('A1c after idle only the 5 likely-next companion poses are warmed; tips, empty states, tour, goodbye, cross-stitch art wait for their view', poses <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'curious', 'presenting', 'reassuring', 'puzzled'}, sorted(poses))
+    ok('A1c after idle only the 5 likely-next companion poses are warmed; tips, empty states, tour, goodbye, cross-stitch art wait for their view', poses <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight', 'curious', 'presenting', 'reassuring', 'puzzled'}, sorted(poses))
     ld.click('#tabHelp') if ld.locator('#tabHelp').count() else None; ld.wait_for_timeout(300)
     ok('A1b deferred images still load when their view opens (Help needle)', any('pip-needle' in u for u in reqs), reqs)
     dist = []
