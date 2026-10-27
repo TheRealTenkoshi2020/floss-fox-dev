@@ -43,7 +43,7 @@ function core(DMC){
  // owned = amount needed is stated and covered; unverified = owned but the amount needed is unknown or (partly) assumed
  function verdict(e,need,assumed){if(!e||state(e)==='out')return'missing';if(need===null||need===undefined)return'unverified';
   const a=assumed||0,stated=need-a;if(a>0)return e.n>=stated?'unverified':'short';return e.n>=need?(e.confirmed===true?'owned':'unverified'):'short'}
- // each project is compared with the whole collection on its own: nothing is reserved between projects
+ // compares a project with the entries it is given: the whole collection by default, or (from projects.js allocE) the collection minus skeins set aside for other projects
  function compare(items,data,opts){const r={owned:[],unverified:[],short:[],missing:[]};const M=opts&&opts.demo?data.demo||{}:data.threads;
   for(const it of items){const e=M[it.code];const v=verdict(e,it.qty,it.assumed);r[v].push({code:it.code,need:it.qty,assumed:it.assumed||0,have:e?e.n:0,partial:!!(e&&e.partial)})}return r}
  return{SCHEMA,migrate,empty,add,step,state,verdict,compare,normEntry,normalizeStorage}}

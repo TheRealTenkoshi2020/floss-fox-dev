@@ -60,7 +60,7 @@ function chooseForChat(host,respond){
 function mount(){const view=document.getElementById('projectsView');if(!view||view.querySelector('#pipProjectReadiness'))return;
  const panel=create('section','card ff-readiness');panel.id='pipProjectReadiness';
  const heading=create('h2','', 'Pip’s Project Readiness Check');
- const note=create('p','hint','This check only reads your project, on this device. It uses the same choices and amounts as your shopping list, and it doesn\'t reserve floss between projects.');
+ const note=create('p','hint','This check only reads your project, on this device. It uses the same choices and amounts as your shopping list, and skips skeins set aside for other projects.');
  const form=create('div','ff-readiness-controls');const lbl=create('label','', 'Project to check');const select=create('select');select.id='ffReadinessProject';lbl.htmlFor=select.id;
  const button=create('button','sec','Check this project');button.type='button';
  const details=create('div','ff-readiness-result');details.setAttribute('role','status');details.setAttribute('aria-live','polite');

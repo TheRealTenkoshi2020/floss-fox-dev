@@ -242,7 +242,8 @@ function nextSteps(P){const k={};P.threads.forEach(t=>{if(t.state==='review')k[t
  if(k.other)o.push(['att',`${s2(k.other)} need${k.other===1?'s':''} a second look.`,k.other===1?'Show it':'Show them','att']);
  if(s.awaiting)o.push(['wait',`${plural(s.awaiting,'thread')} ${s.awaiting===1?'was':'were'} bought but ${s.awaiting===1?"hasn't":"haven't"} been checked in yet.`,'Check them in','shop']);
  if(s.toBuy)o.push(['buy',`${s2(s.toBuy)} to buy.`,'Shop my list','shop']);return o}
-// 1.7: compare with My Thread Collection. Each project is compared with the whole collection on its own (nothing is reserved).
+// 1.7: compare with My Thread Collection. This box and its Apply button compare with the whole collection (set-asides are not subtracted here);
+// the new-project auto-apply and the Shop overlay pass allocE(), which leaves out skeins set aside for other projects.
 // Buckets: owned (verified: amount needed is stated and covered) | unverified (owned, but amount needed unknown or assumed) | short | missing.
 // "Use my collection" shows a preview first and can be undone; it changes only this project's Have/Need choices, never the collection.
 const STW={have:'Have enough',buy:'Need to buy',check:'Not sure'},stWord=d=>d.status?STW[d.status]:'Not checked',ownWord=d=>d.owned===null?'Not entered':plural(d.owned,'skein');
