@@ -82,4 +82,32 @@ ok('"310 Black 2 skeins" plain row still works',one('310 Black 2 skeins')?.code=
  q=P(keys.slice(40,60).map((c,i)=>S[i%12]+' '+c+' '+DMC[c].name+' '+(i+10)).join('\n'));
  ok('chart: 20 catalog-adjacent rows with symbols are still flagged as a chart run',q.rows.length===0||q.warnings.includes('catalog-page-skipped'),q.rows.length);
 }
+
+{// CI005-78: card-grid list with D-prefixed codes (synthetic positions, same layout as the reported color list)
+ const it=(s,x,y)=>({s,x,y,w:20});const cards=[['D208','Very Dark Lavender','Stitches: 23 - Skeins: 1'],['D310','Black','Stitches: 2,417 - Skeins: 4'],['D3865','Winter White','Stitches: 7 - Skeins: 1'],['D725','Topaz','Stitches: 1,050 - Skeins: 2']];
+ const items=[it('DMC Stranded (D)',50,727),it('D',50,710),it('Backstitch: see D2 for outline',50,600),it('Page 3 of 3',280,24)];cards.forEach((c,i)=>{const x=76+128*i;items.push(it('#',x-24,686),it(c[0],x,694),it(c[1],x,681.5),it(c[2],x,669))});
+ const text='DMC Stranded (D)\nD\nD208 D310 D3865 D725\n# @ & %\nVery Dark Lavender Black Winter White Topaz\n'+cards.map(c=>c[2]).join(' ')+'\nBackstitch: see D2 for outline\nColor List Page 3 of 3';
+ let g=C.parsePages([{page:3,text,items}],DMC);const m=Object.fromEntries(g.rows.map(x=>[x.code,[x.stitchCount,x.qty]]));
+ ok('ci005-78 grid: all 4 D-codes with stitches and skeins (comma thousands read whole)',JSON.stringify(m)===JSON.stringify({"208":[23,1],"310":[2417,4],"725":[1050,2],"3865":[7,1]}),m);
+ ok('ci005-78 grid: no false match from "D" header, "see D2" or "Page 3"',!by(g,'02')&&!by(g,'03')&&g.rows.length===4,g.rows.map(x=>x.code));
+ g=C.parsePages([{page:1,text:'see D2\nD151 D304',items:[it('see D2',10,500),it('D151',10,400),it('D304',100,400),it('Marshmallow',10,388)]}],DMC);
+ ok('ci005-78 grid: a D-code with no Stitches/Skeins label under it is not a color',g.rows.length===0,g.rows);
+ g=P('DMC 321 Red 5,841 stitches 10 skeins');ok('ci005-78 comma thousands before "stitches"',by(g,'321').stitchCount===5841&&by(g,'321').qty===10,by(g,'321'));
+ g=P('X 310 Black 2400 2\nDMC 321, 666 Red');ok('ci005-78 existing rows unaffected by comma rule',by(g,'310')&&by(g,'321'),g.rows.map(x=>x.code));
+}
+{// CI005-78: chart rows with row numbers on both sides + key beside the chart as "symbol CODE (DMC)"
+ const text='Synthetic Pond\nCount Size: 12 x 12\n1 1 + BLANC (DMC)\n2 – – – – 2\n/ 3865 (DMC)\n3 – = = – 3\n4 – = + + = – 4\n208 (DMC)\n5 * * – – 5\n6 – – * * 6\n* 3799 (DMC)\n7 7\n8 * * * * 8\n9 = = = = 9\n& 973 (DMC)\n10 + + + + 10 Outline - DMC 3799 - 1 strand\n11 11 Eyes - DMC 208 - 2 strand french knot';
+ const g=C.parsePages([{page:2,text}],DMC);const codes=g.rows.map(x=>x.code).sort();
+ ok('ci005-78 side key: only the 5 key colors, no chart row numbers',JSON.stringify(codes)===JSON.stringify(['208','3799','3865','973','WHITE']),codes);
+ ok('ci005-78 side key: notes naming key colors are not duplicates',g.rows.every(x=>!x.warnings.includes('duplicate-color-rows')),g.rows.map(x=>x.warnings));
+ const n=C.parsePages([{page:1,text:'No. DMC Name Skeins\n1 310 Black\n3 321 Red 2\n2 666 Bright Red 2'}],DMC);
+ ok('ci005-78 numbered legend without (DMC) tags keeps its codes',['310','321','666'].every(c=>by(n,c)),n.rows.map(x=>x.code));
+}
+{// CI005-78 safeguard: many colors, none with a count
+ const codes=Object.keys(DMC).filter(c=>/^\d{3}$/.test(c)).filter((c,i)=>i%3===0).slice(0,45);
+ const g=C.parsePages([{page:1,text:codes.map(c=>'DMC '+c+' Name').join('\n')}],DMC);
+ ok('ci005-78 safeguard: 40+ colors with no counts are flagged',g.warnings.includes('many-colors-no-amounts'),[g.rows.length,g.warnings]);
+ const h=C.parsePages([{page:1,text:codes.slice(0,12).map(c=>'DMC '+c+' Name').join('\n')}],DMC);
+ ok('ci005-78 safeguard: a normal-size key is not flagged',!h.warnings.includes('many-colors-no-amounts'),h.warnings);
+}
 console.log(`${pass} passed, ${fail} failed`);process.exit(fail?1:0);
