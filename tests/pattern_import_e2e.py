@@ -1,6 +1,7 @@
 """Pattern import end to end on SYNTHETIC fixtures (tests/fixtures/patterns). Real-pattern validation is a separate manual protocol.
 Usage: FF_KEY=flossfox-dev.v1 python3 tests/pattern_import_e2e.py URL"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1]; KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); PFX = KEY.replace('.v1', '')
 FX = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'patterns')

@@ -2,6 +2,7 @@
 """Tab row scroll hint (simulated browser run): fade + chevron only where more tabs exist.
 Usage: FF_KEY=flossfox-dev.v1 python tests/tab_hint_e2e.py http://localhost:8811/floss-fox-dev/"""
 import sys
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8811/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 R = {'pass': 0, 'fail': 0}; errs = []

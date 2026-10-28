@@ -3,6 +3,7 @@
 collapsed sections open with one tap (mouse and keyboard), cautions stay visible on cards, no data written by toggles.
 Usage: FF_KEY=flossfox-dev.v1 python tests/projects_scroll_e2e.py http://localhost:8812/floss-fox-dev/ [shot_dir]"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 SHOT = sys.argv[2] if len(sys.argv) > 2 else None

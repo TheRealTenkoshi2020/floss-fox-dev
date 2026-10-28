@@ -6,6 +6,7 @@ Needs: pip install playwright (uses an installed Chrome/Chromium; set --chrome i
 """
 import sys, json, os, argparse, subprocess, re
 KEY = os.environ.get('FF_KEY', 'flossfox.v1')  # storage key; the dev preview build uses a different one
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 from playwright.sync_api import Page as _Page
 # 2.0A+: the project shopping list lives in its own Shopping tab (#shopView). Before acting on an element that sits

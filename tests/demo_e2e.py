@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """DEV PREVIEW ONLY: demo-data button. Usage: FF_KEY=flossfox-dev.v1 python tests/demo_e2e.py https://therealtenkoshi2020.github.io/floss-fox-dev/"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8767/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); TK = KEY[:-3] + '.threads.v1'
