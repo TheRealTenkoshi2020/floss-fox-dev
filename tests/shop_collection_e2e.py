@@ -80,7 +80,7 @@ with sync_playwright() as p:
     ok('700 (not owned) stays in Check first', '700' in cf(), cf())
     # set-aside: reserve 310 for the short-case project, then a third project should not count those skeins
     g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300)
-    k = g.locator('#pKit'); k.evaluate('e=>e.open=true'); g.wait_for_timeout(150)
+    g.evaluate("FlossFoxProjects.showView('shop')"); k = g.locator('#pKit'); k.evaluate('e=>e.open=true'); g.wait_for_timeout(150)
     if g.locator('#pKit [data-kadd="310"]').count(): g.locator('#pKit [data-kadd="310"]').tap(); g.wait_for_timeout(300)
     al = g.evaluate("JSON.parse(localStorage.getItem('flossfox-dev.allocations.v1')||'{\"allocations\":[]}').allocations")
     ok('3 skeins of 310 set aside for Short case', any(a['code'] == '310' and a['qty'] == 3 and a['projectId'] == p2 for a in al), al)

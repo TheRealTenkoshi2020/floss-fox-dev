@@ -25,7 +25,7 @@ with sync_playwright() as p:
         i = g.evaluate("FlossFoxProjects.lastProject().id"); g.evaluate(f"FlossFoxProjects.open({json.dumps(i)})"); g.wait_for_timeout(400); return i
     a = mkproj('310 x3', 'Project A')
     ok('A: 310 marked Have enough from My threads (existing auto-apply)', PJ(a)['decisions']['310']['status'] == 'have', PJ(a)['decisions'])
-    g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150)
+    g.evaluate("FlossFoxProjects.showView('shop')"); g.wait_for_timeout(300); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150)
     g.locator('#pKit [data-kadd="310"]').scroll_into_view_if_needed(); g.locator('#pKit [data-kadd="310"]').tap(); g.wait_for_timeout(400)
     al = g.evaluate("JSON.parse(localStorage.getItem('flossfox-dev.allocations.v1')||'{\"allocations\":[]}').allocations")
     ok('A: 3 skeins of 310 set aside (tap)', any(x['code'] == '310' and x['qty'] == 3 and x['projectId'] == a for x in al), al)
