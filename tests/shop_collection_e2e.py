@@ -6,6 +6,7 @@ removing a thread brings the color back, a short amount goes to Need to buy for 
 for another project are not counted again.
 Usage: FF_KEY=flossfox-dev.v1 python tests/shop_collection_e2e.py http://localhost:8812/floss-fox-dev/ [pdf] [shot_dir]"""
 import sys, os, json, re
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 PDF = sys.argv[2] if len(sys.argv) > 2 else '/workspace/flow-pass/myke-example.pdf'

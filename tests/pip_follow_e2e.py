@@ -3,6 +3,7 @@ Checks at 344, 390 and 882 for every tab plus fabric.html: exactly one visible P
 (the Ask Pip button's small face icon is a button glyph, counted separately), no overlap with the tab bar,
 focused inputs, or the last button, reduced motion stops all companion animation, levels, minimize/restore, no page errors."""
 import sys
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1].rstrip('/') + '/'; R = [0, 0]
 PFX = 'flossfox-dev'

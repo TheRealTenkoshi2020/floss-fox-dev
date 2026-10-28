@@ -1,6 +1,7 @@
 """First-time flow phases 1-2 (SIMULATED browser testing: headless Chrome, 390px, mobile + touch emulation; not real devices).
 Usage: python3 tests/flow_p12_e2e.py BASE_URL"""
 import sys, json, os
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1].rstrip('/') + '/'; KEY = 'flossfox-dev.v1'; R = [0, 0]
 def ok(n, c, d=''): R[0 if c else 1] += 1; print(('PASS ' if c else 'FAIL ') + n + ('' if c else ' -> ' + str(d)[:300]))

@@ -1,5 +1,6 @@
 """Pattern check v2 e2e: key vs chart on SYNTHETIC PDFs (simulated, 390px). Usage: python3 tests/pattern_chart_e2e.py URL [shot.png]"""
 import sys, os
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1].rstrip('/') + '/'; SHOT = sys.argv[2] if len(sys.argv) > 2 else None
 D = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'chart-check')

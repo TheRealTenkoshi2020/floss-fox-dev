@@ -3,6 +3,7 @@ Sorted single-family keys, two-column keys and bare symbol/code/count rows must 
 numbers left as Unknown. Full DMC color-chart PDFs must still be rejected.
 Usage: python3 tests/small_legend_e2e.py BASE_URL"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1].rstrip('/') + '/'; H = os.path.dirname(os.path.abspath(__file__)); FX = os.path.join(H, 'fixtures', 'patterns')
 EXP = json.load(open(os.path.join(FX, 'small', 'expected.json'))); R = [0, 0]

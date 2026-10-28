@@ -8,6 +8,7 @@ Set FF_KEY=flossfox-dev.v1 for a preview that uses the dev storage key.
 import argparse, json, os, tempfile
 from pathlib import Path
 from urllib.parse import urlparse
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 
 ap=argparse.ArgumentParser()
