@@ -36,7 +36,14 @@ ok('missing symbol warning names no row numbers',r.extra.length===1,r.extra);
 r=P.check(page({key:[['–','725'],['=','310'],['=','666']],sym:(a,c)=>(a+c)%2?'–':'='}),DMC,{imported:['725','310']});
 ok('codes not in the import list never appear in warnings',P.lines(r).every(l=>!/666/.test(l)),P.lines(r));
 ok('no em dashes in new copy',!/\u2014/.test(P.STR.symUnsure({sym:'-',codes:['1','2']})));
+// ci005-82: BLANC is its own color. A key printing BLANC matches an imported BLANC with no warnings, and is never read as WHITE.
+{const bk=[['–','725'],['=','310'],['★','BLANC']];let q=P.check(page({key:bk}),DMC,{imported:['725','310','BLANC']});
+ ok('BLANC key + BLANC import: no false warnings',P.lines(q).length===0,P.lines(q));
+ ok('BLANC key read as BLANC, not WHITE',q.key.some(e=>e.code==='BLANC')&&!q.key.some(e=>e.code==='WHITE'),q.key);
+ ok('normCode keeps BLANC and WHITE apart',P.normCode('DMC BLANC',DMC)==='BLANC'&&P.normCode('white',DMC)==='WHITE');
+ const wk=[['–','725'],['=','310'],['★','WHITE']];q=P.check(page({key:wk}),DMC,{imported:['725','310','WHITE']});
+ ok('WHITE key + WHITE import still works with no warnings',P.lines(q).length===0,P.lines(q));}
 if(process.env.SYMCHECK_PAGES&&fs.existsSync(process.env.SYMCHECK_PAGES)){const all=JSON.parse(fs.readFileSync(process.env.SYMCHECK_PAGES,'utf8'));
- if(all['full-list']){r=P.check(all['full-list'],DMC,{imported:['WHITE','725','310','720','640','644','3799','742','817']});ok('private full-list: no false warnings',P.lines(r).length===0,P.lines(r));ok('private full-list: 9 key symbols',r.key.length===9&&new Set(r.key.map(e=>e.sym)).size===9,r.key)}
+ if(all['full-list']){r=P.check(all['full-list'],DMC,{imported:['BLANC','725','310','720','640','644','3799','742','817']});ok('private full-list: BLANC key entry is BLANC, never WHITE',r.key.some(e=>e.code==='BLANC')&&!r.key.some(e=>e.code==='WHITE'),r.key);ok('private full-list: no false warnings',P.lines(r).length===0,P.lines(r));ok('private full-list: 9 key symbols',r.key.length===9&&new Set(r.key.map(e=>e.sym)).size===9,r.key)}
  if(all['solo-leveling']){r=P.check(all['solo-leveling'],DMC,{imported:['151','304','321','335']});ok('private solo-leveling: no false warnings',P.lines(r).length===0,P.lines(r))}}
 console.log(`${pass} passed, ${fail} failed`);process.exit(fail?1:0);

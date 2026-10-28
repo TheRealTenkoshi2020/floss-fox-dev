@@ -49,7 +49,7 @@ with sync_playwright() as p:
         g.locator('#tabThreads').tap(); g.wait_for_timeout(300); g.locator('#thAdd').tap(); g.keyboard.type(txt); g.locator('#thAddBtn').tap(); g.wait_for_timeout(400)
     def shop(): g.locator('#tabShop').tap(); g.wait_for_timeout(500)
     g.locator('#pCfNote a', has_text='My threads').tap(); g.wait_for_timeout(300)
-    threads_add('310 x3, WHITE x2, 415 x2, 434 x1'); shop()
+    threads_add('310 x3, BLANC x2, 415 x2, 434 x1'); shop()  # ci005-82: the pattern lists BLANC; owning BLANC (not WHITE) covers it
     agree(11, 'after adding 4 colors in My threads, no reload')
     ok('the 4 owned colors left Check first', not {'310', 'BLANC', '415', '434'} & set(cf()), cf())
     ok('they count as ready, not on the buy list', g.locator('#pPlan > ul:first-of-type li').count() == 0 and g.locator('#pSummary').get_attribute('data-ready') == 'false')
@@ -69,9 +69,9 @@ with sync_playwright() as p:
     ok('explicit Need to buy on 415 beats My threads (on the buy list)', 'DMC 415' in g.inner_text('#pPlan') and '415' not in cf() and pj()['decisions']['415']['status'] == 'buy')
     agree(13, 'after Need to buy on 415')
     # removing a thread brings it back
-    g.locator('#tabThreads').tap(); g.wait_for_timeout(300); g.locator('#thList [data-del="WHITE"]').tap(); g.wait_for_timeout(300)
+    g.locator('#tabThreads').tap(); g.wait_for_timeout(300); g.locator('#thList [data-del="BLANC"]').tap(); g.wait_for_timeout(300)
     if g.locator('#ffConfirmGo').is_visible(): g.locator('#ffConfirmGo').tap(); g.wait_for_timeout(400); shop()
-    agree(14, 'removing WHITE from My threads brings it back'); ok('WHITE back in Check first', 'BLANC' in cf(), cf())
+    agree(14, 'removing BLANC from My threads brings it back'); ok('BLANC back in Check first', 'BLANC' in cf(), cf())
     # short amount: project with known amounts, verified stock
     g.evaluate(f"FlossFoxProjects.open({json.dumps(p2)})"); g.wait_for_timeout(300)
     d2 = [x for x in S()['projects'] if x['id'] == p2][0]['decisions']; blank = all(v['status'] is None for v in d2.values())

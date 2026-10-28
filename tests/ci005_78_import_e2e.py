@@ -22,7 +22,7 @@ with sync_playwright() as p:
     items = {i['code']: (i['stitchCount'], i['qty']) for i in pr[0]['items']} if pr else {}
     ok('G2 saved with stitches and skeins (2,417 and 1,050 read whole)', items == {'208': (23, 1), '310': (2417, 4), '3865': (7, 1), '725': (1050, 2)}, items)
     g, codes = load('chart-side-key.pdf')
-    ok('G3 chart with row numbers + (DMC) side key: only the 5 key colors', sorted(codes) == sorted(['DMC WHITE', 'DMC 3865', 'DMC 208', 'DMC 3799', 'DMC 973']), codes)
+    ok('G3 chart with row numbers + (DMC) side key: only the 5 key colors', sorted(codes) == sorted(['DMC BLANC', 'DMC 3865', 'DMC 208', 'DMC 3799', 'DMC 973']), codes)
     g, codes = load('many-colors-no-counts.pdf'); n = len(codes)
     box = g.inner_text('#patManyBox') if g.locator('#patManyBox').count() else ''
     ok('G4 many colors, no counts: approved warning with the real count', n >= 40 and f'This PDF lists {n} colors but no stitch counts, so it may be a full color chart, not your pattern key. Add all {n} colors?' in box and g.locator('#patManyAll').inner_text() == f'Add all {n} colors' and g.locator('#patManyPick').inner_text() == 'Let me pick', (n, box))

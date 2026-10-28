@@ -3,7 +3,7 @@
    with a gentle note. Wording is PLACEHOLDER for Pixel (plain, no em dashes, Pip is they/them). */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.FlossFoxPatternChart=api})(typeof window!=='undefined'?window:globalThis,function(){
 'use strict';
-const CODE=/^(?:BLANC|ECRU|B5200|\d{1,4})$/i, INT=/^\d{1,3}$/;
+const CODE=/^(?:BLANC|WHITE|ECRU|B5200|\d{1,4})$/i, INT=/^\d{1,3}$/;
 // Count tolerance: flag only when the key and the chart differ by more than 10% AND more than 5 stitches.
 const TOL_PCT=0.10, TOL_ABS=5;
 const differs=(listed,counted)=>{const d=Math.abs(listed-counted);return d>TOL_ABS&&d>TOL_PCT*counted};
@@ -43,14 +43,14 @@ function labelProblems(labels){if(labels.length<5)return{repeat:[],missing:[]};c
 // Key entries: symbol, optional "=", optional "DMC", code, then name words, then (if the page has a Stitches column) a count.
 function keyEntries(rows,validCodes){const out=[];const countCol=rows.some(r=>r.toks.some(t=>/^(stitches|count)$/i.test(t.t)));
  for(const r of rows){const T=r.toks;for(let i=0;i<T.length;i++){let j=i;const sym=T[j].t;if(sym.length>2||/^\d+$/.test(sym)||/^dmc$/i.test(sym))continue;if(i>0&&T[i-1].w!=null&&T[i].x-(T[i-1].x+T[i-1].w)<1.5*(T[i-1].w/T[i-1].t.length))continue;/* symcheck: glued to the word before it, so it is prose punctuation, not a key symbol */if(/^[a-z]{2}$/.test(sym))continue;/* symcheck: a lowercase word like 'of' in a stitching note ('of DMC 644 and feed it') */if(/^[x×]$/i.test(sym)&&i>0&&/\d$/.test(T[i-1].t)&&(T[i-1].w==null||T[i].x-(T[i-1].x+T[i-1].w)<3*(T[i-1].w/T[i-1].t.length)))continue;/* "24 x 18" is a size */j++;
-  if(T[j]&&T[j].t==='='&&sym!=='=')j++;if(T[j]&&/^dmc$/i.test(T[j].t))j++;if(!T[j]||!CODE.test(T[j].t))continue;let code=T[j].t.toUpperCase();if(code==='BLANC'&&validCodes&&validCodes.WHITE)code='WHITE';/* '1 White' means DMC 01: single digits are 01-09, same as the paste parser */if(/^\d$/.test(code)&&validCodes&&validCodes['0'+code])code='0'+code;
+  if(T[j]&&T[j].t==='='&&sym!=='=')j++;if(T[j]&&/^dmc$/i.test(T[j].t))j++;if(!T[j]||!CODE.test(T[j].t))continue;let code=T[j].t.toUpperCase();/* '1 White' means DMC 01: single digits are 01-09, same as the paste parser */if(/^\d$/.test(code)&&validCodes&&validCodes['0'+code])code='0'+code;
   const valid=!validCodes||!!validCodes[code];if(!valid&&!/^\d{3,4}$/.test(code))continue;if(T[j+1]&&/^(stitch|stitches|ct)\b/i.test(T[j+1].t))continue;let k=j+1;const name=[];let count=null;
   while(k<T.length){const t=T[k].t;if(t.length<=2&&!/^\d+$/.test(t)&&T[k+1]&&(CODE.test(T[k+1].t)||T[k+1].t==='='||/^dmc$/i.test(T[k+1].t)))break;if(/^\d+$/.test(t)){if(countCol&&count===null)count=+t;k++;break}name.push(t);k++}
   /* Flow pass: a symbol and a bare number with no color name and no DMC or = mark is a chart cell, not a key entry */if(!name.some(w=>/[A-Za-z]{3,}/.test(w))&&!T.slice(i,j).some(t=>t.t==='='||/^dmc$/i.test(t.t)))continue;for(let q=i;q<k;q++)T[q].used=true;out.push({sym,code,valid,name:name.join(' '),count,toks:T.slice(i,k)});i=k-1}}
  return out}
 function statedSize(pages){for(const p of pages||[]){const m=/\b(\d{2,4})\s*[x×]\s*(\d{2,4})\s*stitch/i.exec(p.text||'');if(m)return{w:+m[1],h:+m[2]}}return null}
-// symcheck: codes are normalized the same way for the key and the imported list (BLANC is WHITE, 1 is 01).
-function normCode(c,validCodes){c=String(c).toUpperCase().replace(/^DMC\s*/,'');if(c==='BLANC'&&validCodes&&validCodes.WHITE)c='WHITE';if(/^\d$/.test(c)&&validCodes&&validCodes['0'+c])c='0'+c;return c}
+// symcheck: codes are normalized the same way for the key and the imported list (1 is 01; BLANC stays BLANC, never WHITE).
+function normCode(c,validCodes){c=String(c).toUpperCase().replace(/^DMC\s*/,'');if(/^\d$/.test(c)&&validCodes&&validCodes['0'+c])c='0'+c;return c}
 // Key regrouping: the key's symbol can sit on a slightly different baseline from its code (symbol fonts), so key rows use a looser line match.
 function keyRows(rows,tol){const out=rows.map(r=>({y:r.y,toks:r.toks.filter(t=>!t.used).map(t=>({...t,src:t}))})).filter(r=>r.toks.length);
  for(const r of out)for(const t of [...r.toks]){if(!CODE.test(t.t)||/^\d{1,2}$/.test(t.t))continue;const k=r.toks.indexOf(t),prev=r.toks[k-1];if(prev&&t.x-prev.x<25)continue;

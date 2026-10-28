@@ -50,7 +50,7 @@ with sync_playwright() as p:
     ok('I2c imported items flow into the shopping list without re-entry', h.locator('#pPlan').count() == 1)
     # 3 column table
     k = page(); info, codes = load(k, 'column-table-legend.pdf')
-    ok('I3 column-table legend: codes taken, Blanc as White', codes == ['DMC 310', 'DMC WHITE', 'DMC 3865', 'DMC 321'], codes)
+    ok('I3 column-table legend: codes taken, BLANC stays BLANC', codes == ['DMC 310', 'DMC BLANC', 'DMC 3865', 'DMC 321'], codes)
     vals = k.evaluate("[...document.querySelectorAll('#patRows input[type=number]')].map(i=>i.value)")
     ok('I3b unlabeled numbers are not filled in', all(v == '' for v in vals), vals)
     ok('I3c plain-language warning shown', 'no label' in k.inner_text('#patRows'))
