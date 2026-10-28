@@ -4,7 +4,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.FlossFoxPatternCore=api})(typeof window!=='undefined'?window:globalThis,function(){
 'use strict';
 const MAX_TEXT=240000, MAX_LINES=12000, MAX_COLORS=600;
-function normalCode(v){let c=String(v||'').trim().toUpperCase().replace(/^DMC\s*[:#-]?\s*/,'').replace(/\s+/g,'');/* same aliases as the paste parser: Blanc is DMC White, single digits are 01-09 */if(c==='BLANC')c='WHITE';if(/^\d$/.test(c))c='0'+c;return c;}
+function normalCode(v){let c=String(v||'').trim().toUpperCase().replace(/^DMC\s*[:#-]?\s*/,'').replace(/\s+/g,'');/* same rules as the paste parser: single digits are 01-09; BLANC stays BLANC (its own color, ci005-82) */if(/^\d$/.test(c))c='0'+c;return c;}
 function validCode(raw,validCodes){const code=normalCode(raw);return Object.prototype.hasOwnProperty.call(validCodes||{},code)?code:null;}
 const isSku=v=>/^(?:\d{1,4}|BLANC|WHITE|ECRU|B5200)$/i.test(v);
 function parseRow(line,validCodes,page){

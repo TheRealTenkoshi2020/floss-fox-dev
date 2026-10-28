@@ -10,7 +10,7 @@ R = []
 def ok(n, c, d=''):
     R.append(c); print(('PASS ' if c else 'FAIL ') + n + ('' if c else f'  -> {str(d)[:300]}'))
 SEED = "if(!sessionStorage.getItem('seeded')){localStorage.setItem('%s.tour.v1','{\"status\":\"dismissed\"}');localStorage.setItem('%s.hints.v1','off');sessionStorage.setItem('seeded','1')}" % (PFX, PFX)
-KEY15 = ['310', 'WHITE', '415', '01', '797', '762', '3799', '225', '434', '3862', '648', '433', '647', '948', '03']
+KEY15 = ['310', 'BLANC', '415', '01', '797', '762', '3799', '225', '434', '3862', '648', '433', '647', '948', '03']
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
     def page(w=390, h=844, init=''):

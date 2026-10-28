@@ -58,7 +58,7 @@ ap = argparse.ArgumentParser(); ap.add_argument('base', nargs='?', default='http
 ap.add_argument('--chrome', default='/usr/bin/google-chrome'); ap.add_argument('--shots', default=None)
 A = ap.parse_args(); B = A.base if A.base.endswith('/') else A.base + '/'
 REAL = "310 Black\n415 Chrome grey\n817 Japanese red\n948 Pale peach\n3863 Otter brown\n413 Iron grey\n815 Cherry red\n898 Teak brown\n3771 Sandy rose\nBLANC"
-SULL = {'310':'45053','415':'45091','817':'45219','948':'45286','3863':'45461','413':'45089','815':'45217','898':'45249','3771':'45496','BLANC (White)':'45001'}
+SULL = {'310':'45053','415':'45091','817':'45219','948':'45286','3863':'45461','413':'45089','815':'45217','898':'45249','3771':'45496','BLANC':'45001'}
 R = {'pass': 0, 'fail': 0}; FAILS = []
 def ok(name, cond, info=''):
     R['pass' if cond else 'fail'] += 1
@@ -127,7 +127,7 @@ with sync_playwright() as p:
     conv(pg, '310 x3, 01', 'anchor'); ok('partial total labelled incomplete', 'this is incomplete' in pg.inner_text('#totals'), pg.inner_text('#totals'))
     # real pattern
     pg.goto(B); conv(pg, REAL, 'dmc'); s = shop(pg)
-    ok('real pattern DMC: 10 lines, BLANC label, no review', len(s) == 10 and any('DMC BLANC (White) × 1' in x for x in s) and not pg.inner_text('#review'), s)
+    ok('real pattern DMC: 10 lines, BLANC label, no review', len(s) == 10 and any('DMC BLANC × 1' in x for x in s) and not pg.inner_text('#review'), s)
     pg.select_option('#dest', 'sullivans'); s = shop(pg)
     ok('real pattern Sullivans numbers match official chart', all(any(f'Sullivans {v} × 1 (assumed) (for DMC {k} ·' in x for x in s) for k, v in SULL.items()) and not pg.inner_text('#review'), s)
     pg.select_option('#dest', 'anchor'); ok('real pattern Anchor: only BLANC in review', pg.inner_text('#review').count('DMC ') == 1 and 'BLANC' in pg.inner_text('#review'), pg.inner_text('#review'))
@@ -139,7 +139,7 @@ with sync_playwright() as p:
     ok('save as project', '“Real pattern” is safely tucked away in this browser on this device.' in pg.inner_text('#copymsg'), pg.inner_text('#copymsg'))
     pg.click('#tabProjects'); ok('project listed', 'Real pattern' in pg.inner_text('#projList') and '10 colors' in pg.inner_text('#projList'), pg.inner_text('#projList'))
     pg.click('[data-open]'); pg.wait_for_timeout(100)
-    expand(pg, '310'); expand(pg, 'WHITE')
+    expand(pg, '310'); expand(pg, 'BLANC')
     ok('original requirement text preserved', '"310 Black"' in pg.inner_text('#projEdit') and '"BLANC"' in pg.inner_text('#projEdit'))
     ok('new project not ready; all not checked', pg.inner_text('#sSuf') == '0 of 10' and pg.inner_text('#sRev') == '10' and "aren't checked yet" in pg.inner_text('#pSum'), pg.inner_text('#pSum')[:200])
     pg.check('#st-310-have'); pg.check('#st-415-check'); pg.click('#pAllBuy'); pl = pg.inner_text('#pSum') + pg.inner_text('#pPlan')
@@ -152,7 +152,7 @@ with sync_playwright() as p:
     ok('reopened plan copy is accurate', '[x] Sullivans 45219 x1' in clip and 'NEEDS ATTENTION' in clip and 'DMC 415' in clip and 'READY (' in clip and 'BOUGHT, CHECK IN' in clip and 'Notes: threads in the blue bag' in clip, clip)
     with pg.expect_download() as d: pg.click('#pCsv')
     c = open(d.value.path(), encoding='utf-8').read()
-    ok('CSV export', c.startswith('project,dmc_code') and 'BLANC (White)' in c and '45001' in c and c.count('\n') == (12 if 'NOTE:' in c else 11) and 'readiness' in c.split('\n')[0], c[:300])
+    ok('CSV export', c.startswith('project,dmc_code') and 'BLANC' in c and '45001' in c and c.count('\n') == (12 if 'NOTE:' in c else 11) and 'readiness' in c.split('\n')[0], c[:300])
     pg.emulate_media(media='print'); pg.pdf(path='/tmp/ff-project-print.pdf'); pg.emulate_media(media='screen')
     import subprocess; txt = subprocess.run(['pdftotext', '-layout', '/tmp/ff-project-print.pdf', '-'], capture_output=True, text=True).stdout if os.path.exists('/usr/bin/pdftotext') else ''
     ok('print shows plan with review + bought state', ('Real pattern v2' in txt and 'Needs attention' in txt and '45219' in txt) if txt else True, txt[:300])
@@ -211,9 +211,9 @@ with sync_playwright() as p:
     for st in ['have', 'check', 'buy']:
         m.check(f'#st-415-{st}'); ok4.append(summ(m)['sRev'] == '0' if st == 'have' else (not ready(m) and summ(m)['sRev'] == '1'))
     ok('T5 unknown needed: explicit Have enough is accepted (ci005-64); Check/Buy stay unresolved', all(ok4), ok4)
-    newproj(m, 'BLANC, 321', 'Subs'); m.select_option('#pDest', 'anchor'); m.check('#st-WHITE-have'); m.check('#st-321-buy')
+    newproj(m, 'BLANC, 321', 'Subs'); m.select_option('#pDest', 'anchor'); m.check('#st-BLANC-have'); m.check('#st-321-buy')
     ok('T6 unapproved substitution blocks ready (disputed + multi-option)', not ready(m) and summ(m)['sRev'] == '2', summ(m))
-    expand(m, 'WHITE'); m.select_option('#anc-WHITE', '2'); expand(m, '321'); m.select_option('#anc-321', '47'); m.check('#pb-anchor\\:47'); m.click('#rb-anchor_47'); m.fill('#rq-anchor_47', '1'); m.click('#rc-anchor_47')
+    expand(m, 'BLANC'); m.select_option('#anc-BLANC', '2'); expand(m, '321'); m.select_option('#anc-321', '47'); m.check('#pb-anchor\\:47'); m.click('#rb-anchor_47'); m.fill('#rq-anchor_47', '1'); m.click('#rc-anchor_47')
     ok('T6b ready once substitutions approved and received', ready(m), summ(m))
     newproj(m, '310 x2, 415 x1', 'Persist'); m.click('#pAllBuy'); m.check('#pb-dmc\\:310'); m.check('#pb-dmc\\:415'); m.click('#rb-dmc_415'); m.fill('#rq-dmc_415', '1'); m.click('#rc-dmc_415')
     m.reload(); m.click('#tabProjects'); m.locator('[data-open]').first.click()
