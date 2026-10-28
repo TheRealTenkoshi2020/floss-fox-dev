@@ -569,7 +569,7 @@ function snapshot(){const keys=[KEY,ALKEY,TUI()?TUI().KEY:PFX+'.threads.v1',...O
 function undoImportRow(){const el=$('undoImport');if(!el)return;let s=null;try{s=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}
  if(!s||!s.keys){el.hidden=true;el.innerHTML='';return}el.hidden=false;
  el.innerHTML=`<span class="hint">Your data from before the last import (${esc(new Date(s.at).toLocaleString())}) is kept in this browser.</span> <button type="button" class="sec small" id="undoImportBtn">Undo last import</button>`;
- $('undoImportBtn').onclick=()=>{if(!confirm('Undo the last import? Your projects, thread collection and preferences go back to exactly how they were before it. Anything changed since the import is lost.'))return;
+ $('undoImportBtn').onclick=()=>{if(!confirm('Undo the last import? Your projects, thread collection and preferences go back to exactly how they were before it. Anything changed since the import is lost.'))return;if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('undo',{force:true});
   try{for(const k in s.keys){if(s.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s.keys[k])}localStorage.removeItem(PREKEY)}catch(e){pstatus('Undo failed: your browser blocked the save. Nothing else was changed.');return}
   location.hash='#projects';location.reload()}}
 const RPIP=p=>`<picture><source type="image/webp" srcset="assets/pip/pip-${p}-160.webp"><img class="rpip" data-pose="${p}" src="assets/pip/pip-${p}-160.png" width="160" height="240" alt=""></picture>`;
@@ -592,6 +592,7 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
    let alNext=null;if(S&&AL()&&window.FlossFoxAllocationBackup){const cur=S.read(),pr=FlossFoxAllocationBackup.prepare({current:cur,incoming:c.allocations,mode:im,collisionMode:cmode,incomingProjectIds:pendingRestore.map(x=>x.id),existingProjectIds:store.projects.filter(x=>!x.demo).map(x=>x.id),copyIdMap:copyMap});
     if(!pr.ok){pstatus('We stopped the restore because the set-aside threads in this backup don\'t fit. Nothing was changed.');return}
     if(JSON.stringify(pr.data)!==JSON.stringify(cur)){if(!S.writable()){pstatus('We stopped the restore because your set-aside list is read-only here. Nothing was changed.');return}alNext=pr.data}}
+   if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('import',{force:true});
    try{localStorage.setItem(PREKEY,JSON.stringify(snapshot()))}catch(e){if(!confirm('A safety copy of your current data couldn\'t be saved in this browser (storage full or blocked), so this import can\'t be undone. Import anyway?'))return}
    let add=0,rep=0,skip=0,cp=0,ta=0;
    if(im==='replace'){store.projects=store.projects.filter(p=>p.demo).concat(pendingRestore);rep=pendingRestore.length}
@@ -628,7 +629,7 @@ $('saveProj').onclick=()=>{if(saving)return;if(!state.items.length){$('copymsg')
  $('newProjName').value='';renderList();
  $('openSaved').onclick=()=>{showView('projects');openProject(p.id)};if(ok&&window.FlossFoxPip){/* Pip A: the save bubble replaces the small saved wink; the wink still runs when the bubble doesn't show */if(store.projects.length===1&&FlossFoxPip.firstProject)pipFirstPending=true; /* new-15: first-project moment waits for the Projects view (never on Shopping) */if(!(FlossFoxPip.react&&FlossFoxPip.react('pipA.save.ok',{},$('copymsg'),{siteAnnounces:true})))FlossFoxPip.saved($('copymsg'))}};
 load();renderList();
-window.FlossFoxProjects={_caut:CAUT,openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
+window.FlossFoxProjects={_caut:CAUT,openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,rawSnapshot:snapshot,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
  replaceAll:data=>{store={schema:SCHEMA,projects:data.projects};canSave=true;storeMsg('');openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false;const ok=save();renderList();return ok},
  removeDemo:()=>{const n=store.projects.filter(x=>x.demo).length;store.projects=store.projects.filter(x=>!x.demo);if(openId&&!proj(openId)){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}save();renderList();return n},showView,open:id=>{showView('projects');openProject(id)},missingCount:id=>{const p=proj(id);return p?p.items.filter(i=>i.qty===null).length:0},
  fillMissing:id=>{const p=proj(id);if(!p)return 0;const c=p.items.filter(i=>i.qty===null);c.forEach(i=>{i.qty=1;i.stated=false;i.assumed=1});if(c.length){fillUndo={id,codes:c.map(i=>i.code)};touch(p);if(openId===id)renderEditor()}return c.length},
