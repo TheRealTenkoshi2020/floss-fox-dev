@@ -39,7 +39,7 @@ with sync_playwright() as p:
     g.reload(); g.wait_for_function('window.FlossFoxSnapshots'); g.wait_for_timeout(200)
     ok('SNAP-2 unchanged data on reload makes no new snapshot', len(snaps(g)) == 1)
     g.evaluate(f"(()=>{{const d=JSON.parse(localStorage.getItem('{KEY}'));d.projects[0].name='Throttled';localStorage.setItem('{KEY}',JSON.stringify(d))}})()"); g.reload(); g.wait_for_function('window.FlossFoxSnapshots')
-    ok('SNAP-3 changed data within 6h is throttled', len(snaps(g)) == 1)
+    ok('SNAP-3 changed data makes a new copy on the next open', len(snaps(g)) == 2 and snaps(g)[0]['reason'] == 'open')
     for n in ('Version B', 'Version C', 'Version D', 'Version E'): edit_and_reload(g, n)
     names = [json.loads(s['keys'][KEY])['projects'][0]['name'] for s in snaps(g)]
     ok('ROT-1 rotation keeps only 3, newest first', names == ['Version E', 'Version D', 'Version C'], names)
@@ -53,6 +53,12 @@ with sync_playwright() as p:
     g.reload(); g.wait_for_function('window.FlossFoxSnapshots'); g.wait_for_timeout(200)
     # Restore with confirm: cancel first
     g.click('#tabSettings'); g.wait_for_selector('#snapBox button[data-snap]')
+    box = g.inner_text('#snapBox')
+    ok('COPY-1 Pixel heading, body and footer shown exactly', 'Automatic copies on this device' in box and "We keep up to 3 recent copies of your projects and thread collection in this browser. We save one when you open the app after changes, and before an import or restore. These copies are deleted if you clear this site's data, so keep saving backup files too." in box and 'Your browser may clear Floss Fox data if space runs low. A backup file you save keeps a copy outside the browser.' in box)
+    al = g.get_attribute('#snapBox button[data-snap="0"]', 'aria-label') or ''
+    ok('COPY-2 Restore button aria-label is "Restore the copy from {date}"', al.startswith('Restore the copy from ') and len(al) > 22, al)
+    import re as _re
+    ok('COPY-3 timestamps show no seconds', not _re.search(r'\d:\d\d:\d\d', box + al), box[:200])
     ok('UI-1 Restore list shows 3 copies with counts', g.locator('#snapBox li').count() == 3 and 'project' in g.inner_text('#snapBox li >> nth=0'))
     cur = ls(g, KEY)
     g.once('dialog', lambda d: d.dismiss()); g.click('#snapBox button[data-snap="2"]'); g.wait_for_timeout(300)
