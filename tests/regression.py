@@ -6,6 +6,7 @@ Needs: pip install playwright (uses an installed Chrome/Chromium; set --chrome i
 """
 import sys, json, os, argparse, subprocess, re
 KEY = os.environ.get('FF_KEY', 'flossfox.v1')  # storage key; the dev preview build uses a different one
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 from playwright.sync_api import Page as _Page
 # 2.0A+: the project shopping list lives in its own Shopping tab (#shopView). Before acting on an element that sits
@@ -283,7 +284,7 @@ with sync_playwright() as p:
     # ---------- Milestone 1.2: welcome, example mode, search/filter, shopping mode, a11y ----------
     CJS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'contrast.js'), encoding='utf-8').read()
     h = page(412, True); h.goto(B)
-    ok('N1 welcome headline, label, 3 steps, actions', 'Watch your colors come to light.' in h.inner_text('h1') and h.inner_text('label[for=inp]') == 'Paste your DMC color list' and h.locator('.hero .steps li').count() == 3 and h.inner_text('#go') == 'Add my colors' and h.inner_text('#sample') == 'Try an example')
+    ok('N1 welcome headline, label, 3 steps, actions', 'Watch your colors come to light.' in h.inner_text('#heroH') and h.inner_text('label[for=inp]') == 'Paste your DMC color list' and h.locator('.hero .steps li').count() == 3 and h.inner_text('#go') == 'Add my colors' and h.inner_text('#sample') == 'Try an example')
     ok('N1b nav current state (aria-pressed + aria-current)', h.get_attribute('#tabConvert', 'aria-current') == 'page' and h.get_attribute('#tabProjects', 'aria-pressed') == 'false')
     h.click('#tabHelp'); ok('N1c help view opens, others hidden', h.locator('#helpView').is_visible() and h.locator('#convertView').is_hidden() and h.get_attribute('#tabHelp', 'aria-current') == 'page')
     h.click('#tabConvert'); h.click('#openProj'); ok('N1d Open my projects + welcoming empty state', h.locator('#projectsView').is_visible() and 'Every masterpiece begins with a single stitch' in h.inner_text('#projList') and h.locator('#emptyAdd').is_visible())
