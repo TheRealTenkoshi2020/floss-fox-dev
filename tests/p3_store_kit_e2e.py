@@ -14,7 +14,11 @@ def mk(g, name, text):
     g.click('#tabConvert')
     if g.locator('#exitExample').is_visible(): g.click('#exitExample')
     g.fill('#inp', text); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(120)
-    g.fill('#newProjName', name); g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
+    g.fill('#newProjName', name)
+    for _ in range(3):  # saveProj ignores a second click within 800ms (double-tap guard); the compact layout gets here faster than that
+        g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
+        if any(x['name'] == name for x in json.loads(ls(g, KEY) or '{"projects":[]}')['projects']): break
+        g.wait_for_timeout(700)
     return [x for x in json.loads(ls(g, KEY))['projects'] if x['name'] == name][0]['id']
 def restore(g, obj, mode='merge'):
     g.evaluate("FlossFoxProjects.showView('projects')")

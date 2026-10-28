@@ -1,5 +1,6 @@
 """CI005-78: pattern import through the real file path (PDF.js in headless Chrome) on SYNTHETIC fixtures
 (tests/make_ci005_78_fixtures.py). Usage: FF_KEY=flossfox-dev.v1 python3 tests/ci005_78_import_e2e.py URL"""
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 import sys, os
 from playwright.sync_api import sync_playwright
 B = sys.argv[1]; KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); PFX = KEY.replace('.v1', '')

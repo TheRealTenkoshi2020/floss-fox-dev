@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Phase 0 quick win: storage.persist + automatic local snapshots + Restore. Results are simulated (headless Chrome, synthetic data).
 Usage: FF_KEY=flossfox-dev.v1 python tests/snapshots_e2e.py http://localhost:8765/"""
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 import sys, os, json
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8765/'; B = B if B.endswith('/') else B + '/'
