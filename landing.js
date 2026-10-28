@@ -23,6 +23,9 @@
    if(!t||t.tagName==='A')return hide(); // Fabric is its own page: let the link navigate
    ev.preventDefault();hide();t.click();scrollTo(0,0);try{t.focus({preventScroll:true})}catch(_){}
   });
+  var tb=el('ffLandTour');
+  if(tb)tb.addEventListener('click',function(){hide();var c=el('tabConvert');if(c)c.click();scrollTo(0,0);
+   if(window.FlossFoxTour&&window.FlossFoxTour.start)window.FlossFoxTour.start()});
   var n=el('appname');
   if(n){n.classList.add('fflandlink');n.setAttribute('role','link');n.setAttribute('tabindex','0');n.setAttribute('title','Start');
    n.addEventListener('click',show);n.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();show()}})}

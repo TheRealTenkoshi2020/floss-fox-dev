@@ -28,3 +28,7 @@ html.ff-landing body{padding:0!important;margin:0!important}
 @media print{#ffLanding{display:none!important}html.ff-landing body>*:not(#ffLanding){display:revert!important}}
 .land .lpip picture{display:contents}
 #ffLanding:focus{outline:none}
+.land .ltour{margin:14px 0 0;width:100%;display:flex;justify-content:center}
+.land .ltourbtn{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;min-height:44px;max-width:100%;padding:0 18px;font:600 16px/1.2 var(--font-head);color:var(--text);background:transparent;border:1.5px solid var(--chip-border);border-radius:22px;cursor:pointer}
+.land .ltourbtn:hover{background:var(--chip-bg)}
+#ffLanding .ltourbtn:focus-visible{outline:3px solid var(--brand-accent)!important;outline-offset:2px}
