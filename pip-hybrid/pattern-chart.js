@@ -29,12 +29,12 @@ function findGrid(rows0){const rows=rows0.map(r=>({...r,toks:r.toks.filter(t=>!t
  // Column rulers (1 2 3 ... above or below the grid) give the exact cell span when present.
  let lo=Infinity,hi=-Infinity;for(const r of ok)for(const t of r.toks)if(!isLabel(t)){lo=Math.min(lo,t.x);hi=Math.max(hi,t.x)}
  const ruler=rows.filter(r=>isSeq(r.toks.filter(t=>/^\d+$/.test(t.t)))&&r.toks.filter(t=>/^\d+$/.test(t.t)).length>=0.8*r.toks.length);
- if(hasR)hi=Math.min(hi,xr-pitch*0.5);if(hasL)lo=Math.max(lo,x0+pitch*0.5);/* symcheck: nothing past the row numbers is a cell */
+ if(ruler.length){const rx=ruler.flatMap(r=>r.toks.filter(t=>/^\d+$/.test(t.t)).map(t=>t.x));lo=Math.max(lo,Math.min(...rx)-pitch*0.5);hi=Math.min(hi,Math.max(...rx)+pitch*0.5)}/* symcheck: the column ruler marks the cell span, so row numbers on sparse rows stay outside it */if(hasR)hi=Math.min(hi,xr-pitch*0.5);if(hasL)lo=Math.max(lo,x0+pitch*0.5);/* symcheck: nothing past the row numbers is a cell */
  lo-=pitch*0.6;hi+=pitch*0.6;const yTop=Math.max(...ok.map(r=>r.y))+pitch*1.2,yBot=Math.min(...ok.map(r=>r.y))-pitch*1.2;
  const xL=hasL?Math.min(lo,x0-pitch):lo,xR=hasR?Math.max(hi,xr+pitch):hi;
  const inRegion=(r,t)=>r.y<=yTop&&r.y>=yBot&&t.x>=xL&&t.x<=xR;
  const labels=[],cells=[],used=[];let h=0;
- for(const r of rows){if(ruler.includes(r)||r.y>yTop||r.y<yBot)continue;let any=false;for(const t of r.toks){if(!inRegion(r,t))continue;used.push(t);any=true;if(isLabel(t)){if(hasL?near(t,x0):true)labels.push(+t.t);continue}if(t.x>=lo&&t.x<=hi&&t.t.length<=2)cells.push(t.t)}if(any)h++}
+ for(const r of rows){if(ruler.includes(r)||r.y>yTop||r.y<yBot)continue;let any=false;for(const t of r.toks){if(!inRegion(r,t))continue;used.push(t);any=true;if(isLabel(t)){if(hasL?near(t,x0):true)labels.push(+t.t);continue}if(t.x>=lo&&t.x<=hi&&t.t.length<=2&&!(INT.test(t.t)&&r.toks.filter(o=>o.t===t.t).length>1&&(t===r.toks[0]||t===r.toks[r.toks.length-1])))cells.push(t.t)}/* symcheck: the same number at both ends of a row is its row label */if(any)h++}
  for(const r of ruler)for(const t of r.toks)used.push(t);
  return{rows:ok,cells,labels,used,isLabel,inRegion,yTop,yBot,height:h,width:Math.round((hi-lo-pitch*1.2)/pitch)+1}}
 // Row labels that repeat or skip (49, 49 or 36 then 41). Uses the usual step between labels.
