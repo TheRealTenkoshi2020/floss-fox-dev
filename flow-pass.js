@@ -12,7 +12,7 @@ function offerUndo(n,host){document.querySelectorAll('.ffundo').forEach(e=>e.rem
 // My threads: one button per recent project that has new Have enough colors.
 function drawFrom(){const box=$('thFromProj'),t=T(),p=P();if(!box||!t||!p||!t.fromProjectsCount)return;const S=p._store();
  const ps=S.projects.filter(x=>!x.demo).sort((a,b)=>String(b.updated).localeCompare(String(a.updated))).map(x=>({x,n:t.fromProjectsCount([x.id])})).filter(o=>o.n).slice(0,3);
- box.hidden=!ps.length;box.innerHTML=ps.map(o=>`<button type="button" class="sec small" data-from="${esc(o.x.id)}">+ Add ${colors(o.n)} you have from ${esc(o.x.name||'your project')}</button>`).join('');
+ box.hidden=!ps.length;box.innerHTML=ps.map(o=>`<button type="button" class="sec small fffrom" data-from="${esc(o.x.id)}" aria-label="Add ${colors(o.n)} you have from ${esc(o.x.name||'your project')}" title="${esc(o.x.name||'your project')}"><span aria-hidden="true">+ Add ${colors(o.n)} you have from </span><span class="fffname" aria-hidden="true">${esc(o.x.name||'your project')}</span></button>`).join('');
  box.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>{const r=t.addFromProjects([b.dataset.from]),n=r.added.length;status(n?`Added ${colors(n)} from ${S.projects.find(x=>x.id===b.dataset.from).name}. Colors already in your collection were left alone.`:'Nothing new to add.');drawFrom();offerUndo(n)})}
 // Open project: "Put my N Have enough colors in My threads" under the compare box.
 function drawProjAdd(){const host=$('pCmp'),t=T(),p=P();if(!host||!t||!p||!t.fromProjectsCount)return;const id=p.openId&&p.openId();let el=$('pToThreads');
@@ -54,3 +54,8 @@ function init(){{const t=$('tabProjects');if(t)t.addEventListener('click',autoBa
  ['threadsView','projectsView','shopView'].forEach(i=>{const e=$(i);if(e)mo.observe(e,{attributes:true,attributeFilter:['hidden']})});refresh()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
+/* ci005-77 compact pass: Settings points to Help instead of repeating it (added by script to keep the Settings markup untouched for the Backup branch merge) */
+(function(){function go(){const v=document.getElementById('settingsView');if(!v||document.getElementById('setHelpLink'))return;
+ const p=document.createElement('p');p.className='ffhelplink noprint';p.innerHTML='<button type="button" class="ghost" id="setHelpLink">See how Floss Fox works in Help</button>';v.append(p);
+ p.querySelector('button').onclick=()=>{const t=document.getElementById('tabHelp');if(t)t.click()}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go()})();

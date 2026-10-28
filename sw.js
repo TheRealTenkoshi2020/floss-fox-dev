@@ -1,9 +1,10 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-75';
+const CACHE = 'flossfox-dev-v2.0a-ci005-80';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
+  "snapshots.js",
   "backup-ui.css",
   "ftux-draft-core.js",
   "ftux-draft-ui.js",
@@ -16,6 +17,8 @@ const CORE = [
   "pip-hybrid/pattern-trust.js",
   "pip-hybrid/pattern-trust-ui.js",
   "analytics.js",
+  "landing.js",
+  "landing.css",
   "pip-hybrid/pattern-ui.js",
   "pip-hybrid/pattern-pdf.js",
   "pip-hybrid/pattern-core.js",

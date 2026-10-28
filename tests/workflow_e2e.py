@@ -5,6 +5,7 @@ missing/short counts -> shopping list -> close + reopen (persisted) -> edit + un
 export, clear storage, import, restored. Also nav, readability, 44px touch targets, scrolling, Pip, quick DMC conversion.
 Usage: python tests/workflow_e2e.py [BASE_URL] [--shots DIR]   (preview: set FF_KEY like regression.py)"""
 import sys, os, argparse, json, tempfile, shutil
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 ap = argparse.ArgumentParser(); ap.add_argument('base', nargs='?', default='http://localhost:8765/'); ap.add_argument('--chrome', default='/usr/bin/google-chrome'); ap.add_argument('--shots', default=None)
 A = ap.parse_args(); B = A.base if A.base.endswith('/') else A.base + '/'
@@ -81,7 +82,7 @@ with sync_playwright() as p:
         with g.expect_download() as dl: g.click('#backupBtn')
         bp = os.path.join(prof, 'bk.json'); dl.value.save_as(bp); snapP, snapT = ls(KEY), ls(TKEY)
         g.evaluate('localStorage.clear()'); g.reload(); g.wait_for_load_state('networkidle')
-        if g.locator('#tourNo').count(): g.click('#tourNo')
+        if g.locator('#tourNo').is_visible(): g.click('#tourNo')  # the tour invite sits on Find floss; a reload on #projects keeps it out of view
         g.click('#tabProjects'); ok(f'W13 {T} storage cleared', ls(KEY) is None or json.loads(ls(KEY))['projects'] == [])
         g.click('#backupBox summary'); g.set_input_files('#restoreFile', bp); g.wait_for_timeout(250); g.click('#rGo'); g.wait_for_timeout(200)
         ok(f'W14 {T} import restores projects and collection exactly', json.loads(ls(KEY))['projects'] == json.loads(snapP)['projects'] and json.loads(ls(TKEY))['threads'] == json.loads(snapT)['threads'])

@@ -4,6 +4,7 @@ Real taps: add threads, save project A and set its skeins aside, save project B 
 Have enough with A's skeins, free skeins still count, and A plus My threads stay unchanged.
 Usage: FF_KEY=flossfox-dev.v1 python tests/auto_alloc_e2e.py http://localhost:8812/floss-fox-dev/"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); R = {'pass': 0, 'fail': 0}; errs = []
@@ -25,7 +26,7 @@ with sync_playwright() as p:
         i = g.evaluate("FlossFoxProjects.lastProject().id"); g.evaluate(f"FlossFoxProjects.open({json.dumps(i)})"); g.wait_for_timeout(400); return i
     a = mkproj('310 x3', 'Project A')
     ok('A: 310 marked Have enough from My threads (existing auto-apply)', PJ(a)['decisions']['310']['status'] == 'have', PJ(a)['decisions'])
-    g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150)
+    g.evaluate("FlossFoxProjects.showView('shop')"); g.wait_for_timeout(300); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150)
     g.locator('#pKit [data-kadd="310"]').scroll_into_view_if_needed(); g.locator('#pKit [data-kadd="310"]').tap(); g.wait_for_timeout(400)
     al = g.evaluate("JSON.parse(localStorage.getItem('flossfox-dev.allocations.v1')||'{\"allocations\":[]}').allocations")
     ok('A: 3 skeins of 310 set aside (tap)', any(x['code'] == '310' and x['qty'] == 3 and x['projectId'] == a for x in al), al)

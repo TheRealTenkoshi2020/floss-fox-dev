@@ -2,6 +2,7 @@
 """Unfinished-list recovery (DRAFT-1..8) + one-time first backup prompt (BACKUP-1/2) + offline + restore. Results are simulated (headless Chrome).
 Usage: FF_KEY=flossfox-dev.v1 python tests/draft_backup_e2e.py http://localhost:8811/floss-fox-dev/"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8811/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); PFX = KEY[:-3]; SK = PFX + '.scratch.v1'; FK = PFX + '.backup-first.v1'; TK = PFX + '.threads.v1'
@@ -112,7 +113,7 @@ with sync_playwright() as p:
     g.fill('#inp', LIST); g.wait_for_timeout(900); ctx.set_offline(True); g.reload(); g.wait_for_load_state('domcontentloaded'); g.wait_for_timeout(500)
     ok('390px offline reload: recovery card works from cache', g.evaluate("!!window.FlossFoxDraftUI&&!!window.FlossFoxDraftCore") and g.locator('#ffDraftRecovery').is_visible())
     g.click('#ffDraftRestore'); ok('390px offline restore gives the list back', g.input_value('#inp') == LIST)
-    ok('sw cache is ci005-75', 'ci005-75' in g.evaluate("caches.keys().then(k=>k.join(','))"))
+    ok('sw cache is ci005-80', 'ci005-80' in g.evaluate("caches.keys().then(k=>k.join(','))"))
     ctx.close(); br.close()
 ok('no page errors', not errs, errs)
 print(f"\ndraft_backup_e2e (simulated): {R['pass']} passed, {R['fail']} failed"); sys.exit(1 if R['fail'] else 0)

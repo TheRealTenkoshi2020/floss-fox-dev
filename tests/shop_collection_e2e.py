@@ -6,6 +6,7 @@ removing a thread brings the color back, a short amount goes to Need to buy for 
 for another project are not counted again.
 Usage: FF_KEY=flossfox-dev.v1 python tests/shop_collection_e2e.py http://localhost:8812/floss-fox-dev/ [pdf] [shot_dir]"""
 import sys, os, json, re
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 PDF = sys.argv[2] if len(sys.argv) > 2 else '/workspace/flow-pass/myke-example.pdf'
@@ -80,7 +81,7 @@ with sync_playwright() as p:
     ok('700 (not owned) stays in Check first', '700' in cf(), cf())
     # set-aside: reserve 310 for the short-case project, then a third project should not count those skeins
     g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300)
-    k = g.locator('#pKit'); k.evaluate('e=>e.open=true'); g.wait_for_timeout(150)
+    g.evaluate("FlossFoxProjects.showView('shop')"); k = g.locator('#pKit'); k.evaluate('e=>e.open=true'); g.wait_for_timeout(150)
     if g.locator('#pKit [data-kadd="310"]').count(): g.locator('#pKit [data-kadd="310"]').tap(); g.wait_for_timeout(300)
     al = g.evaluate("JSON.parse(localStorage.getItem('flossfox-dev.allocations.v1')||'{\"allocations\":[]}').allocations")
     ok('3 skeins of 310 set aside for Short case', any(a['code'] == '310' and a['qty'] == 3 and a['projectId'] == p2 for a in al), al)

@@ -2,6 +2,7 @@
 """Phase 3 (STORE-1..6, KIT-1..5, simulated browser run): Store Mode view and kitting set-asides.
 Usage: FF_KEY=flossfox-dev.v1 python tests/p3_store_kit_e2e.py http://localhost:8811/floss-fox-dev/"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8811/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); PFX = KEY[:-3]; AKEY = PFX + '.allocations.v1'; TKEY = PFX + '.threads.v1'
@@ -13,10 +14,16 @@ def mk(g, name, text):
     g.click('#tabConvert')
     if g.locator('#exitExample').is_visible(): g.click('#exitExample')
     g.fill('#inp', text); g.click('#go'); g.wait_for_selector('#saveProj:not([disabled])', state='visible'); g.wait_for_timeout(120)
-    g.fill('#newProjName', name); g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
+    g.fill('#newProjName', name)
+    for _ in range(3):  # saveProj ignores a second click within 800ms (double-tap guard); the compact layout gets here faster than that
+        g.evaluate("document.getElementById('saveProj').click()"); g.wait_for_timeout(200)
+        if any(x['name'] == name for x in json.loads(ls(g, KEY) or '{"projects":[]}')['projects']): break
+        g.wait_for_timeout(700)
     return [x for x in json.loads(ls(g, KEY))['projects'] if x['name'] == name][0]['id']
 def restore(g, obj, mode='merge'):
-    g.evaluate("FlossFoxProjects.showView('projects')"); g.evaluate("document.getElementById('backupBox').open=true")
+    g.evaluate("FlossFoxProjects.showView('projects')")
+    if g.locator('#pClose').is_visible(): g.click('#pClose'); g.wait_for_timeout(150)  # ci005-77: the kit lives in Shop, so a reload can land with a project open
+    g.evaluate("document.getElementById('backupBox').open=true")
     g.set_input_files('#restoreFile', {'name': 'b.json', 'mimeType': 'application/json', 'buffer': json.dumps(obj).encode()}); g.wait_for_timeout(300)
     if g.locator('#rGo').count():
         g.check(f'input[name=imode][value={mode}]'); g.click('#rGo'); g.wait_for_timeout(300)
@@ -76,7 +83,7 @@ with sync_playwright() as p:
         # ---- Kitting ----
         g.evaluate("FlossFoxThreadsUI.replaceAll({threads:{'310':{n:4},'898':{n:1}}})")
         g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(200)
-        g.evaluate("document.getElementById('pKit').open=true")
+        g.evaluate("FlossFoxProjects.showView('shop');document.getElementById('pKit').open=true")
         ok(f'[{w}] KIT-1 kit shows count', '0 of 6 skeins set aside' in g.inner_text('#pKitH'), g.inner_text('#pKitH'))
         g.click('[data-kadd="310"]'); g.wait_for_timeout(150)
         al = json.loads(ls(g, AKEY))
@@ -84,14 +91,14 @@ with sync_playwright() as p:
         g.click('#kUndo'); g.wait_for_timeout(150)
         ok(f'[{w}] KIT-2 undo clears it', json.loads(ls(g, AKEY))['allocations'] == [])
         g.click('[data-kadd="310"]'); g.wait_for_timeout(150)
-        g.evaluate(f"FlossFoxProjects.open({json.dumps(b)})"); g.wait_for_timeout(200); g.evaluate("document.getElementById('pKit').open=true")
+        g.evaluate(f"FlossFoxProjects.open({json.dumps(b)})"); g.wait_for_timeout(200); g.evaluate("FlossFoxProjects.showView('shop');document.getElementById('pKit').open=true")
         t = g.inner_text('[data-kit="310"]')
         ok(f'[{w}] KIT-3 no double count: B can set aside only the 2 free', 'Set aside 2' in t and '(2 for other projects)' in t, t)
         g.click('[data-kadd="310"]'); g.wait_for_timeout(150)
         tot = sum(r['qty'] for r in json.loads(ls(g, AKEY))['allocations'] if r['code'] == '310')
         ok(f'[{w}] KIT-3 total set aside never exceeds owned', tot == 4, tot)
         ok(f'[{w}] KIT-4 unknown stock not set aside', g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})") is None and g.locator('[data-kadd="3799"]').count() == 0)
-        g.evaluate("FlossFoxThreadsUI.replaceAll({threads:{'310':{n:3},'898':{n:1}}})"); g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(150); g.evaluate("document.getElementById('pKit').open=true")
+        g.evaluate("FlossFoxThreadsUI.replaceAll({threads:{'310':{n:3},'898':{n:1}}})"); g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(150); g.evaluate("FlossFoxProjects.showView('shop');document.getElementById('pKit').open=true")
         ok(f'[{w}] KIT-4 conflict shown, not clamped', 'More is set aside than you have' in g.inner_text('#pKit') and tot == sum(r['qty'] for r in json.loads(ls(g, AKEY))['allocations'] if r['code'] == '310'))
         g.evaluate("FlossFoxThreadsUI.replaceAll({threads:{'310':{n:4},'898':{n:1}}})")
         # ---- Backup round trip ----
@@ -107,7 +114,7 @@ with sync_playwright() as p:
         msg = restore(g, new, 'replace')
         ok(f'[{w}] BK-4 newer allocation schema fails closed', 'newer version' in msg and (ls(g, KEY), ls(g, AKEY)) == snap, msg)
         g.evaluate(f"localStorage.setItem({json.dumps(AKEY)}, JSON.stringify({{schema:9,allocations:[]}}))"); g.reload(); g.wait_for_load_state('networkidle')
-        g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(150); g.evaluate("document.getElementById('pKit').open=true")
+        g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(150); g.evaluate("FlossFoxProjects.showView('shop');document.getElementById('pKit').open=true")
         ok(f'[{w}] BK-5 newer stored schema is read-only and untouched', "read-only" in g.inner_text('#pKit') and json.loads(ls(g, AKEY))['schema'] == 9 and 'allocations' not in g.evaluate("FlossFoxProjects.fullBackup()"))
         g.evaluate(f"localStorage.setItem({json.dumps(AKEY)}, JSON.stringify({json.dumps(bk['allocations'])}))"); g.reload(); g.wait_for_load_state('networkidle')
         # ---- Delete releases ----

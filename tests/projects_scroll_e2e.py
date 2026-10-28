@@ -3,6 +3,7 @@
 collapsed sections open with one tap (mouse and keyboard), cautions stay visible on cards, no data written by toggles.
 Usage: FF_KEY=flossfox-dev.v1 python tests/projects_scroll_e2e.py http://localhost:8812/floss-fox-dev/ [shot_dir]"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 SHOT = sys.argv[2] if len(sys.argv) > 2 else None
@@ -31,7 +32,7 @@ with sync_playwright() as p:
         a = mk(g, 'Spring Fox', TXT); mk(g, 'Winter Owl', '310 x3\n820 x1\n3865 x2'); mk(g, 'Tiny Mushroom', '321 x1\n700 x1')
         g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(300)
         ok(t + 'kit closed by default on open', g.evaluate("document.getElementById('pKit').open") is False)
-        g.click('#pKit > summary'); g.wait_for_timeout(100)
+        g.evaluate("FlossFoxProjects.showView('shop')"); g.wait_for_timeout(200); g.click('#pKit > summary'); g.wait_for_timeout(100)
         ok(t + 'kit opens with one tap', g.evaluate("document.getElementById('pKit').open") is True)
         for s in ('[data-kadd="310"]', '[data-kadd="321"]'):
             if g.locator(s).count(): g.click(s); g.wait_for_timeout(200)
@@ -63,8 +64,10 @@ with sync_playwright() as p:
         g.focus('#pCmpBox > summary'); g.keyboard.press('Enter'); g.wait_for_timeout(80)
         ok(t + 'comparison closes with Enter key', g.evaluate("document.getElementById('pCmpBox').open") is False)
         g.keyboard.press('Enter'); g.wait_for_timeout(80)
+        g.evaluate("FlossFoxProjects.showView('shop');document.getElementById('pKit').open=false"); g.wait_for_timeout(150)
         g.focus('#pKit > summary'); g.keyboard.press('Enter'); g.wait_for_timeout(80)
         ok(t + 'kit opens with Enter key', g.evaluate("document.getElementById('pKit').open") is True)
+        g.evaluate("FlossFoxProjects.showView('projects')"); g.evaluate(f"FlossFoxProjects.open({json.dumps(a)})"); g.wait_for_timeout(300)
         g.click('#x-310'); g.wait_for_timeout(120)
         ok(t + 'why sentence is in Details with no heading', vis(g, '#det-310 > .why') and g.evaluate("!document.querySelector('#det-310 > .why').previousElementSibling||!/^H\\d$/.test(document.querySelector('#det-310 > .why').previousElementSibling.tagName)"))
         ok(t + 'toggling sections wrote no data', g.evaluate(LS) == before)

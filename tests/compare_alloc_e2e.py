@@ -3,6 +3,7 @@
 for OTHER projects; a project's own set-asides still count. Real taps; undo restores; project A, My threads and set-asides stay unchanged.
 Usage: FF_KEY=flossfox-dev.v1 python tests/compare_alloc_e2e.py http://localhost:8812/floss-fox-dev/"""
 import sys, os, json
+import os as _o, sys as _s; _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__))); import ff_session  # ci005-79: skip the fresh-session landing
 from playwright.sync_api import sync_playwright
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8812/floss-fox-dev/'; B = B if B.endswith('/') else B + '/'
 KEY = os.environ.get('FF_KEY', 'flossfox-dev.v1'); R = {'pass': 0, 'fail': 0}; errs = []
@@ -25,6 +26,7 @@ with sync_playwright() as p:
         i = g.evaluate("FlossFoxProjects.lastProject().id"); opn(i); return i
     def tap(sel): l = g.locator(sel); l.scroll_into_view_if_needed(); l.tap(); g.wait_for_timeout(350)
     def use_and_apply():
+        g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(250)
         g.locator('#pCmpBox').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pUseColl'); prev = g.inner_text('#pCmpPrev') if g.locator('#pCmpPrev').count() else ''
         if g.locator('#pApplyColl').count(): tap('#pApplyColl')
         return prev
@@ -32,7 +34,7 @@ with sync_playwright() as p:
     a = mkproj('310 x3', 'Project A'); b = mkproj('310 x2\n434 x1', 'Project B')
     g.locator('#tabThreads').tap(); g.wait_for_timeout(300); g.locator('#thAdd').tap(); g.keyboard.type('310 x3, 434 x2'); g.locator('#thAddBtn').tap(); g.wait_for_timeout(400)
     opn(a); g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300)
-    g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pKit [data-kadd="310"]')
+    g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(200); tap('#pKitGo'); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pKit [data-kadd="310"]')
     al = g.evaluate(ALS); ok('A: 3 skeins of 310 set aside (tap)', any(x['code'] == '310' and x['qty'] == 3 and x['projectId'] == a for x in al), al)
     ok('the compare box shows the approved line', "Each project is checked against your whole collection, minus any skeins set aside for other projects." in g.evaluate("document.getElementById('pCmp').textContent"))
     use_and_apply()

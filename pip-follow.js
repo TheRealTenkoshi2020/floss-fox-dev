@@ -47,13 +47,20 @@ function mount(){if(comp&&comp.isConnected)return true;
  new ResizeObserver(pad).observe(comp);observe();return true}
 // Visual refresh: on a tab that shows the hero (Find floss), the hero Pip is the companion, so it sits in the hero and there is no bar.
 // Same element, same controls (Minimize, Hide Pip, Pip level); only where it is drawn changes.
-function dock(){if(!comp||isFabric||!homeG)return;const cv=$('convertView'),inHero=!!(cv&&!cv.hidden&&homeG.isConnected&&homeG.getClientRects().length);
+// ci005-77: on phones the companion is an inline note at the top of the open view (never a bar over content).
+function inlineSpot(){const w=document.querySelector('.wrap');if(!w)return null;if(isFabric){const c=w.querySelector('.card');return c?[c.parentElement,c]:null}
+ const v=[...w.querySelectorAll(':scope>div[id$="View"]')].find(x=>!x.hidden);return v?[v,v.firstElementChild]:null}
+function placeInline(){if(!comp)return false;body.classList.toggle('pipc-inline',!wide.matches);if(wide.matches)return false;const sp=inlineSpot();if(!sp)return false;const [par,ref]=sp;
+ if(comp.parentElement!==par||comp.nextElementSibling!==ref){if(ref===comp)return true;const f=comp.contains(document.activeElement)?document.activeElement:null;par.insertBefore(comp,ref&&ref.parentElement===par?ref:null);if(f)f.focus({preventScroll:true})}return true}
+let viewMO=null;function watchViews(){if(viewMO)return;const w=document.querySelector('.wrap');if(!w||!window.MutationObserver)return;viewMO=new MutationObserver(()=>dock());[...w.querySelectorAll(':scope>div[id$="View"]')].forEach(v=>viewMO.observe(v,{attributes:true,attributeFilter:['hidden']}))}
+function dock(){if(!comp)return;watchViews();if(isFabric||!homeG){placeInline();return}const cv=$('convertView'),inHero=!!(cv&&!cv.hidden&&homeG.isConnected&&homeG.getClientRects().length);
  if(inHero&&comp.parentElement!==homeG){const f=comp.contains(document.activeElement)?document.activeElement:null;homeG.insertBefore(comp,homeNext&&homeNext.parentElement===homeG?homeNext:homeG.firstChild);if(f)f.focus({preventScroll:true})}
- else if(!inHero&&comp.parentElement===homeG){const f=comp.contains(document.activeElement)?document.activeElement:null;(document.querySelector('.wrap')||body).after(comp);if(f)f.focus({preventScroll:true})}
+ else if(!inHero&&!placeInline()&&(comp.parentElement===homeG||(comp.parentElement&&comp.parentElement.closest('.wrap')))){const f=comp.contains(document.activeElement)?document.activeElement:null;(document.querySelector('.wrap')||body).after(comp);if(f)f.focus({preventScroll:true})}
+ if(!inHero)body.classList.toggle('pipc-inline',!wide.matches);else body.classList.remove('pipc-inline');
  if(body.classList.contains('pipc-hero')!==inHero){body.classList.toggle('pipc-hero',inHero);const p=P();if(p&&p.retheme)p.retheme()}homeG.classList.toggle('pipmoved',!inHero)}
 const heroMode=()=>body.classList.contains('pipc-hero');
 // bottom padding on phones so nothing stays under the bar (last button reachable)
-function pad(){if(!comp)return;dock();const h=heroMode()||wide.matches||comp.hidden||body.classList.contains('pipc-away')?0:comp.getBoundingClientRect().height;doc.style.setProperty('--pipc-h',Math.ceil(h)+'px')}
+function pad(){if(!comp)return;dock();const h=heroMode()||wide.matches||body.classList.contains('pipc-inline')||comp.hidden||body.classList.contains('pipc-away')?0:comp.getBoundingClientRect().height;doc.style.setProperty('--pipc-h',Math.ceil(h)+'px')}
 // wide: line up with the active section, but never above the tab bar / header
 let active=null;
 function place(){if(!comp)return;if(!wide.matches||heroMode()){comp.style.transform='';return}
