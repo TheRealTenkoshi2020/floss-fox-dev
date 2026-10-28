@@ -11,7 +11,7 @@ const STR={
  intro:'We keep up to 3 recent copies of your projects and thread collection in this browser. We save one when you open the app after changes, and before an import or restore. These copies are deleted if you clear this site\'s data, so keep saving backup files too.',
  none:'No automatic copies yet. One is made the next time you open Floss Fox after making changes.',
  listLabel:'Saved copies',
- item:'{when}: {projects}, {colors}',
+ item:'{when} · {projects}, {colors}',
  reason:{open:'when you opened the app',import:'before an import',restore:'before a restore',undo:'before undoing an import'},
  restoreBtn:'Restore this copy',
  confirm:'Restore the copy from {when}? Your current projects, thread collection and preferences will be replaced by this copy. Your current data is saved as a new copy first, so you can switch back.',
