@@ -8,7 +8,7 @@ function normalCode(v){let c=String(v||'').trim().toUpperCase().replace(/^DMC\s*
 function validCode(raw,validCodes){const code=normalCode(raw);return Object.prototype.hasOwnProperty.call(validCodes||{},code)?code:null;}
 const isSku=v=>/^(?:\d{1,4}|BLANC|WHITE|ECRU|B5200)$/i.test(v);
 function parseRow(line,validCodes,page){
- const clean=String(line||'').trim().replace(/[\u00a0\t]+/g,' ');
+ const clean=String(line||'').trim().replace(/[\u00a0\t]+/g,' ').replace(/\b(\d{1,3}),(\d{3})(?=\s*(?:full\s+)?(?:cross\s*)?stitches\b)/gi,'$1$2').replace(/(\bstitches\s*[:=]\s*)(\d{1,3}),(\d{3})\b/gi,'$1$2$3');
  if(clean.length<3||clean.length>300)return null;
  // Prevent false-positive DMC colors from chart dimensions (e.g. 180 x 240 stitches).
  if(/^\d{1,4}\s*(?:x|×|by)\s*\d{1,4}\s*(?:stitches?|crosses?)/i.test(clean))return null;
@@ -59,7 +59,7 @@ function splitSegments(line,validCodes){const t=String(line||'').trim().replace(
 // A legend-shaped row whose number isn't a DMC code ("# 9999 Bogus 10 1"): list it so it is never silently dropped.
 const UNKNOWN_ROW=new RegExp('^'+SYM_SRC+'\\s+\\d{1,4}\\b(?!\\s*(?:x|×|by|ct|count|strands?|stitch(?:es)?|cm|mm|in|inch(?:es)?|aida|linen|evenweave)\\b)');
 const SPECIAL=/\b(?:light\s*effects?|satin|etoile|[ÉE]toile|coloris|metallic|kreinik|mill\s*hill|beads?|DMC\s*[ESC]\s?\d{2,4}|[ESC]\d{3,4})\b/i;
-const CATALOG_MIN=150,CATALOG_RUN=12;
+const CATALOG_MIN=150,CATALOG_RUN=12,MANY_NO_AMOUNTS=40;
 const ordCache=new WeakMap();
 function catalogOrder(validCodes){if(!validCodes||typeof validCodes!=='object')return new Map();if(ordCache.has(validCodes))return ordCache.get(validCodes);
  const n=c=>/^\d+$/.test(c)?+c:-1;const keys=Object.keys(validCodes).sort((a,b)=>(n(a)<0)-(n(b)<0)||n(a)-n(b)||(a<b?-1:a>b?1:0));const m=new Map(keys.map((k,i)=>[k,i]));ordCache.set(validCodes,m);return m}
@@ -77,12 +77,34 @@ function stripChartRun(line){const t=String(line).trim().split(/\s+/);let i=0;co
 function unspace(line){const t=String(line).trim().split(/\s+/);if(t.length<6)return line;const one=t.filter(x=>x.length===1).length;if(one<0.8*t.length)return line;const j=t.join('');return /[a-z]{4,}/.test(j)?j:line}
 // Flow pass: chart row and column labels ("48 48", "1 2 3 4 5 ...") are not colors.
 function gridLabel(line){const t=String(line).trim().split(/\s+/);if(!t.every(x=>/^\d{1,3}$/.test(x)))return false;if(t.length===2&&t[0]===t[1])return true;if(t.length>=5){let up=0;for(let i=1;i<t.length;i++)if(+t[i]===+t[i-1]+1)up++;return up>=0.8*(t.length-1)}return false}
+// CI005-78: card-grid color lists ("D151" over "Marshmallow" over "Stitches: 11 - Skeins: 1", 4 cards per row). pdf.js puts each grid row
+// on one text line, so codes, names and amounts land on separate lines. Rebuild one row per card from item positions. A "D" code only
+// counts when a "Stitches:"/"Skeins:" label sits right under it in the same column (never page refs or a lone "D" header).
+function gridCards(items,validCodes){if(!Array.isArray(items)||items.length>40000)return [];const out=[];const num=v=>v==null?null:v.replace(/,/g,'');
+ for(const it of items){const m=/^D(\d{1,4}|BLANC|ECRU|B5200)$/i.exec(String(it.s||'').trim());if(!m)continue;const code=validCode(m[1],validCodes);if(!code)continue;
+  const below=items.filter(o=>o!==it&&Math.abs(o.x-it.x)<3&&o.y<it.y&&it.y-o.y<45).sort((a,b)=>b.y-a.y);
+  const lab=below.find(o=>/\b(?:stitches|skeins?)\s*:/i.test(o.s));if(!lab)continue;
+  const st=num((/\bstitches\s*:\s*(\d{1,3}(?:,\d{3})+|\d{1,8})\b/i.exec(lab.s)||[])[1]),sk=num((/\bskeins?\s*:\s*(\d{1,3})\b/i.exec(lab.s)||[])[1]);
+  const name=below.find(o=>o!==lab&&o.y>lab.y&&/[A-Za-z]/.test(o.s)&&!/\d{3}/.test(o.s));
+  out.push(`DMC ${code}${name?' '+name.s.replace(/\d+/g,'').trim():''}${st?` ${st} stitches`:''}${sk?` ${sk} skein${sk==='1'?'':'s'}`:''}`)}
+ return out}
+// CI005-78: keys printed beside a chart as "symbol CODE (DMC)" ("☆ 644 (DMC)", "742 (DMC)"), often on the same text line as a chart row.
+const DMC_TAG=/(?:^|\s)(?:[^\s\d]{1,2}\s+)?(BLANC|WHITE|ECRU|B5200|\d{1,4})\s+\(DMC\)/gi;
+// CI005-78: a chart row with its row number on both sides ("7 – – = + + 7", "2 – – 2", "38 38"). Only symbol cells may sit between the labels.
+// The row (and its labels) is not a color; text after the right label (a key or note beside the chart) is kept.
+const CHART_ROW=/^(\d{1,3})((?:\s+[^\s\d]{1,2})*)\s+\1(?=\s|$)/;
 const keyText=l=>String(l).trim().toLowerCase().replace(/^\S{1,2}\s+(?=(?:dmc\s*)?(?:\d|blanc|white|ecru|b5200))/,'');
 function parsePages(pages,validCodes){
  if(!Array.isArray(pages)||pages.length>100)throw new Error('That page list isn\'t valid.');
  let checked=0;const raw=[];const warnings=[];const skipped=[];
  for(const p of pages){let text=String(p.text||'');if(text.length>MAX_TEXT)text=text.slice(0,MAX_TEXT);
-  const src=text.split(/\r?\n/).map(unspace).filter(l=>!gridLabel(l));let lines=src.map(stripChartRun);
+  const extra=gridCards(p.items,validCodes);let tagged=0;
+  let src0=text.split(/\r?\n/).map(unspace).map(l=>{let o=String(l).replace(DMC_TAG,(m0,c)=>{if(validCode(c,validCodes)){extra.push('DMC '+c);tagged++;return ' '}return m0});return o.trim()?o:''});
+  // Row labels are stripped only on pages whose key uses the (DMC) tag style, so ordinary numbered legends ("2 310 Black 2") are untouched.
+  // Notes beside the chart ("Teeth - DMC 310 - 2 strands") name key colors again; the tagged key row is the color, so the note isn't a second row.
+  if(tagged){const tc=new Set(extra.map(e=>validCode(e.slice(4).split(' ')[0],validCodes)));src0=src0.filter(l=>{const m=/\bDMC\s*[:#-]?\s*(BLANC|WHITE|ECRU|B5200|\d{1,4})\b/i.exec(l);return !(m&&tc.has(validCode(m[1],validCodes)))})}
+  if(tagged)src0=src0.map(l=>{const m=CHART_ROW.exec(String(l).trim());return m?String(l).trim().slice(m[0].length):l});
+  const src=[...src0,...extra].filter(l=>!gridLabel(l));let lines=src.map(stripChartRun);
   // A chart with row numbers on the left (5+ chart rows that start with a number): any other line starting with a 1 or 2 digit
   // number followed by a word is a row label beside text ("1 FLOSS LEGEND ..."), not DMC 1. Drop the label.
   if(src.filter((l,i)=>lines[i]!==l&&/^\s*\d{1,2}\s/.test(l)).length>=5)lines=lines.map(l=>l.replace(/^\s*\d{1,2}\s+(?=[A-Za-z])(?!(?:BLANC|ECRU|B5200|DMC)\b)/i,''));
@@ -101,6 +123,8 @@ function parsePages(pages,validCodes){
  if(catalogPages.length)warnings.push('catalog-page-skipped');
  if(new Set(kept.map(x=>x.code)).size>CATALOG_MIN){kept=[];warnings.push('catalog-document')}
  raw.length=0;raw.push(...kept);
+ // CI005-78 safeguard: many colors and not one stitch or skein count is what a reference list looks like. Flag it so the UI can warn first.
+ if(new Set(kept.map(x=>x.code)).size>=MANY_NO_AMOUNTS&&kept.every(x=>x.qty==null&&x.stitchCount==null))warnings.push('many-colors-no-amounts');
  for(const x of raw){delete x.lineCodes}
  const byCode=new Map(),same=(a,b)=>a.sourcePage!==b.sourcePage&&!(a.repeats||[]).includes(b.sourcePage)&&keyText(a.sourceLine)===keyText(b.sourceLine)&&a.qty==b.qty&&a.stitchCount==b.stitchCount;for(const x of raw){const r=byCode.get(x.code);
   // Flow pass: the same key printed again on another page (word for word) is a repeat, not a second amount.

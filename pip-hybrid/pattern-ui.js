@@ -61,9 +61,18 @@ const unclear=r=>r.qty===null||badQty(r)||(r.warnings||[]).some(w=>w!=='no-quant
    info(`Read ${out.pages.length} page${out.pages.length===1?'':'s'} on your device. ${limited.join(' ')} Nothing was sent online.`.replace(/\s+/g,' '));
    const d=dialog.querySelector('details.pat-manual');if(d){const m=N('p','errbox pat-unreadable',msg);m.id='patUnreadable';m.setAttribute('role','alert');d.parentElement.insertBefore(m,d);if(noText)pipKnot(m);d.open=true;m.scrollIntoView({block:'start'})}}
   else{const catMsg=cat.length?`We skipped page${cat.length===1?'':'s'} ${cat.join(', ')} because ${cat.length===1?'it looks':'they look'} like a full DMC color chart, not this pattern's color key.`:'';info(`Selected ${f.name}. ${catMsg} ${out.warnings.join(' ')} Read ${out.pages.length} page${out.pages.length===1?'':'s'} on your device. Nothing was sent online.`)}
+  // CI005-78 safeguard (wording approved by Pixel): many colors and no counts looks like a full color chart. Ask before adding them.
+  $('patManyBox')?.remove();if(parsed.rows.length&&parsed.warnings.includes('many-colors-no-amounts')){const n=parsed.rows.length,cs=`${n} color${n===1?'':'s'}`;
+   const box=N('div','errbox pat-many');box.id='patManyBox';box.setAttribute('role','alert');box.appendChild(N('p','',`This PDF lists ${cs} but no stitch counts, so it may be a full color chart, not your pattern key. Add all ${cs}?`));
+   const all=N('button','btn','Add all '+cs);all.type='button';all.id='patManyAll';const pick=N('button','btn ghost','Let me pick');pick.type='button';pick.id='patManyPick';
+   all.onclick=()=>{box.remove();const a=$('patAll');if(a&&!a.checked){a.checked=true;a.dispatchEvent(new Event('change',{bubbles:true}))}};
+   pick.onclick=()=>{box.remove();const r=$('patRows');if(r)r.scrollIntoView({block:'start'})};
+   box.append(all,' ',pick);const r=$('patRows');if(r&&r.parentElement)r.parentElement.insertBefore(box,r);pipChart(box,n);box.scrollIntoView({block:'start'})}
  }catch(e){info(e&&e.pdfOnly?String(e.message):'Import stopped: '+String(e.message||e));if(e&&e.pdfOnly){const md=dialog&&dialog.querySelector('details.pat-manual');if(md)md.open=true}setRows([])}}
  /* new-15 grumpy-knot: only for Pip's own struggle with a scanned PDF (never a user error). Decorative art, hidden when Pip is off or quiet.
     Line approved by Pixel (review of 6377560). */
+ function pipChart(m,n){const P=window.FlossFoxPip,lv=P&&P.level?P.level():'off';if(lv==='off'||lv==='quiet')return;
+  m.appendChild(N('p','pat-pipknot-text',`This looks like a full color chart, not a key. Add all ${n} color${n===1?'':'s'}, or pick a few?`))}
  function pipKnot(m){const P=window.FlossFoxPip,lv=P&&P.level?P.level():'off';if(lv==='off'||lv==='quiet')return;
   const w=N('div','pat-pipknot');
   w.innerHTML='<picture aria-hidden="true"><source type="image/webp" srcset="assets/pip/pip-grumpy-knot-160.webp"><img src="assets/pip/pip-grumpy-knot-160.png" width="64" height="86" alt="" decoding="async"></picture>';
