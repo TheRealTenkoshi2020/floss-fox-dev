@@ -71,12 +71,13 @@ function save(){bulkStorageUndoState=null;if(!canSave){if(!mem)say('Not saved: s
  try{localStorage.setItem(KEY,JSON.stringify(data));backupChanged();return true}catch(e){say(e&&(e.name==='QuotaExceededError'||e.code===22)?'Not saved: browser storage is full.':'Not saved: your browser blocked the save.');return false}}
 const nm=c=>DMC[c].name.replace(/\b(vy|dk|lt|md|ul)\b/gi,m=>({vy:'very',dk:'dark',lt:'light',md:'medium',ul:'ultra'}[m.toLowerCase()]));
 const ST={stock:'In stock',partial:'Partial skein only',out:'Out of stock'};
+const thOpen=new Set();
 const MM=x=>x&&x.dataset&&x.dataset.m==='d'?(data.demo||{}):data.threads;
-function row(c,dm){const M=dm?data.demo:data.threads,e=M[c],s=C.state(e),id=(dm?'d_':'')+c.replace(/[^\w]/g,'_'),m=dm?' data-m="d"':'',L=esc(lab(c));
- return`<li class="tcard th st-${s==='out'?'buy':s==='partial'?'awaiting':'have'}${dm?' demo':''}" data-code="${esc(c)}"${m} data-q="${esc((lab(c)+' '+nm(c)).toLowerCase())}">
- <div class="thtop">${sw(DMC[c].hex)}<div class="thname"><b>DMC ${L}</b>${dm?' <span class="tag demotag">Demo</span>':''} <small class="mut">${esc(nm(c))}</small><br><small class="thst">${ST[s]}${e.restock?' · <b>restock</b>':''}</small></div>
+function row(c,dm){const M=dm?data.demo:data.threads,e=M[c],s=C.state(e),id=(dm?'d_':'')+c.replace(/[^\w]/g,'_'),m=dm?' data-m="d"':'',L=esc(lab(c)),ox=thOpen.has(id);
+ return`<li class="tcard th st-${s==='out'?'buy':s==='partial'?'awaiting':'have'}${dm?' demo':''}${ox?' thx':''}" data-code="${esc(c)}"${m} data-q="${esc((lab(c)+' '+nm(c)).toLowerCase())}">
+ <div class="thtop">${sw(DMC[c].hex)}<button type="button" class="thname thtog" id="tx-${id}" data-tog="${id}" aria-expanded="${ox}" aria-controls="to-${id}" aria-label="Edit DMC ${L}"><b>DMC ${L}</b>${dm?' <span class="tag demotag">Demo</span>':''} <small class="mut">${esc(nm(c))}</small><br><small class="thst">${ST[s]}${e.restock?' · <b>restock</b>':''}</small><span class="thedit" aria-hidden="true">${ox?'Done':'Edit'}</span></button>
  <div class="stepper" role="group" aria-label="Full skeins of ${dm?'demo ':''}DMC ${L}"><button type="button" class="sec" id="tm-${id}"${m} data-step="-1" data-c="${esc(c)}" aria-label="One fewer skein of ${dm?'demo ':''}DMC ${L}"${e.n?'':' disabled'}>−</button><input type="number" class="thn" id="tn-${id}"${m} data-n="${esc(c)}" value="${e.n}" min="0" max="999" step="1" inputmode="numeric" aria-label="Full skeins of ${dm?'demo ':''}DMC ${L}"><button type="button" class="sec" id="tp-${id}"${m} data-step="1" data-c="${esc(c)}" aria-label="One more skein of ${dm?'demo ':''}DMC ${L}">+</button></div></div>
- <div class="thopts"><label><input type="checkbox" id="tpa-${id}"${m} data-part="${esc(c)}"${e.partial?' checked':''}> Partial skein</label><label><input type="checkbox" id="tr-${id}"${m} data-rs="${esc(c)}"${e.restock?' checked':''}> Restock</label><button type="button" class="ghost small"${m} data-del="${esc(c)}">Remove</button></div>${e.n>0&&e.confirmed!==true?`<p class="hint">Check this full-skein count before using it with Pip’s estimates. <button type="button" class="sec small" id="tv-${id}"${m} data-verify="${esc(c)}">Confirm ${e.n} full skein${e.n===1?'':'s'}</button></p>`:''}</li>`}
+ <div class="thopts" id="to-${id}"><label><input type="checkbox" id="tpa-${id}"${m} data-part="${esc(c)}"${e.partial?' checked':''}> Partial skein</label><label><input type="checkbox" id="tr-${id}"${m} data-rs="${esc(c)}"${e.restock?' checked':''}> Restock</label><button type="button" class="ghost small"${m} data-del="${esc(c)}">Remove</button></div>${e.n>0&&e.confirmed!==true?`<p class="hint">Check this full-skein count before using it with Pip’s estimates. <button type="button" class="sec small" id="tv-${id}"${m} data-verify="${esc(c)}">Confirm ${e.n} full skein${e.n===1?'':'s'}</button></p>`:''}</li>`}
 const byCode=(a,b)=>{const na=/^\d+$/.test(a)?+a:1e6,nb=/^\d+$/.test(b)?+b:1e6;return na-nb||a.localeCompare(b)};
 function sorted(){return Object.keys(data.threads).sort(byCode)}
 function render(){const V=$('threadsView');if(!V)return;const codes=sorted(),T=data.threads,D=Object.keys(data.demo||{}).sort(byCode);
@@ -101,6 +102,7 @@ async function removeDemo(){const n=Object.keys(data.demo||{}).length,P=window.F
  if(!ok)return;
  delete data.demo;save();const rp=P&&P.removeDemo?P.removeDemo():0;render();say(`Demo data removed (${n} threads, ${rp} project${rp===1?'':'s'}). Your own data is unchanged.`);$('thAdd').focus()}
 function bind(){const L=$('thList');
+ L.querySelectorAll('[data-tog]').forEach(b=>b.onclick=()=>{const k=b.dataset.tog,li=b.closest('li');if(thOpen.has(k))thOpen.delete(k);else thOpen.add(k);const o=thOpen.has(k);li.classList.toggle('thx',o);b.setAttribute('aria-expanded',o);const t=b.querySelector('.thedit');if(t)t.textContent=o?'Done':'Edit'});
  L.querySelectorAll('[data-n]').forEach(i=>i.onchange=()=>{const c=i.dataset.n,M=MM(i),v=i.value.trim(),e=M[c];
   if(!/^\d+$/.test(v)){say(`"${v}" isn't a whole number of skeins (0 or more), so nothing changed.`);i.value=e.n;return}
   const k=Math.min(999,+v);if(!okCap(c,k,M)){i.value=e.n;return}e.n=k;e.confirmed=true;stamp(e);save();render();keepFocus(i.id);say(`DMC ${lab(c)}: ${k} full skein${k===1?'':'s'}.`)});
@@ -131,7 +133,7 @@ function tip(name,host){const el=host||$('thTip');if(!el)return;el.innerHTML='';
  if(pipHidden||off||tipSeen.has(name)||dismissed().includes(name))return;
  if(!host&&$('threadsView').hidden)return; // only when the view is on screen (no image is loaded for a hidden view)
  const [pose,h,text,more]=TIPS[name];el.hidden=false;
- el.innerHTML=`<picture><source type="image/webp" srcset="assets/pip/pip-${pose}-160.webp"><img src="assets/pip/pip-${pose}-160.png" width="160" height="${h}" alt="" data-pose="${pose}" decoding="async"></picture><div class="tiptx"><p><b>Pip:</b> ${text}</p><details class="tipmore"><summary>More</summary><p>${more}</p></details></div><button type="button" class="ghost small" data-tipx="${name}" aria-label="Dismiss Pip's tip">Got it</button>`;
+ el.innerHTML=`<picture><source type="image/webp" srcset="assets/pip/pip-${pose}-160.webp"><img src="assets/pip/pip-${pose}-160.png" width="160" height="${h}" alt="" data-pose="${pose}" decoding="async"></picture><div class="tiptx"><p><b>Pip:</b> ${text}</p><details class="tipmore"><summary>${name==='compare'?'More from Pip about this check':'More'}</summary><p>${more}</p></details></div><button type="button" class="ghost small" data-tipx="${name}" aria-label="Dismiss Pip's tip">Got it</button>`;
  el.querySelector('[data-tipx]').onclick=()=>{const d=dismissed();d.push(name);try{localStorage.setItem(TIPKEY,JSON.stringify(d))}catch(e){}el.hidden=true;el.innerHTML=''}}
 function leaveView(){tipSeen.add('threads')}
 load();

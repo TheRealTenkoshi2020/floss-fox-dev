@@ -48,7 +48,7 @@ with sync_playwright() as p:
     g.click('#tabThreads'); g.wait_for_timeout(200)
     top = g.evaluate("document.getElementById('thAdd').getBoundingClientRect().bottom")
     ok('F3a the add box is on the first phone screen', top < 844 - 60, top)
-    ok('F3b Add sits right beside the box', g.evaluate("(()=>{const a=document.getElementById('thAdd').getBoundingClientRect(),b=document.getElementById('thAddBtn').getBoundingClientRect();return Math.abs(a.top-b.top)<30})()"))
+    ok('F3b Add sits right beside the box (phones: full-width box, Add just below)', g.evaluate("(()=>{const a=document.getElementById('thAdd').getBoundingClientRect(),b=document.getElementById('thAddBtn').getBoundingClientRect();return innerWidth<=560?(b.top>=a.bottom-1&&b.top-a.bottom<30):Math.abs(a.top-b.top)<30})()"))
     g.fill('#thAdd', '310'); g.press('#thAdd', 'Enter'); g.wait_for_timeout(200)
     ok('F3c typing 310 and Enter adds it', '310' in threads(g).get('threads', {}), threads(g))
     g.fill('#thAdd', '321, 3865 x2'); g.click('#thAddBtn'); g.wait_for_timeout(200)
@@ -62,7 +62,7 @@ with sync_playwright() as p:
       decisions:{'310':{status:'have',owned:1},'321':{status:'have',owned:2},'666':{status:'have',owned:null},'797':{status:'buy',owned:0}}})""")
     g.click('#tabThreads'); g.wait_for_timeout(300)
     btn = g.locator('#thFromProj [data-from]')
-    ok('F4a My threads offers the project with a clear count (2 new, 310 already owned)', btn.count() == 1 and 'Add 2 colors you have from Autumn fox' in btn.inner_text(), btn.all_inner_texts())
+    ok('F4a My threads offers the project with a clear count (2 new, 310 already owned)', btn.count() == 1 and 'Add 2 colors you have from Autumn fox' in (btn.get_attribute('aria-label') or ''), btn.all_inner_texts())
     before = threads(g)['threads']['310']
     btn.click(); g.wait_for_timeout(200); th = threads(g)['threads']
     ok('F4b it adds exactly the 2 new colors and leaves 310 alone', set(th) == {'310', '321', '666'} and th['310'] == before and th['321']['n'] == 2, th)

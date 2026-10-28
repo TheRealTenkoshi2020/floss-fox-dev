@@ -219,7 +219,7 @@ function react(key,vars,anchor,opts){opts=opts||{};vars=vars||{};if(key==='pipA.
 function mountSettings(){const h=document.querySelector('#helpView .card.help');if(!h||document.getElementById('pipSettings'))return;
  const f=document.createElement('fieldset');f.id='pipSettings';f.className='pipA-settings';const cur=level();
  f.innerHTML=`<legend>${AL.label}</legend>`+['chatty','important','quiet','off'].map(l=>`<label><input type="radio" name="pipLevel" value="${l}"${l===cur?' checked':''}> ${AL[l]}</label>`).join('')+'<p class="hint" id="pipLevelMsg" role="status" aria-live="polite"></p>';
- const before=[...h.querySelectorAll('h3')].find(x=>/Your data/.test(x.textContent));h.insertBefore(f,before||null);
+ const ps=h.querySelector('#helpPipSec');if(ps)ps.append(f);else{const before=[...h.querySelectorAll('h3')].find(x=>/Your data/.test(x.textContent));h.insertBefore(f,before&&before.parentElement===h?before:null)}
  f.addEventListener('change',e=>{if(e.target.name!=='pipLevel')return;setLevel(e.target.value);document.getElementById('pipLevelMsg').textContent=AL.saved})}
 function syncSettings(){const f=document.getElementById('pipSettings');if(!f)return;const c=f.querySelector(`input[value="${level()}"]`);if(c)c.checked=true}
 mountSettings();tog.addEventListener('click',()=>{syncSettings();if(fig.hidden)closeBubble()});

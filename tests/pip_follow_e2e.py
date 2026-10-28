@@ -32,7 +32,7 @@ with sync_playwright() as p:
             # last button reachable: scroll to bottom, last visible button in the view not under the bar
             g.evaluate("scrollTo(0,document.documentElement.scrollHeight)"); g.wait_for_timeout(300)
             # visual refresh: on Find floss the companion is docked in the hero, so a link below it is clear too
-            last = g.evaluate("""(()=>{const v=[...document.querySelectorAll('main button, .view button, main a.btn, footer a, footer button, .wrap a')].filter(b=>b.offsetParent&&!b.closest('.pipc'));const b=v[v.length-1];if(!b)return null;const r=b.getBoundingClientRect(),c=document.querySelector('.pipc').getBoundingClientRect();return r.bottom<=c.top+1||r.right<=c.left+1||!c.height||(document.body.classList.contains('pipc-hero')&&r.top>=c.bottom-1)})()""")
+            last = g.evaluate("""(()=>{const v=[...document.querySelectorAll('main button, .view button, main a.btn, footer a, footer button, .wrap a')].filter(b=>b.offsetParent&&!b.closest('.pipc'));const b=v[v.length-1];if(!b)return null;const r=b.getBoundingClientRect(),c=document.querySelector('.pipc').getBoundingClientRect();return r.bottom<=c.top+1||r.right<=c.left+1||!c.height||((document.body.classList.contains('pipc-hero')||document.body.classList.contains('pipc-inline'))&&r.top>=c.bottom-1)})()""")
             ok(f'[{w}] {t}: last button / footer link not under Pip', last in (True, None), last)
             g.evaluate("scrollTo(0,0)")
         if w < 880:
@@ -51,7 +51,7 @@ with sync_playwright() as p:
         f = page(w, 'fabric.html')
         v = f.evaluate(CHARS); ok(f'[{w}] fabric.html: exactly one Pip', len(v) == 1, v)
         f.evaluate("scrollTo(0,document.documentElement.scrollHeight)"); f.wait_for_timeout(500)
-        ok(f'[{w}] fabric.html scrolled: still one Pip', len(f.evaluate(CHARS)) == 1, f.evaluate(CHARS))
+        ok(f'[{w}] fabric.html scrolled: still one Pip (at most one; the inline note can scroll away)', len(f.evaluate(CHARS)) <= 1, f.evaluate(CHARS))
         ok(f'[{w}] fabric no page errors', not f.errs, f.errs); f.context.close()
     g = page(390)
     inf = g.evaluate("[...document.querySelectorAll('.pipc, .pipc *')].filter(e=>getComputedStyle(e).animationIterationCount==='infinite'&&getComputedStyle(e).animationName!=='none').map(e=>e.className||e.tagName)")

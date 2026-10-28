@@ -25,6 +25,7 @@ with sync_playwright() as p:
         i = g.evaluate("FlossFoxProjects.lastProject().id"); opn(i); return i
     def tap(sel): l = g.locator(sel); l.scroll_into_view_if_needed(); l.tap(); g.wait_for_timeout(350)
     def use_and_apply():
+        g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(250)
         g.locator('#pCmpBox').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pUseColl'); prev = g.inner_text('#pCmpPrev') if g.locator('#pCmpPrev').count() else ''
         if g.locator('#pApplyColl').count(): tap('#pApplyColl')
         return prev
@@ -32,7 +33,7 @@ with sync_playwright() as p:
     a = mkproj('310 x3', 'Project A'); b = mkproj('310 x2\n434 x1', 'Project B')
     g.locator('#tabThreads').tap(); g.wait_for_timeout(300); g.locator('#thAdd').tap(); g.keyboard.type('310 x3, 434 x2'); g.locator('#thAddBtn').tap(); g.wait_for_timeout(400)
     opn(a); g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(300)
-    g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pKit [data-kadd="310"]')
+    g.evaluate("FlossFoxProjects.showView('projects')"); g.wait_for_timeout(200); tap('#pKitGo'); g.locator('#pKit').evaluate('e=>e.open=true'); g.wait_for_timeout(150); tap('#pKit [data-kadd="310"]')
     al = g.evaluate(ALS); ok('A: 3 skeins of 310 set aside (tap)', any(x['code'] == '310' and x['qty'] == 3 and x['projectId'] == a for x in al), al)
     ok('the compare box shows the approved line', "Each project is checked against your whole collection, minus any skeins set aside for other projects." in g.evaluate("document.getElementById('pCmp').textContent"))
     use_and_apply()
