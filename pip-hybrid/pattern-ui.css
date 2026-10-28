@@ -44,3 +44,6 @@
 .pat-row .pat-warnings{grid-column:1 / -1;font-size:.8rem;order:9}.pat-row label{font-size:.8rem}.pat-row input[type=number]{padding:6px!important}
 @media(max-width:560px){.pat-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.pat-row b{grid-column:1 / 2}.pat-row>small:not(.pat-warnings){grid-column:2 / -1}
  .pat-row label{display:flex;align-items:center;gap:6px}.pat-row label input[type=number]{min-width:0;flex:1}}
+/* ci005-80: number inputs never clip ("Unkn", "1(") */
+.pat-row input[type=number]{min-width:4.5em;height:44px;min-height:44px;box-sizing:border-box}
+@media(max-width:400px){.pat-row{grid-template-columns:repeat(2,minmax(4.5em,1fr))}.pat-row b,.pat-row>small:not(.pat-warnings){grid-column:1 / -1}.pat-row .ghost.small{grid-column:1 / -1;justify-self:start}}
