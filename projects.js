@@ -558,7 +558,7 @@ const PREF_KEYS={pip:PFX+'.pip.v1',hints:PFX+'.hints.v1',tips:PFX+'.tips.v1',fab
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const TUI=()=>window.FlossFoxThreadsUI;
 function fullBackup(){const T=TUI(),prefs={};for(const k in PREF_KEYS){const v=lsGet(PREF_KEYS[k]);if(v!==null)prefs[k]=v}
- return{app:'floss-fox',kind:'full-backup',version:BK_VERSION,schema:SCHEMA,exported:nowISO(),projects:store.projects.filter(p=>!p.demo),threads:T?T.exportData():{schema:1,threads:{}},prefs,...((S=>S&&S.writable()?{allocations:S.read()}:{})(ALS()))}}
+ return{app:'floss-fox',kind:'full-backup',version:BK_VERSION,schema:SCHEMA,exported:nowISO(),projects:store.projects.filter(p=>!p.demo),threads:T?T.exportData():{schema:1,threads:{}},prefs,...((S=>S&&S.writable()?{allocations:S.read()}:{})(ALS())),...((J=>{/* optional, additive (dev event journal phase 1); older backups have none */try{const e=J?J.exportEvents():[];return e.length?{journal:e}:{}}catch(x){return{}}})(window.FlossFoxJournal))}}
 function backup(){const d=fullBackup(),nt=Object.keys(d.threads.threads).length;download(JSON.stringify(d,null,2),'floss-fox-backup-'+nowISO().slice(0,10)+'.json','application/json');
  pstatus(`Backup downloaded with ${plural(d.projects.length,'project')} and ${plural(nt,'thread color')}. Keep the file somewhere safe, the way you'd keep a favorite pattern.`)}
 const PREF_OK={backup:v=>!!(window.FlossFoxBackupCore&&FlossFoxBackupCore.validPrefsString(v)),pip:v=>v==='shown'||v==='hidden',hints:v=>v==='on'||v==='off',tips:v=>{try{const a=JSON.parse(v);return Array.isArray(a)&&a.every(x=>typeof x==='string')}catch(e){return false}},fabric:v=>{try{const o=JSON.parse(v);return!!o&&typeof o==='object'&&!Array.isArray(o)}catch(e){return false}}};
@@ -570,7 +570,7 @@ function checkBackup(d){if(!d||typeof d!=='object'||d.app!=='floss-fox')return{e
  if(full){const T=TUI();if(!T)return{err:'bad'};const tm=T.core.migrate(d.threads);if(!tm)return{err:'bad'};if(tm.tooNew)return{err:'new'};threads=tm.data.threads;tsk=tm.skipped;
   if(d.prefs&&typeof d.prefs==='object')for(const k in PREF_KEYS)if(typeof d.prefs[k]==='string'&&PREF_OK[k](d.prefs[k]))prefs[k]=d.prefs[k]}
  let allocations=null;if(full&&d.allocations!==undefined){if(!AL())return{err:'bad'};const v=AL().validate(d.allocations);if(!v.ok)return{err:v.reason==='future-schema'?'new':'bad'};const ids=new Set(m.data.projects.map(x=>x.id));if(v.data.allocations.some(r=>!ids.has(r.projectId)))return{err:'bad'};allocations=v.data}
- return{projects:m.data.projects,threads,prefs,skipped:m.skipped+tsk,full,allocations}}
+ return{projects:m.data.projects,threads,prefs,skipped:m.skipped+tsk,full,allocations,journal:Array.isArray(d.journal)?d.journal:null}}
 function snapshot(){const keys=[KEY,ALKEY,TUI()?TUI().KEY:PFX+'.threads.v1',...Object.values(PREF_KEYS)],o={};keys.forEach(k=>{o[k]=lsGet(k)});return{at:nowISO(),keys:o}}
 function undoImportRow(){const el=$('undoImport');if(!el)return;let s=null;try{s=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}
  if(!s||!s.keys){el.hidden=true;el.innerHTML='';return}el.hidden=false;
@@ -600,7 +600,7 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
     if(JSON.stringify(pr.data)!==JSON.stringify(cur)){if(!S.writable()){pstatus('We stopped the restore because your set-aside list is read-only here. Nothing was changed.');return}alNext=pr.data}}
    if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('import',{force:true});
    try{localStorage.setItem(PREKEY,JSON.stringify(snapshot()))}catch(e){if(!confirm('A safety copy of your current data couldn\'t be saved in this browser (storage full or blocked), so this import can\'t be undone. Import anyway?'))return}
-   let add=0,rep=0,skip=0,cp=0,ta=0;
+   let add=0,rep=0,skip=0,cp=0,ta=0;const JN=window.FlossFoxJournal,jIn=c.journal;if(JN)JN.hold(); // an import is a re-base, not a run of history events
    if(im==='replace'){store.projects=store.projects.filter(p=>p.demo).concat(pendingRestore);rep=pendingRestore.length}
    else{const modeEl=document.querySelector('input[name=rmode]:checked'),mode=modeEl?modeEl.value:'replace';
     pendingRestore.forEach(p=>{const i=store.projects.findIndex(x=>x.id===p.id);if(i<0){store.projects.push(p);add++}else if(mode==='replace'){store.projects[i]=p;rep++}else if(mode==='skip')skip++;else{store.projects.push({...p,id:copyMap[p.id]||newId(),name:(p.name+' (restored copy)').slice(0,100)});cp++}})}
@@ -608,7 +608,7 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
    if(c.full&&T){if(im==='replace'){tok=T.replaceAll({threads:c.threads});ta=nt}else{const merged=Object.assign({},c.threads,mine);ta=Object.keys(c.threads).filter(k=>!mine[k]).length;tok=T.replaceAll({threads:merged})}
     if(im==='replace')for(const k in c.prefs){try{localStorage.setItem(PREF_KEYS[k],c.prefs[k])}catch(e){}}}
    let aok=true;if(alNext){const r=S.replace(alNext);aok=r.ok;if(!aok){let s0=null;try{s0=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}try{if(s0&&s0.keys)for(const k in s0.keys){if(s0.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s0.keys[k])}}catch(e){}pstatus('The restore failed while saving set-aside threads, so everything was put back how it was.');setTimeout(()=>{location.hash='#projects';location.reload()},1500);return}}
-   pendingRestore=null;R.hidden=true;const ok=save()&&tok;renderList();if(openId&&proj(openId))renderEditor();undoImportRow();if(window.FlossFoxBackupUI)FlossFoxBackupUI.refresh();
+   pendingRestore=null;R.hidden=true;const ok=save()&&tok;if(JN)JN.rebase(jIn);renderList();if(openId&&proj(openId))renderEditor();undoImportRow();if(window.FlossFoxBackupUI)FlossFoxBackupUI.refresh();
    pstatus(`Restore ${ok?'done':'applied but NOT saved'} (${im}): ${add} added, ${rep} replaced, ${skip} skipped, ${cp} copied${c.full?`; ${ta} thread color${ta===1?'':'s'} ${im==='replace'?'restored':'added'}`:''}.`);if(ok&&window.FlossFoxPip)FlossFoxPip.saved($('projStatus'))}})
   .catch(()=>{R.hidden=false;R.innerHTML='<b class="warn">Couldn\'t read that file. Nothing was changed.</b>'})}
 
