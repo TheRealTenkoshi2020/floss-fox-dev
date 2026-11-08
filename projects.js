@@ -54,7 +54,7 @@ function normProject(p){if(!p||typeof p!=='object'||typeof p.id!=='string'||!p.i
   }else items.push(it)}
  items.forEach(it=>dec[it.code]=normDecision(it.code,p.decisions&&p.decisions[it.code]));
  const purchased={};if(p.purchased&&typeof p.purchased==='object')for(const k of Object.keys(p.purchased))if(p.purchased[k]===true&&k.length<40)purchased[k]=true;
- return{id:p.id,name:str(p.name,100).trim()||'Untitled project',notes:str(p.notes,2000),buyBrand:BRAND[p.buyBrand]?p.buyBrand:'dmc',
+ return{id:p.id,name:str(p.name,100).trim()||'Untitled project',notes:str(p.notes,2000),...(typeof p.leftOff==='string'&&p.leftOff.trim()?{leftOff:p.leftOff.slice(0,500)}:{}),buyBrand:BRAND[p.buyBrand]?p.buyBrand:'dmc',
   items,decisions:dec,purchased,status:PSTAT.some(x=>x[0]===p.status)?p.status:'planning',...(p.skeinEstimator!==undefined?{skeinEstimator:SK.normalize(p.skeinEstimator)}:{}),...(p.demo===true?{demo:true}:{}),...(()=>{/* optional, additive (dev pattern trust): only present when a pattern check left something to fix or undo */const T=window.FlossFoxPatternTrust,pc=p.pcheck&&typeof p.pcheck==='object'?(T?T.normPcheck(p.pcheck):JSON.parse(JSON.stringify(p.pcheck))):undefined;return pc?{pcheck:pc}:{}})(),created:str(p.created,40)||nowISO(),updated:str(p.updated,40)||nowISO()}}
 function migrate(d){ // returns {data, skipped} or null if not Floss Fox data
  if(!d||typeof d!=='object'||!Array.isArray(d.projects))return null;
@@ -396,6 +396,7 @@ function renderEditor(){if(mode==='shop')return renderShop();const y=window.scro
  const unchecked=p.items.filter(it=>!p.decisions[it.code].status).length;
  E.innerHTML=`<div class="noprint"><div class="ptitle"><button type="button" class="ghost" id="pClose">← All projects</button><button type="button" class="pri" id="pShop"><span aria-hidden="true">🛒</span> Shop my list</button></div><p class="ffsaved" id="pSaved">${canSave?esc(FX(FS('savedBadge'),{time:new Date(p.updated).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})})):''}</p>
  <h2 class="ptname" id="pTitle">${esc(p.name)}</h2><nav class="pflow" id="pFlow" aria-label="Project steps"></nav><div class="ffbanner" id="pAuto" role="status" hidden></div></div><div id="pSum"></div><div id="pReady" class="noprint"></div><div id="pTrust" class="noprint"></div>
+ <div class="fld noprint pleftoff"><label for="pLeftOff">Where I left off <small class="mut">(optional)</small></label><textarea id="pLeftOff" maxlength="500" rows="2" style="width:100%;min-height:56px;font-family:var(--font)" placeholder="e.g. Finished page 2; next is the border." aria-describedby="pLeftOffHint">${esc(p.leftOff||'')}</textarea><p class="hint" id="pLeftOffHint">A quick reminder for next time. Saved on this device when you leave the box.</p></div>
  <div class="noprint"><details class="pmore" id="pDetails"${secOpen('pDetails',!String(p.name||'').trim()||(document.activeElement&&!!document.activeElement.closest&&!!document.activeElement.closest('#pDetails')))}><summary>Project details</summary><div class="fldrow" style="margin-top:var(--s3)"><div class="fld" style="flex:2 1 220px"><label for="pName">Project name</label><input type="text" id="pName" maxlength="100" value="${esc(p.name)}" style="width:100%"></div>
  <div class="fld" style="flex:1 1 160px"><label for="pStatus">Status</label><select id="pStatus" style="width:100%">${PSTAT.map(([k,l])=>`<option value="${k}"${(p.status||'planning')===k?' selected':''}>${l}</option>`).join('')}</select></div>
  <div class="fld" style="flex:1 1 180px"><label for="pDest">Brand to buy</label><select id="pDest" style="width:100%">${['dmc','sullivans','anchor'].map(k=>`<option value="${k}"${p.buyBrand===k?' selected':''}>${k==='dmc'?'DMC (same as pattern)':BRAND[k]}</option>`).join('')}</select></div></div>
@@ -512,6 +513,7 @@ function renderShop(){const p=proj(openId),E=$('projEdit');if(!p){E.hidden=true;
 function bindEditor(p){const E=$('projEdit'),re=()=>{edited(p);touch(p);renderEditor();renderList()};
  $('pClose').onclick=closeProject;$('pShop').onclick=()=>showView('shop');$('pDelete').onclick=()=>delProject(p.id);
  $('pName').onchange=()=>{p.name=$('pName').value.trim().slice(0,100)||'Untitled project';touch(p);renderList();renderPlan(p)};
+ $('pLeftOff').onchange=()=>{const v=$('pLeftOff').value.slice(0,500);if(!v.trim()){if(!('leftOff'in p))return;delete p.leftOff}else{if(p.leftOff===v)return;p.leftOff=v}touch(p)};
  $('pNotes').onchange=()=>{p.notes=$('pNotes').value.slice(0,2000);touch(p);renderPlan(p)};
  $('pDest').onchange=()=>{p.buyBrand=$('pDest').value;re()};
  $('pStatus').onchange=()=>{p.status=$('pStatus').value;touch(p);renderList();pstatus(`Status: ${$('pStatus').selectedOptions[0].textContent}.`)};
