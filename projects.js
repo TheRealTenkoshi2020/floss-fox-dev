@@ -600,6 +600,7 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
     if(JSON.stringify(pr.data)!==JSON.stringify(cur)){if(!S.writable()){pstatus('We stopped the restore because your set-aside list is read-only here. Nothing was changed.');return}alNext=pr.data}}
    if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('import',{force:true});
    try{localStorage.setItem(PREKEY,JSON.stringify(snapshot()))}catch(e){if(!confirm('A safety copy of your current data couldn\'t be saved in this browser (storage full or blocked), so this import can\'t be undone. Import anyway?'))return}
+   const pre=snapshot(); // in-memory copy of every affected key, taken right before the first write
    let add=0,rep=0,skip=0,cp=0,ta=0;const JN=window.FlossFoxJournal,jIn=c.journal;if(JN)JN.hold(); // an import is a re-base, not a run of history events
    if(im==='replace'){store.projects=store.projects.filter(p=>p.demo).concat(pendingRestore);rep=pendingRestore.length}
    else{const modeEl=document.querySelector('input[name=rmode]:checked'),mode=modeEl?modeEl.value:'replace';
@@ -608,11 +609,20 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
    if(c.full&&T){if(im==='replace'){tok=T.replaceAll({threads:c.threads});ta=nt}else{const merged=Object.assign({},c.threads,mine);ta=Object.keys(c.threads).filter(k=>!mine[k]).length;tok=T.replaceAll({threads:merged})}
     if(im==='replace')for(const k in c.prefs){try{localStorage.setItem(PREF_KEYS[k],c.prefs[k])}catch(e){}}}
    let aok=true;if(alNext){const r=S.replace(alNext);aok=r.ok;if(!aok){let s0=null;try{s0=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}try{if(s0&&s0.keys)for(const k in s0.keys){if(s0.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s0.keys[k])}}catch(e){}pstatus('The restore failed while saving set-aside threads, so everything was put back how it was.');setTimeout(()=>{location.hash='#projects';location.reload()},1500);return}}
-   pendingRestore=null;R.hidden=true;const ok=save()&&tok;if(JN)JN.rebase(jIn);renderList();if(openId&&proj(openId))renderEditor();undoImportRow();if(window.FlossFoxBackupUI)FlossFoxBackupUI.refresh();
-   pstatus(`Restore ${ok?'done':'applied but NOT saved'} (${im}): ${add} added, ${rep} replaced, ${skip} skipped, ${cp} copied${c.full?`; ${ta} thread color${ta===1?'':'s'} ${im==='replace'?'restored':'added'}`:''}.`);if(ok&&window.FlossFoxPip)FlossFoxPip.saved($('projStatus'))}})
+   pendingRestore=null;const sok=save()&&tok,RV=window.FlossFoxRestoreVerify,exp={};
+   // Read back exactly what was meant to be saved; only a verified save is reported as done.
+   try{exp[KEY]=JSON.stringify(store);if(c.full&&T)exp[T.KEY]=JSON.stringify(T.data());if(im==='replace'&&c.full)for(const k in c.prefs)exp[PREF_KEYS[k]]=c.prefs[k]}catch(e){}
+   const ver=sok&&RV?RV.verifyKeys(exp,lsGet):{ok:false};
+   if(!ver.ok){const back=!!RV&&RV.writeKeys(pre.keys,(k,v)=>localStorage.setItem(k,v),k=>localStorage.removeItem(k))&&RV.verifyKeys(pre.keys,lsGet).ok;
+    const fm=RV?RV.failMessage(back):'The restore could not be checked. Before changing anything, use Undo last import, or import your backup again.';
+    try{sessionStorage.setItem(PFX+'.restoremsg',fm)}catch(e){}R.hidden=false;R.textContent=fm;pstatus(fm);setTimeout(()=>{location.hash='#projects';location.reload()},1500);return}
+   if(JN)JN.rebase(jIn);renderList();if(openId&&proj(openId))renderEditor();undoImportRow();if(window.FlossFoxBackupUI)FlossFoxBackupUI.refresh();
+   const dm=RV.importMessage({mode:im,full:c.full,add,rep,skip,cp,ta,projects:store.projects.filter(p=>!p.demo).length,colors:T?Object.keys(T.data().threads||{}).length:0});
+   R.hidden=false;R.textContent='';const dp=document.createElement('p');dp.id='restoreDone';dp.setAttribute('role','status');dp.textContent=dm;R.append(dp);pstatus('Restore checked and saved.');if(window.FlossFoxPip)FlossFoxPip.saved($('projStatus'))}})
   .catch(()=>{R.hidden=false;R.innerHTML='<b class="warn">Couldn\'t read that file. Nothing was changed.</b>'})}
 
 // ---- Wiring ----
+try{const rm=sessionStorage.getItem(PFX+'.restoremsg');if(rm){sessionStorage.removeItem(PFX+'.restoremsg');setTimeout(()=>pstatus(rm),0)}}catch(e){} // one-time result of a restore that had to be put back
 let pipFirstPending=false;function pipFirstTry(){const P=window.FlossFoxPip;if(!pipFirstPending||!P||!P.firstProject)return;let seen=false;try{seen=!!localStorage.getItem(P.FIRST_KEY)}catch(e){seen=true}if(seen||P.firstProject($('projList')||$('projectsView')))pipFirstPending=false}
 function showView(v,fromHash){if(v==='projects'&&pipFirstPending)setTimeout(pipFirstTry,350);{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(!fromHash&&location.hash!=='#'+v)history.pushState(null,'','#'+v);const V={convert:['convertView','tabConvert'],threads:['threadsView','tabThreads'],projects:['projectsView','tabProjects'],help:['helpView','tabHelp'],shop:['shopView','tabShop'],settings:['settingsView','tabSettings']};
  const T=window.FlossFoxThreadsUI;if(T&&!$('threadsView').hidden&&v!=='threads')T.leaveView();if(T&&!$('projectsView').hidden&&v!=='projects')T.tipDone('compare');

@@ -53,7 +53,7 @@ with sync_playwright() as p:
     ok('IMP-3 importing the same backup again adds nothing', len(evs(g)) == n_before + 1)
     old = {k: v for k, v in bk.items() if k != 'journal'}
     restore(old, 'merge')
-    ok('OLD-1 an older backup without a journal imports fine', len(evs(g)) == n_before + 1 and g.evaluate("document.body.textContent.includes('Restore done')"))
+    ok('OLD-1 an older backup without a journal imports fine', len(evs(g)) == n_before + 1 and g.evaluate("document.body.textContent.includes('Restore checked and saved')"))
     old_proj = {'app': 'floss-fox', 'schema': 2, 'projects': [proj('p9', 'Old projects-only', ['550'])]}
     restore(old_proj, 'merge')
     ok('OLD-2 an old projects-only backup imports and adds no events', len(evs(g)) == n_before + 1 and any(x['id'] == 'p9' for x in json.loads(ls(g, KEY))['projects']))
