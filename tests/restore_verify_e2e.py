@@ -19,14 +19,17 @@ OLD = {'app': 'floss-fox', 'schema': 2, 'projects': [proj('o1', 'Sample Old Samp
 FULL = {'app': 'floss-fox', 'kind': 'full-backup', 'version': 2, 'schema': 2, 'exported': '2026-11-05T00:00:00Z', 'projects': [proj('f1', 'Sample Garden Bookmark'), proj('f2', 'Sample Winter Mittens')],
         'threads': {'schema': 2, 'threads': {'310': th(9), '321': th(1), '699': th(2)}}, 'prefs': {},
         'journal': [{'id': 'ebk-1', 't': '2026-11-04T12:00:00Z', 'k': 'inventory', 'ref': {'code': '321'}, 'from': None, 'to': {'n': 1, 'partial': False}}]}
-INIT = """(([K,TK,S,T,P])=>{if(!sessionStorage.getItem('rv.seeded')){localStorage.clear();localStorage.setItem(K,S);localStorage.setItem(TK,T);sessionStorage.setItem('rv.seeded','1')}
+J0 = json.dumps({'schema': 1, 'base': None, 'cps': [], 'events': [{'id': 'e0', 't': '2026-11-02T12:00:00Z', 'k': 'inventory', 'ref': {'code': '310'}, 'from': {'n': 1, 'partial': False}, 'to': {'n': 2, 'partial': False}}]})
+INIT = """(([K,TK,S,T,P,J])=>{if(!sessionStorage.getItem('rv.seeded')){localStorage.clear();localStorage.setItem(K,S);localStorage.setItem(TK,T);localStorage.setItem(P+'.journal.v1',J);localStorage.setItem(P+'.pip.v1','shown');sessionStorage.setItem('rv.seeded','1')}
 for(const p of [P,'flossfox']){localStorage.setItem(p+'.tour.v1','{"status":"dismissed"}');localStorage.setItem(p+'.hints.v1','off')}})"""
-DATA = f"JSON.stringify([localStorage.getItem('{KEY}'),localStorage.getItem('{TK}')])"
+AFFECTED = [KEY, TK, PFX + '.allocations.v1'] + [PFX + x for x in ('.pip.v1', '.hints.v1', '.tips.v1', '.fabric.v1', '.backup-prefs.v1')]
+DATA = "JSON.stringify(%s.map(k=>[k,localStorage.getItem(k)]))" % json.dumps(AFFECTED)
+FULLP = dict(FULL, prefs={'pip': 'hidden'})
 def ls(g, k): return g.evaluate(f"localStorage.getItem('{k}')")
 def ready(g): g.wait_for_function('window.FlossFoxProjects&&window.FlossFoxJournal&&window.FlossFoxRestoreVerify&&window.FlossFoxSnapshots'); g.wait_for_timeout(300)
 def page(br, vw={'width': 1200, 'height': 900}):
     c = br.new_context(viewport=vw, service_workers='block', is_mobile=vw['width'] < 500, has_touch=vw['width'] < 500, device_scale_factor=2 if vw['width'] < 500 else 1)
-    c.add_init_script(INIT[:-1] + f")({json.dumps([KEY, TK, SEED, THR, PFX])})")
+    c.add_init_script(INIT[:-1] + f")({json.dumps([KEY, TK, SEED, THR, PFX, J0])})")
     g = c.new_page(); g.set_default_timeout(8000); g.on('pageerror', lambda e: errs.append(str(e))); g.on('dialog', lambda d: d.accept())
     g.goto(B + '?nosw#projects'); ready(g); return c, g
 def imp(g, data, mode='merge', rmode=None, raw=None):
@@ -57,9 +60,13 @@ with sync_playwright() as p:
     imp(g, FULL, rmode='replace'); m = g.inner_text('#restoreDone')
     ok('TWICE-1 same backup again replaces, no duplicate projects', projs(g).count('f1') == 1 and len(projs(g)) == 4 and '0 added, 2 replaced' in m, (projs(g), m))
     ok('TWICE-2 no duplicate journal events', len(jids(g)) == n_j and len(set(jids(g))) == len(jids(g)))
-    # 4. undo last import
-    g.click('#undoImportBtn'); g.wait_for_load_state(); ready(g)
-    ok('UNDO-1 Undo last import still works', sorted(projs(g)) == ['f1', 'f2', 'o1', 'p1'] or sorted(projs(g)) == ['o1', 'p1'], projs(g))
+    # 4. Undo last import: exact pre-import state of every affected key, and the journal as it was
+    pre_data = g.evaluate(DATA); pre_j = jids(g); imp(g, FULLP, mode='replace')
+    ok('UNDO-0 replace import changed data and prefs', g.evaluate(DATA) != pre_data and ls(g, PFX + '.pip.v1') == 'hidden')
+    with g.expect_navigation(): g.click('#undoImportBtn')
+    ready(g)
+    ok('UNDO-1 Undo restores every affected key byte-for-byte (projects, threads, allocations, prefs)', g.evaluate(DATA) == pre_data, (g.evaluate(DATA), pre_data))
+    ok('UNDO-2 journal back to its pre-import events (imported events dropped)', jids(g) == pre_j, (jids(g), pre_j))
     c.close()
     # 5. replace full
     c, g = page(br); imp(g, FULL, mode='replace'); m = g.inner_text('#restoreDone')
@@ -74,7 +81,10 @@ with sync_playwright() as p:
     g.evaluate("void(window.__si=Storage.prototype.setItem,Storage.prototype.setItem=function(k,v){if(k===%r&&/f1/.test(v))throw new Error('quota');return window.__si.call(this,k,v)})" % KEY)
     with g.expect_navigation(timeout=6000): imp(g, FULL)
     ready(g); g.wait_for_timeout(200)
-    ok('FAIL-1 failed save rolled back: projects and threads unchanged', g.evaluate(DATA) == before, g.evaluate(DATA))
+    ok('FAIL-1 failed save rolled back: every affected key unchanged', g.evaluate(DATA) == before, g.evaluate(DATA))
+    ok('FAIL-3 recovery material kept: pre-import copy and Undo row', ls(g, PFX + '.preimport.v1') is not None and g.is_visible('#undoImportBtn'))
+    ok('FAIL-4 journal unchanged', jids(g) == ['e0'], jids(g))
+    g.wait_for_timeout(1500); ok('FAIL-5 no later autosave changes storage or claims success', g.evaluate(DATA) == before and 'checked and saved' not in g.inner_text('body'))
     ok('FAIL-2 no success claimed; rollback message shown after reload', 'Nothing was changed' in g.inner_text('#projStatus') and 'checked and saved' not in g.inner_text('#projStatus'), g.inner_text('#projStatus'))
     c.close()
     # 8. read-back mismatch (storage silently stores something else)
@@ -84,16 +94,34 @@ with sync_playwright() as p:
     ready(g); g.wait_for_timeout(200)
     ok('MISMATCH-1 read-back mismatch rolled back, no success shown', g.evaluate(DATA) == before and 'Nothing was changed' in g.inner_text('#projStatus'), g.inner_text('#projStatus'))
     c.close()
-    # 9. failed save AND failed rollback: honest warning
+    # 9. failed save AND failed rollback: honest warning that survives the reload, recovery still exact
+    c, g = page(br); pre_data = g.evaluate(DATA)
+    g.evaluate("void(window.__si=Storage.prototype.setItem,Storage.prototype.setItem=function(k,v){if(k===%r)throw new Error('blocked');if(k===%r&&!/321/.test(v))throw new Error('blocked');return window.__si.call(this,k,v)})" % (KEY, TK))
+    with g.expect_navigation(timeout=8000): imp(g, FULL)
+    ready(g); g.wait_for_timeout(200); st = g.inner_text('#projStatus')
+    ok('NOBACK-1 warning shown after the reload, never success', 'could not confirm' in st and 'checked and saved' not in g.inner_text('body'), st)
+    partial = g.evaluate(DATA)
+    ok('NOBACK-2 known partial state (threads merged, projects not) is what storage holds', partial != pre_data and json.loads(ls(g, KEY)) == json.loads(SEED))
+    ok('NOBACK-3 recovery material kept: pre-import copy + Undo row', ls(g, PFX + '.preimport.v1') is not None and g.is_visible('#undoImportBtn'))
+    g.wait_for_timeout(1500); ok('NOBACK-4 no later autosave overwrites the partial state', g.evaluate(DATA) == partial)
+    with g.expect_navigation(): g.click('#undoImportBtn')
+    ready(g); ok('NOBACK-5 Undo last import then restores the exact pre-import data', g.evaluate(DATA) == pre_data, g.evaluate(DATA))
+    c.close()
+    # 9b. unexpected error during the import writes: put back, no success
+    c, g = page(br); pre_data = g.evaluate(DATA)
+    g.evaluate("void(FlossFoxThreadsUI.replaceAll=(o=>function(d){o(d);throw new Error('boom')})(FlossFoxThreadsUI.replaceAll))")
+    with g.expect_navigation(timeout=8000): imp(g, FULL)
+    ready(g); g.wait_for_timeout(200)
+    ok('THROW-1 unexpected error after a partial write is put back exactly', g.evaluate(DATA) == pre_data and 'Nothing was changed' in g.inner_text('#projStatus'), g.inner_text('#projStatus'))
+    c.close()
+    # 9c. read-back itself fails: cannot verify -> warning, never success
     c, g = page(br)
-    g.evaluate("void(window.__si=Storage.prototype.setItem,Storage.prototype.setItem=function(k,v){if(k===%r)throw new Error('blocked');return window.__si.call(this,k,v)})" % KEY)
-    g.evaluate("void(window.__ri=Storage.prototype.removeItem)")
-    g.evaluate("void(window.__t=%r)" % TK)
-    g.evaluate("void(Storage.prototype.setItem=(o=>function(k,v){if(k===window.__t&&!/321/.test(v))throw new Error('blocked');return o.call(this,k,v)})(Storage.prototype.setItem))")
-    imp(g, FULL); g.wait_for_timeout(200)
-    txt = g.inner_text('#restorePanel')
-    ok('NOBACK-1 cannot confirm rollback: warns, never claims success', 'could not confirm' in txt and 'checked and saved' not in txt, txt)
-    g.wait_for_timeout(2000); c.close()
+    g.evaluate("void(window.__gi=Storage.prototype.getItem,window.__arm=false,Storage.prototype.getItem=function(k){if(window.__arm&&k===%r)throw new Error('read');return window.__gi.call(this,k)},window.__s0=FlossFoxProjects._store)" % KEY)
+    g.evaluate("void(window.addEventListener('ff:data-saved',()=>{window.__arm=true}))")
+    with g.expect_navigation(timeout=8000): imp(g, FULL)
+    ready(g); g.wait_for_timeout(200)
+    ok('READFAIL-1 failed read-back gives the cannot-confirm warning, not success', 'could not confirm' in g.inner_text('#projStatus') and 'checked and saved' not in g.inner_text('body'), g.inner_text('#projStatus'))
+    c.close()
     # 10. automatic copy restore: success shows checked counts after reload
     c, g = page(br)
     g.evaluate("FlossFoxSnapshots.take('open',{force:true})"); imp(g, FULL, mode='replace')

@@ -21,3 +21,18 @@ Design (reuses existing paths, no consent changes, no migration):
   allocations rollback path is unchanged.
 
 Tests first: tests/restore_verify_unit.cjs, tests/restore_verify_e2e.py.
+
+## Follow-up: failure paths (baseline vs this change)
+- Baseline (main, simulated probe): when the project save fails mid-import, the thread collection is already
+  written, projects are not, the message says "applied but NOT saved", and the next normal edit silently writes
+  the imported projects. Partial writes existed before this change.
+- Now: any failed save, read-back mismatch or unexpected error is put back from an in-memory copy and read
+  back again; project saves are paused until the immediate reload; the result is carried across the reload
+  (sessionStorage) and the backup box opens so Undo last import is in view. The pre-import copy is never removed.
+- If putting back also fails, storage can still hold the same kind of partial state as baseline (every value
+  written is a pre-import value, so no new data is introduced). The user gets a "could not confirm" warning and
+  Undo last import restores the exact pre-import keys. localStorage has no transactions, so this is
+  best effort with verification, not atomic.
+- Remaining limits: the warning shows once after the reload (not persisted if sessionStorage is unavailable,
+  in which case the reload waits 6 s with saves paused); if the pre-import copy could not be saved (user chose
+  "Import anyway") and put-back fails, there is no automatic recovery beyond automatic copies.
