@@ -295,8 +295,9 @@ function autoCmp(p){if(window.FF_NO_AUTOCMP)return; /* test-only hook for legacy
  if(!T.count({demo:!!p.demo})){if(fresh&&!p.demo&&!autoHid().includes(p.id)){autoBan[p.id]={kind:'empty'};setTimeout(()=>window.FlossFoxPip&&FlossFoxPip.react&&FlossFoxPip.react('pipA.cmp.empty',{},'#pAuto',{siteAnnounces:true}),0)}return}
  const a=autoPlan(p);if(!a)return;
  if(!a.safe.length){if(fresh&&!autoHid().includes(p.id)){autoBan[p.id]={kind:'nothing'};setTimeout(()=>window.FlossFoxPip&&FlossFoxPip.react&&FlossFoxPip.react('pipA.cmp.nothing',{},'#pAuto',{id:p.id,siteAnnounces:true}),0)}else delete autoBan[p.id];return}
- if(!fresh){autoBan[p.id]=Object.assign({kind:'offer'},a);return}
- applyAuto(p,a)}
+ // Myke's rule: opening a project or Shop never fills colors on its own, whatever the project's date. Only offer;
+ // applyAuto runs only from the explicit "Use my collection" tap (pAutoApply), with Undo.
+ autoBan[p.id]=Object.assign({kind:'offer'},a)}
 function applyAuto(p,a){a.safe.forEach(x=>Object.assign(p.decisions[x.code],x.to));undoBy[p.id]=(undoBy[p.id]||[]).concat(a.safe);autoBan[p.id]=Object.assign({kind:'done'},a);touch(p);setTimeout(()=>window.FlossFoxPip&&FlossFoxPip.react&&FlossFoxPip.react('pipA.cmp.done',{have:a.have,total:a.total,u:a.u},'#pAuto',{id:p.id,siteAnnounces:true}),0)}
 function autoHead(b){return b.total===1?FC(b.have?'oneHave':'oneNot'):b.have?FC('many',b):FC('none',b)}
 var autoMore={};   // in-memory only, like openSec

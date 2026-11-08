@@ -11,7 +11,7 @@ R = {'pass': 0, 'fail': 0}; errs = []
 def ok(n, c, i=''):
     R['pass' if c else 'fail'] += 1; print(('PASS ' if c else 'FAIL ') + n + ('' if c else f'  -> {i}'))
 def proj(pid, name, notes='', left=None):
-    p = {'id': pid, 'name': name, 'notes': notes, 'buyBrand': 'dmc', 'status': 'progress', 'items': [{'code': '310', 'qty': 1, 'stated': True, 'assumed': 0, 'src': ['DMC 310'], 'stitchCount': None}], 'decisions': {}, 'purchased': {}, 'created': '2026-10-01T00:00:00Z', 'updated': '2026-10-01T00:00:00Z'}  # before the auto-compare cut-off, so Shop visits only offer it
+    p = {'id': pid, 'name': name, 'notes': notes, 'buyBrand': 'dmc', 'status': 'progress', 'items': [{'code': '310', 'qty': 1, 'stated': True, 'assumed': 0, 'src': ['DMC 310'], 'stitchCount': None}], 'decisions': {}, 'purchased': {}, 'created': '2026-11-08T12:00:00Z', 'updated': '2026-11-08T12:00:00Z'}  # after the old auto-compare cut-off on purpose: visits must still write nothing
     if left is not None: p['leftOff'] = left
     return p
 def th(n): return {'n': n, 'partial': False, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z'}
