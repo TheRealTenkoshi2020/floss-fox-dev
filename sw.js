@@ -1,11 +1,11 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-91';
+const CACHE = 'flossfox-dev-v2.0a-ci005-92';
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
   "snapshots.js",
-  "journal.js","recent-changes.js",
+  "journal.js","recent-changes.js","review.js",
   "restore-verify.js",
   "backup-ui.css",
   "ftux-draft-core.js",
