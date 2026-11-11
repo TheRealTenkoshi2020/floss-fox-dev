@@ -64,7 +64,7 @@ C. DONE on branch (see FF39_CHECKLIST Stage C record). Shopping + thread library
 D. Visual: themes DONE on this branch (tests + regression in PR 18): System / Morning Linen / Forest Twilight / Moonlit Threads
    as token overlays on theme-pair.css via <html data-atelier-theme> set before first paint from the pref key (no key created on
    first visit). Pixel's final tokens shipped (Moonlit is DARK). Pip art + lantern halo follow the chosen theme; ~28 theme-pair
-   rules now key off data-atelier-scheme. Still open in Stage D: gallery cards (color-strip fallback), comparison surface (FF39-09),
+   rules now key off data-atelier-scheme. Stage D gallery cards (color-strip fallback) and FF39-09 comparison have shipped. Still open: cover photos (Stage G), add-to-threads/project on the studio (FF39-08),
    remaining micro-interactions. Gate (themes): contrast.js all themes, 390/1280, reduced motion, no flash — done in atelier_themes_e2e.py.
 E. Fabric diagram from compute() only + named presets + cut slip (FF39-20); Stitch Session (FF39-16; timer OFF by default, never saved or backed up, wall-clock while the page is open, resets on close); progress
    clarity (FF39-14, manual % ring per Pixel mockups: number as text, no ring when unset, 100% never auto-completes; celebration once per real transition).

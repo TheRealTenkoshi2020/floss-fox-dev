@@ -130,10 +130,10 @@ test('palette: 500-color project still returns 6 + overflow', () => { const v = 
 test('palette: no em dash in note', () => assert(!C.NOTE.includes('\u2014')));
 
 // ---------- new: privacy / inertness scan of module sources ----------
-const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
+const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js', 'atelier-compare-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
 test('privacy: no network, analytics, eval or HTML injection in Atelier modules', () => { for (const [f, s] of mods) assert(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|goatcounter|innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function|import\s*\(/.test(s), f); });
 test('privacy: only the preferences module touches storage, and only via the passed-in object', () => { for (const [f, s] of mods) assert(!/localStorage|sessionStorage|indexedDB/.test(s), f); });
-test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-95/.test(sw)); });
+test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-compare-core.js', 'atelier/atelier-studio.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-96/.test(sw)); assert(srcs.indexOf('atelier/atelier-compare-core.js') < srcs.indexOf('atelier/atelier-studio.js') && srcs.indexOf('atelier/atelier-studio.js') < srcs.indexOf('atelier/atelier-ui.js')); });
 test('copy: no em dash in any Atelier module string', () => { for (const [f, s] of mods) { const strs = s.match(/'[^'\n]*'|`[^`\n]*`/g) || []; assert(!strs.some(x => x.includes('\u2014')), f); } });
 
 // ---------- new: landing.js first-visit detection (FF39-24) in a sandbox ----------
@@ -268,6 +268,43 @@ test('theme: index loads atelier-theme.js before atelier-ui.js and marks Pip dar
   const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]);
   assert(srcs.indexOf('atelier/atelier-theme.js') > -1 && srcs.indexOf('atelier/atelier-theme.js') < srcs.indexOf('atelier/atelier-ui.js'));
   assert((html.match(/data-atelier-darksrc/g) || []).length >= 3);
+});
+
+
+const CMP = require('../atelier/atelier-compare-core.js');
+test('compare: official chart and original are exact; chart is close; choice is estimated', () => {
+  assert.equal(CMP.classify('original'), 'exact');
+  assert.equal(CMP.classify('official chart'), 'exact');
+  assert.equal(CMP.classify('chart'), 'close');
+  assert.equal(CMP.classify('chart option 1 of 3'), 'close');
+  assert.equal(CMP.classify('your choice of chart options'), 'estimated');
+  assert.equal(CMP.classify('your choice (sources disagree)'), 'estimated');
+});
+test('compare: BLANC, WHITE and B5200 are never aliases of each other', () => {
+  for (const a of CMP.WHITES) for (const b of CMP.WHITES) {
+    if (a === b) assert.equal(CMP.allowedMatch(a, b), true, a);
+    else assert.equal(CMP.allowedMatch(a, b), false, a + '->' + b);
+  }
+  const blanc = CMP.matchesFor('BLANC', 'anchor', { anchor: ['WHITE', 'Ecru', '2'] }).map(m => m.code);
+  assert.ok(!blanc.includes('WHITE') && !blanc.includes('B5200'));
+  assert.ok(blanc.includes('Ecru') && blanc.includes('2'));
+  const sull = CMP.matchesFor('WHITE', 'sullivans', { sullivans: { WHITE: 'BLANC' } });
+  assert.deepEqual(sull, [], 'illegal white-to-white Sullivans alias is dropped');
+});
+test('compare: Sullivans official listing is exact; single Anchor chart is close; whites stay estimated', () => {
+  const s = CMP.matchesFor('310', 'sullivans', { sullivans: { '310': '45018' } });
+  assert.equal(s[0].kind, 'exact');
+  const a = CMP.matchesFor('310', 'anchor', { anchor: ['403'] });
+  assert.equal(a[0].kind, 'close');
+  const w = CMP.matchesFor('B5200', 'anchor', { anchor: ['Ecru'] });
+  assert.equal(w[0].kind, 'estimated');
+  assert.equal(w[0].prov, 'your choice (sources disagree)');
+});
+test('prefs: projectsView defaults to list and only accepts list or gallery', () => {
+  assert.equal(P.DEFAULT.projectsView, 'list');
+  assert.equal(P.normalize({ projectsView: 'gallery' }).data.projectsView, 'gallery');
+  assert.equal(P.normalize({ projectsView: 'shelf' }).data.projectsView, 'list');
+  assert.equal(P.normalize({}).data.projectsView, 'list');
 });
 
 console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);

@@ -17,10 +17,11 @@
   const THEMES = Object.freeze(['system', 'morning', 'forest', 'moon']);
   const TABS = Object.freeze(['workbasket', 'convert', 'threads', 'projects', 'shop', 'help', 'settings']); // matches projects.js showView(); Fabric is its own page
   const VIEWS = Object.freeze(['list', 'grid', 'shelf']);
+  const PROJECT_VIEWS = Object.freeze(['list', 'gallery']); // journal list/gallery (FF39-13 Stage D)
   const SORTS = Object.freeze(['code', 'amount', 'family', 'location', 'recent']); // My threads sort (lib.sort.*)
   const BRANDS = Object.freeze(['dmc', 'anchor', 'sullivans']); // BRAND keys in index.html
   const MAX_RECENT = 12;
-  const DEFAULT = Object.freeze({ v: SCHEMA, theme: 'system', rememberPlace: false, lastTab: 'convert', lastProjectId: null, collectionView: 'list', collectionSort: 'code', lowStockThreshold: 1, seasonalPip: true, recentConversions: Object.freeze([]) });
+  const DEFAULT = Object.freeze({ v: SCHEMA, theme: 'system', rememberPlace: false, lastTab: 'convert', lastProjectId: null, collectionView: 'list', collectionSort: 'code', lowStockThreshold: 1, seasonalPip: true, projectsView: 'list', recentConversions: Object.freeze([]) });
   const code = v => typeof v === 'string' && /^[A-Za-z0-9-]{1,35}$/.test(v.trim()) ? v.trim().toUpperCase() : null;
   const brand = v => typeof v === 'string' && BRANDS.includes(v.trim().toLowerCase()) ? v.trim().toLowerCase() : null;
   const projectId = v => typeof v === 'string' && v.length >= 1 && v.length <= 80 && /^[\w.-]+$/.test(v) ? v : null;
@@ -44,6 +45,7 @@
     if (SORTS.includes(d.collectionSort)) o.collectionSort = d.collectionSort;
     if (Number.isInteger(d.lowStockThreshold) && d.lowStockThreshold >= 0 && d.lowStockThreshold <= 20) o.lowStockThreshold = d.lowStockThreshold;
     if (typeof d.seasonalPip === 'boolean') o.seasonalPip = d.seasonalPip;
+    if (PROJECT_VIEWS.includes(d.projectsView)) o.projectsView = d.projectsView;
     const seen = new Set();
     o.recentConversions = (Array.isArray(d.recentConversions) ? d.recentConversions.slice(0, 200) : []).map(conversion).filter(x => {
       if (!x || seen.has(ck(x))) return false;
@@ -94,5 +96,5 @@
     try { storage.removeItem(storageKey); return storage.getItem(storageKey) === null ? { ok: true } : { ok: false, reason: 'unverified-reset' }; }
     catch (e) { return { ok: false, reason: 'storage-unavailable' }; }
   }
-  return Object.freeze({ SCHEMA, DEFAULT, THEMES, TABS, VIEWS, SORTS, BRANDS, MAX_RECENT, normalize, rememberConversion, keyFor, isPrefKey, load, save, reset });
+  return Object.freeze({ SCHEMA, DEFAULT, THEMES, PROJECT_VIEWS, TABS, VIEWS, SORTS, BRANDS, MAX_RECENT, normalize, rememberConversion, keyFor, isPrefKey, load, save, reset });
 });

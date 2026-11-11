@@ -146,3 +146,46 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-theme-opt .hint{margin:0}
 .ffa-theme-opt input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.ffa-theme-opt, .ffa-floss{transition:none}}
+
+/* Stage D: gallery cards + color-studio compare (reduced-motion safe) */
+#ffaViewBar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px;align-items:center}
+#ffaViewBar .ffa-viewbtn{min-height:44px;min-width:44px;padding:8px 14px}
+#projList.ffa-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;list-style:none;padding:0;margin:8px 0}
+#projList.ffa-gallery>li.storeline,#projList.ffa-gallery>li.empty{grid-column:1/-1}
+#projList.ffa-gallery>li.ffa-gcard{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line,var(--surface-border));border-radius:16px;padding:12px;background:var(--psurface,#fff);min-width:0}
+#projList.ffa-gallery>li.ffa-gcard>.row{margin:0;flex-wrap:wrap}
+.ffa-cover{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:var(--hero-surface,var(--psurface,#f4efe6));border:1px solid var(--line,var(--surface-border))}
+.ffa-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.ffa-cover .ffa-strip{list-style:none;margin:0;padding:10px;display:flex;gap:6px;align-items:center;height:100%;box-sizing:border-box;flex-wrap:nowrap}
+.ffa-cover .ffa-strip li{flex:1 1 0;min-width:0;height:100%;border-radius:8px;overflow:hidden}
+.ffa-cover .ffa-strip .ffa-floss,.ffa-cover .ffa-strip span.ffa-chip{display:block;width:100%;height:100%;border-radius:8px;background:var(--c,#ccc)}
+.ffa-cover .ffa-more{position:absolute;right:8px;bottom:8px;background:var(--psurface,#fff);color:var(--text-strong,#222);border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700;border:1px solid var(--line)}
+.ffa-gcard .pname{font-weight:800}
+.ffa-cmp,.ffa-whites,.ffa-pcc,.ffa-studio{margin:14px 0}
+.ffa-studio-head h2,.ffa-cmp-h,.ffa-whites h3,.ffa-pcc h3{margin:0 0 6px;font-size:1.15rem;color:var(--text-strong)}
+.ffa-cmp{border:1px solid var(--line,var(--surface-border));border-radius:16px;padding:14px;background:var(--psurface)}
+.ffa-cmp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:10px;align-items:start}
+.ffa-cmpcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ffa-cmp-floss,.ffa-wcard .ffa-floss{width:64px;height:64px;border-radius:50%;display:block;background:var(--c,#ccc)}
+.ffa-cmp-floss.is-empty{background:repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(127,127,127,.25) 6px,rgba(127,127,127,.25) 7px);border:1px dashed var(--line)}
+.ffa-cmp-floss.is-edge,.ffa-wcard .ffa-floss.is-edge,.ffa-chip.is-edge{box-shadow:inset 0 0 0 1px var(--swatch-edge,rgba(0,0,0,.35))}
+.ffa-ccode{font-weight:800;color:var(--text-strong)}
+.ffa-cname{font-size:.85rem;color:var(--text-muted)}
+.ffa-kind{display:inline-block;align-self:flex-start;font-size:.75rem;font-weight:800;letter-spacing:.02em;border-radius:999px;padding:2px 8px;border:1px solid var(--line)}
+.ffa-kind-exact{background:var(--ok-bg,#e7f3e4);color:var(--ok-fg,#215c2a)}
+.ffa-kind-close{background:var(--wait-bg,#f7eed8);color:var(--wait-fg,#6a4b10)}
+.ffa-kind-estimated{background:var(--warn-bg,#f8e8e2);color:var(--warn-fg,#8a2f17)}
+.ffa-wgrid{display:flex;flex-wrap:wrap;gap:12px}
+.ffa-wcard{display:flex;flex-direction:column;gap:4px;min-width:88px}
+.ffa-pcc-list{list-style:none;margin:0;padding:0}
+.ffa-pcc-row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line)}
+.ffa-gcard,.ffa-cmp,.ffa-cover,.ffa-kind,.ffa-viewbtn,.ffa-cmp-floss{
+  transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s ease
+}
+@media (hover:hover) and (pointer:fine){
+  #projList.ffa-gallery>li.ffa-gcard:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ffa-gcard,.ffa-cmp,.ffa-cover,.ffa-kind,.ffa-viewbtn,.ffa-cmp-floss,.ffa-theme-opt,.ffa-floss{transition:none;animation:none}
+  #projList.ffa-gallery>li.ffa-gcard:hover{transform:none;box-shadow:none}
+}
