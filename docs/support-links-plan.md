@@ -11,10 +11,13 @@ Source: Samira's Monetization Launch Kit (`support-links.js/.css/.test.cjs`), ad
 - `support/links.css`: theme tokens only (light, dark, later 3.9 themes), outline buttons, 44px targets, focus ring,
   reduced motion, forced colors, hidden in print.
 - Placement: end of the Settings card (mount created by the script, so the big Settings markup line is untouched),
-  a section on About (`about.html#support`), and one small footer link on the app page that goes to `about.html#support`
-  (in-app, never straight to checkout, so the external-checkout notice is always seen first).
+  a section on About (`about.html#support`, which also lists the three privacy points), and one small footer link on the
+  app page that opens Settings and scrolls to the section (falls back to `about.html#support`). Never straight to checkout,
+  so the external-checkout notice is always seen first.
   Never on the landing / Start here, no modal, no nag, no badge.
-- Privacy page: new "Optional support links" section. About page: mount only.
+- Privacy page: new "Tips and the printable companion" section (Pixel's three points). About page: mount only.
+- Copy: Pixel's `support.*` / `privacy.support.*` strings from /workspace/pip-art/atelier39/copy/SUPPORT.md, verbatim,
+  all in the `COPY` object, marked DEV DRAFT PENDING MYKE. No provider is named in the copy.
 - `sw.js`: both files precached; dev cache `ci005-94` (PR 17 = ci005-92, Atelier = ci005-93). Final value is reconciled at integration.
 
 ## Fixes over the kit reference
@@ -25,10 +28,10 @@ Source: Samira's Monetization Launch Kit (`support-links.js/.css/.test.cjs`), ad
    Bare provider homepages are rejected (not a checkout). The URL is used exactly as configured.
 3. Link style is by kind (tip / pack), not position, so a pack-only setup is not styled as the tip (kit `i === 0` bug).
 4. Unique ids per mount (`ffSupportTitle-settings`, `ffSupportTitle-about`); remounting never duplicates.
-5. Copy: no em dashes or curly apostrophes, no pronoun for Pip, visible "Opens Ko-fi checkout in a new tab. Checkout needs an
-   internet connection." notice, and fine print that the provider may collect buyer info and tips are not tax-deductible.
-6. Offline: a polite status line says the links need internet; a tap while offline opens no dead tab. Floss Fox never shows a
-   payment success; only the provider confirms purchases.
+5. Copy: Pixel's strings (no em dashes, no spaced hyphens, no provider named), visible external-checkout + internet line
+   (singular/plural by number of links), what-you-get line beside the $7 button, provider and tax points on Privacy and About.
+6. Offline: the offline note replaces the external line and the links are aria-disabled; a tap while offline opens no dead
+   tab. Floss Fox never shows a payment success; only the provider confirms purchases.
 7. `referrerpolicy="no-referrer"` added alongside `rel="noopener noreferrer"`.
 
 ## Not done here

@@ -34,23 +34,31 @@
   // Exact hostnames only. No subdomain wildcards. Adding a provider is a code change plus review.
   var PROVIDERS = { 'ko-fi.com': 'Ko-fi', 'buy.stripe.com': 'Stripe' };
 
-  // ALL user-facing strings live here and nowhere else (swap-in point for Pixel's SUPPORT.md).
-  // STATUS: PENDING PIXEL. Cleaned-up kit copy (no em dashes, no spaced hyphens, straight apostrophes).
+  // ALL user-facing strings live here and nowhere else.
+  // STATUS: DEV DRAFT PENDING MYKE. Verbatim from Pixel's /workspace/pip-art/atelier39/copy/SUPPORT.md
+  // (copy.json keys support.*). No provider is named on purpose (support.external, not support.external.kofi).
   var COPY = {
-    title: "Keep Pip's lantern glowing",
-    intro: 'Floss Fox is free and private, and every feature stays free. If it has helped your stitching, you can leave an optional tip or pick up the printable Stitching Atelier Companion.',
-    tip: 'Leave a tip',
-    pack: function (price) { return 'Get the printable companion (' + price + ')'; },
-    external: function (names) { return 'Opens ' + names + ' checkout in a new tab. Checkout needs an internet connection.'; },
-    fine: function (names) {
-      return 'Optional. Paying or not paying changes nothing in Floss Fox. ' + names +
-        ' handles payment and delivery and may collect your name, email and payment details under its own privacy policy. ' +
-        'Floss Fox never sees your payment details and sends nothing from your projects or collection. ' +
-        'Tips support a software project and are not charitable or tax-deductible donations.';
+    title: "Keep Pip's lantern glowing",                                   // support.title
+    intro: 'Floss Fox is free, and your projects and threads stay on this device. If it has helped your stitching, you can leave a tip or get our printable companion for your craft table.', // support.intro
+    tip: 'Support Floss Fox',                                              // support.btn.tip
+    pack: function (price) { return 'Buy the printable \u00b7 ' + price; },  // support.btn.pack
+    packDetail: function (price) { return 'The Stitching Atelier Printable Companion: a 16-page US Letter PDF to print at home. ' + price + ', one time.'; }, // support.pack.detail
+    external: function (n) {                                               // support.external.text.one / .other
+      return n === 1 ? 'This link opens an external checkout in a new tab and needs an internet connection.'
+        : 'These links open an external checkout in a new tab and need an internet connection.';
     },
-    offline: "You're offline. These links will work when you're back online.",
-    footer: 'Support Floss Fox',
-    aria: function (label, provider) { return label + ' (opens ' + provider + ' checkout in a new tab)'; }
+    offline: "You're offline. Tips and the printable need an internet connection. Everything else in Floss Fox works as usual.", // support.offline
+    noteFree: "Floss Fox stays free. Supporting is optional and doesn't change your projects or thread collection.", // support.note.free
+    notePayment: 'Payment and the PDF download are handled by the checkout provider. We never see your card details.', // support.note.payment
+    footer: 'Support Floss Fox',                                           // support.footer
+    privacyTitle: 'Tips and the printable companion',                     // privacy.support.title (About mount only)
+    privacy: [
+      'Your projects and thread collection stay in this browser on this device. Opening a support link sends none of them.', // privacy.support.local
+      'If you leave a tip or buy the printable, you pay on an external checkout site. That provider may collect information about you as a buyer and share some of it with us, under its own privacy policy. We never receive your card details.', // privacy.support.provider
+      "Tips support a creative software project. They aren't charitable donations and aren't tax deductible." // privacy.support.tax
+    ],
+    ariaTip: 'Support Floss Fox (opens external checkout)',
+    ariaPack: function (price) { return 'Buy the Stitching Atelier Printable Companion, ' + price + ' (opens external checkout)'; }
   };
 
   function safeCheckoutUrl(raw) {
@@ -86,8 +94,8 @@
     var pack = safeCheckoutUrl(config.packUrl);
     var price = safePrice(config.packPrice);
     var items = [];
-    if (support) items.push({ kind: 'tip', href: support, label: COPY.tip, provider: providerName(support) });
-    if (pack) items.push({ kind: 'pack', href: pack, label: COPY.pack(price), provider: providerName(pack) });
+    if (support) items.push({ kind: 'tip', href: support, label: COPY.tip, aria: COPY.ariaTip, provider: providerName(support) });
+    if (pack) items.push({ kind: 'pack', href: pack, label: COPY.pack(price), aria: COPY.ariaPack(price), detail: COPY.packDetail(price), provider: providerName(pack) });
     var names = joinNames(items.map(function (i) { return i.provider; }));
     return {
       show: items.length > 0,
@@ -95,7 +103,7 @@
       pack: items.filter(function (i) { return i.kind === 'pack'; })[0] || null,
       items: items,
       providers: names,
-      note: 'Floss Fox stays free. Supporting is optional and never changes your projects or collection.'
+      note: COPY.noteFree
     };
   }
 
@@ -127,35 +135,56 @@
     var links = doc.createElement('div'); links.className = 'ff-support-links';
     var status = doc.createElement('p'); status.className = 'ff-support-offline'; status.id = 'ffSupportOffline-' + slug;
     status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
+    var ext = doc.createElement('p'); ext.className = 'ff-support-external'; ext.textContent = COPY.external(v.items.length);
+    var anchors = [];
     v.items.forEach(function (it) {
+      var wrap = doc.createElement('div'); wrap.className = 'ff-support-item';
       var a = doc.createElement('a');
       a.href = it.href; a.textContent = it.label;
       a.target = '_blank'; a.rel = 'noopener noreferrer';
       a.referrerPolicy = 'no-referrer';
       a.className = 'ff-support-link ff-support-' + it.kind;
       a.setAttribute('data-kind', it.kind);
-      a.setAttribute('aria-label', COPY.aria(it.label, it.provider));
-      a.addEventListener('click', function (e) {
-        if (isOffline(win)) { e.preventDefault(); status.textContent = COPY.offline; }
-      });
-      links.appendChild(a);
+      a.setAttribute('aria-label', it.aria);
+      a.addEventListener('click', function (e) { if (isOffline(win)) { e.preventDefault(); sync(); } });
+      wrap.appendChild(a);
+      if (it.detail) {
+        var d = doc.createElement('p'); d.className = 'ff-support-detail'; d.id = 'ffSupportPackDetail-' + slug; d.textContent = it.detail;
+        a.setAttribute('aria-describedby', d.id); wrap.appendChild(d);
+      }
+      anchors.push(a); links.appendChild(wrap);
     });
-    var ext = doc.createElement('p'); ext.className = 'ff-support-external'; ext.textContent = COPY.external(v.providers);
-    var fine = doc.createElement('p'); fine.className = 'ff-support-note'; fine.textContent = COPY.fine(v.providers);
-    function sync() { status.textContent = isOffline(win) ? COPY.offline : ''; }
-    sync();
-    if (win && win.addEventListener && !host.__ffSupportBound) {
-      host.__ffSupportBound = true;
-      win.addEventListener('online', function () { var s = host.querySelector('.ff-support-offline'); if (s) s.textContent = ''; });
-      win.addEventListener('offline', function () { var s = host.querySelector('.ff-support-offline'); if (s) s.textContent = COPY.offline; });
+    var free = doc.createElement('p'); free.className = 'ff-support-note'; free.textContent = COPY.noteFree;
+    var pay = doc.createElement('p'); pay.className = 'ff-support-note'; pay.textContent = COPY.notePayment;
+    // Offline: show support.offline instead of support.external and disable the links (no dead tab, no fake success).
+    function sync() {
+      var off = isOffline(win);
+      status.textContent = off ? COPY.offline : '';
+      ext.hidden = off;
+      anchors.forEach(function (a) {
+        if (off) { a.setAttribute('aria-disabled', 'true'); a.classList.add('is-offline'); }
+        else { a.removeAttribute('aria-disabled'); a.classList.remove('is-offline'); }
+      });
     }
-    section.append(h, intro, links, ext, status, fine);
+    sync();
+    if (win && win.addEventListener) {
+      if (host.__ffSupportSync) { win.removeEventListener('online', host.__ffSupportSync); win.removeEventListener('offline', host.__ffSupportSync); }
+      host.__ffSupportSync = sync;
+      win.addEventListener('online', sync); win.addEventListener('offline', sync);
+    }
+    section.append(h, intro, links, ext, status, free, pay);
+    if (slug === 'about') { // About also carries the three Privacy points (same text as privacy.html#support)
+      var ph = doc.createElement('h4'); ph.className = 'ff-support-ptitle'; ph.textContent = COPY.privacyTitle;
+      var ul = doc.createElement('ul'); ul.className = 'ff-support-privacy';
+      COPY.privacy.forEach(function (t) { var li = doc.createElement('li'); li.textContent = t; ul.appendChild(li); });
+      section.append(ph, ul);
+    }
     host.replaceChildren(section);
     return true;
   }
 
-  // Footer: one small in-app link to the About page section (never straight to checkout),
-  // so the external-checkout notice is always seen first.
+  // Footer: one small in-app link that scrolls to the support section (Settings on the app page,
+  // About#support otherwise). Never straight to checkout, so the external-checkout notice is always seen first.
   function renderFooter(doc, config, href) {
     var old = doc.getElementById('ffSupportFooter'); if (old) old.remove();
     if (!viewModel(config).show) return false;
@@ -164,6 +193,19 @@
     var span = doc.createElement('span'); span.id = 'ffSupportFooter';
     span.appendChild(doc.createTextNode(' \u00b7 '));
     var a = doc.createElement('a'); a.href = href || 'about.html#support'; a.textContent = COPY.footer;
+    a.addEventListener('click', function (e) {
+      var tab = doc.getElementById('tabSettings');
+      if (!tab || !doc.querySelector('[data-ff-support-mount="settings"]')) return; // no in-page section: go to About#support
+      e.preventDefault(); tab.click();
+      // The tab switch scrolls to the top (smoothly); jump after it, instantly, so the two scrolls don't fight.
+      var go = function () {
+        var sec = doc.getElementById('ffSupport-settings'), h = doc.getElementById('ffSupportTitle-settings');
+        if (sec) { try { sec.scrollIntoView({ block: 'start', behavior: 'instant' }); } catch (_) { sec.scrollIntoView(); } }
+        if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (_) {} }
+      };
+      var w = doc.defaultView;
+      if (w && w.requestAnimationFrame) w.requestAnimationFrame(function () { w.requestAnimationFrame(go); }); else go();
+    });
     span.appendChild(a);
     // Sit right after "Backup and settings" (before the closing privacy sentence) when present.
     var after = foot.querySelector('.ffsettingslink');
