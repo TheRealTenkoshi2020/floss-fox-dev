@@ -55,7 +55,7 @@ B. DONE on branch (tests + regression in PR 18). Workbasket (heading "Your workb
    - Gate: fresh-user + persisted-data E2E, hash precedence, deleted-project fallback, keyboard search, no-mutation dumps, full regression.
    - Also pulled forward from C: +/- skein verified save, Undo of the latest step, rollback on a failed save (FF39-10).
    - Returning visitors who opted into Resume skip the welcome landing (flagged for Myke).
-C. Shopping + thread library: in-store checklist on top of existing Store mode (one checkbox per line), Share (Web Share, else copy,
+C. DONE on branch (see FF39_CHECKLIST Stage C record). Shopping + thread library: in-store checklist on top of existing Store mode (one checkbox per line), Share (Web Share, else copy,
    else print; Pixel's share strings), Bought vs owned (FF39-19), quick quantity Undo/pending/rollback (FF39-10), collection sort/views
    and low-stock threshold (FF39-11), low-stock suggestion with explicit Add / Not now (FF39-12).
    - Receipt copy (relayed): the "in your threads" line ONLY after the confirmed "I received it" step that really changed My threads;
