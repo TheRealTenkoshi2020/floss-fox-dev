@@ -1,0 +1,70 @@
+/* Floss Fox 3.9 Atelier, Stage B: Workbasket + search + Settings additions.
+   PROVISIONAL styling after Pixel's mockups (/workspace/pip-art/atelier39/mockups), using existing theme tokens only.
+   Everything is scoped to .ffa-* / #ffSearch* / #workbasketView so it can be restyled or removed in one place.
+   Tokens Pixel added for 3.9 (--disabled-*, --swatch-edge, --fiber-*, --hover-tint) are used with fallbacks until Stage D. */
+.ffa-wbview{margin:0 0 16px}
+.ffa-wbgrid{display:grid;gap:16px;min-width:0}
+@media(min-width:900px){.ffa-wbgrid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start}}
+.ffa-wb,.ffa-side{min-width:0;overflow-wrap:anywhere}
+.ffa-wb{background:var(--hero-surface,var(--psurface));background-color:var(--psurface)}
+.ffa-eyebrow{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--eyebrow,var(--text-muted));margin:0 0 4px}
+.ffa-wb h2{margin:0;font-family:var(--font-head)}
+.ffa-lead{color:var(--text-muted);margin:6px 0 14px}
+.ffa-active{border:1px solid var(--hair,var(--surface-border));border-radius:16px;padding:14px;background:var(--psurface)}
+.ffa-active h3{margin:2px 0 2px;font-family:var(--font-head);font-size:21px}
+.ffa-label{font-size:14px;font-weight:800;color:var(--text-muted);margin:0}
+.ffa-meta{font-size:14px;color:var(--text-muted);margin:0 0 10px}
+.ffa-mut{color:var(--text-muted)}.ffa-small{font-size:14px}
+.ffa-note{border-left:4px solid var(--sage,var(--sec-border));background:var(--surface-2,var(--psurface));border-radius:0 14px 14px 0;padding:10px 14px;margin:12px 0}
+.ffa-note b{display:block;font-size:14px;color:var(--text-muted)}
+.ffa-note p{margin:2px 0 0;white-space:pre-line}
+.ffa-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:0 0 12px}
+.ffa-stat{background:var(--surface-2,var(--psurface));border:1px solid var(--hair,var(--surface-border));border-radius:14px;padding:8px 12px;min-width:0}
+.ffa-stat b{display:block;font:700 24px/1.1 var(--font-head);color:var(--text-strong);font-variant-numeric:tabular-nums}
+.ffa-stat span{font-size:14px;color:var(--text-muted)}
+.ffa-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ffa-row button,.ffa-empty button{min-height:44px}
+.ffa-empty h3{font-family:var(--font-head);margin:0 0 4px}
+.ffa-empty p{color:var(--text-muted);margin:0 0 12px}
+.ffa-owned{margin:0 0 12px}.ffa-owned b{color:var(--text-strong)}
+.ffa-quick h3{font-size:17px;margin:0 0 8px;font-family:var(--font-head)}
+.ffa-quickgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ffa-qbtn{display:flex;align-items:center;min-height:56px;padding:8px 14px;border-radius:16px;border:1.5px solid var(--chip-border);background:var(--chip-bg);color:var(--chip-text);font:inherit;font-weight:800;text-align:left;text-decoration:none;cursor:pointer;min-width:0}
+.ffa-qbtn:hover{background:var(--hover-tint,var(--chip-bg))}
+/* palette strip + floss swatch (approximate color; the code is always in text nearby or in the accessible name) */
+.ffa-strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;list-style:none;margin:6px 0 4px;padding:0}
+.ffa-floss{--c:#9a9a9a;display:inline-block;width:30px;height:26px;flex:none;border-radius:7px;border:1.5px solid transparent;
+ background:repeating-linear-gradient(100deg,var(--fiber-hi,rgba(255,255,255,.35)) 0 1.5px,transparent 1.5px 4px,var(--fiber-lo,rgba(0,0,0,.16)) 4px 5px,transparent 5px 7px),var(--c)}
+.ffa-floss.edge{border-color:var(--swatch-edge,var(--input-border))}
+.ffa-floss.none{background:repeating-linear-gradient(135deg,var(--surface-2,#eee) 0 5px,var(--psurface) 5px 10px);border:1.5px dashed var(--swatch-edge,var(--input-border))}
+.ffa-more{font-weight:800;font-size:14px;color:var(--text-muted);padding:0 4px}
+/* tab + search trigger */
+.ffa-searchbtn{display:inline-flex;align-items:center;gap:8px;min-height:44px;min-width:44px;padding:0 14px;margin-left:auto;margin-right:8px;border-radius:999px;border:1.5px solid var(--input-border);background:var(--input-bg);color:var(--text-muted);font:inherit;font-weight:700;cursor:pointer;flex:none}
+.ffa-searchbtn svg{width:20px;height:20px;stroke:currentColor;flex:none}
+@media(max-width:700px){.ffa-searchbtn .ffa-lbl{display:none}.ffa-searchbtn{padding:0;width:44px;justify-content:center}}
+.ffa-search{max-width:720px;margin:8px auto 16px;position:relative;z-index:31} /* above the floating Pip card (pip-follow.css z 30), below confirm (80) */
+.ffa-shead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ffa-sh{font-size:20px;margin:0;font-family:var(--font-head)}
+.ffa-x{width:44px;height:44px;border-radius:999px;border:1.5px solid var(--input-border);background:var(--input-bg);color:var(--text-strong);font:800 22px/1 var(--font-body);cursor:pointer}
+.ffa-sfield{margin:10px 0 6px}
+.ffa-sfield input{width:100%;box-sizing:border-box;min-height:52px;font-size:18px;border-radius:14px;border:2px solid var(--input-border);background:var(--input-bg);color:var(--text-strong);padding:0 14px}
+.ffa-sfield input::placeholder{color:var(--placeholder);opacity:1}
+.ffa-hint,.ffa-keys{font-size:14px;color:var(--text-muted);margin:4px 0}
+.ffa-results{margin-top:6px}
+.ffa-sgroup{margin-top:12px}
+.ffa-sgroup h3{font:800 13px/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:0 0 8px}
+.ffa-res{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 12px;border-radius:14px;border:1.5px solid var(--hair,var(--surface-border));background:var(--psurface);color:var(--text);margin-bottom:8px;cursor:pointer;min-width:0}
+.ffa-res[aria-selected=true]{border-color:var(--focus);outline:3px solid var(--focus);outline-offset:1px}
+.ffa-rmeta{flex:1;min-width:0;overflow-wrap:anywhere}.ffa-rmeta b{display:block;color:var(--text-strong)}.ffa-rmeta span{display:block;font-size:14px;color:var(--text-muted)}
+.ffa-none{padding:8px 4px}.ffa-nonet{font-weight:800;color:var(--text-strong);margin:0 0 4px}
+.ffa-detail{margin-top:10px;border:1.5px solid var(--hair,var(--surface-border));border-radius:14px;padding:10px 14px;background:var(--surface-2,var(--psurface))}
+.ffa-detail h3{margin:0 0 4px;font-family:var(--font-head)}.ffa-detail p{margin:2px 0}
+/* Settings */
+.ffa-prefs{border-top:1px solid var(--surface-border);margin-top:16px;padding-top:12px}
+.ffa-check{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:700}
+.ffa-check input{width:22px;height:22px}
+.ffa-prefs button{min-height:44px}
+.ffa-missing{margin:0 0 8px}
+#thList li.ffa-found{outline:3px solid var(--focus);outline-offset:2px}
+@media(prefers-reduced-motion:no-preference){.ffa-res,.ffa-qbtn{transition:background-color .12s ease,border-color .12s ease}}
+@media print{.ffa-searchbtn,.ffa-search,#tabWorkbasket{display:none!important}}

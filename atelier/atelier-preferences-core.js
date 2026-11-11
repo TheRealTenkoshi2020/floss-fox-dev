@@ -14,7 +14,7 @@
   'use strict';
   const SCHEMA = 1;
   const THEMES = Object.freeze(['system', 'morning', 'forest', 'moon']);
-  const TABS = Object.freeze(['convert', 'threads', 'projects', 'shop', 'help', 'settings']); // matches projects.js showView(); Fabric is its own page
+  const TABS = Object.freeze(['workbasket', 'convert', 'threads', 'projects', 'shop', 'help', 'settings']); // matches projects.js showView(); Fabric is its own page
   const VIEWS = Object.freeze(['list', 'grid', 'shelf']);
   const BRANDS = Object.freeze(['dmc', 'anchor', 'sullivans']); // BRAND keys in index.html
   const MAX_RECENT = 12;

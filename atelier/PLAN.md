@@ -46,13 +46,15 @@ Settings and sw.js CORE + cache name; trivial). FF39-25 stays blocked-external u
 
 ## Stages (adapted)
 A. Pure cores + prefs lifecycle + first-visit fix + privacy tests. DONE on branch (see report). Store core strings switched to Pixel's draft copy.
-B. Workbasket (heading "Your workbasket", Myke's name choice as relayed), Continue project (FF39-15), saved spot (FF39-06), search UI (FF39-02).
+B. DONE on branch (tests + regression in PR 18). Workbasket (heading "Your workbasket", Myke's name choice as relayed), Continue project (FF39-15), saved spot (FF39-06), search UI (FF39-02).
    - New atelier/atelier.css + atelier/atelier-ui.js loaded after existing scripts; reads FlossFoxProjects._store().projects,
      lastProject(), plan(), FlossFoxThreadsUI.data().threads; navigates only via showView()/openProject() after validating ids.
    - Precedence: restore/safety message > URL hash > landing/Start here > opted-in last tab/project > Find floss.
    - Workbasket only for a visitor with saved projects or threads; fresh visitors keep landing + Start here.
    - Strings from Pixel's copy.json (DRAFT, flagged). Pip lines: Pixel's starred line per event for dev.
    - Gate: fresh-user + persisted-data E2E, hash precedence, deleted-project fallback, keyboard search, no-mutation dumps, full regression.
+   - Also pulled forward from C: +/- skein verified save, Undo of the latest step, rollback on a failed save (FF39-10).
+   - Returning visitors who opted into Resume skip the welcome landing (flagged for Myke).
 C. Shopping + thread library: in-store checklist on top of existing Store mode (one checkbox per line), Share (Web Share, else copy,
    else print; Pixel's share strings), Bought vs owned (FF39-19), quick quantity Undo/pending/rollback (FF39-10), collection sort/views
    and low-stock threshold (FF39-11), low-stock suggestion with explicit Add / Not now (FF39-12).
@@ -61,13 +63,17 @@ C. Shopping + thread library: in-store checklist on top of existing Store mode (
    - Gate: no-inventory-mutation E2E (dump threads key before/after every non-receipt action), duplicate merchant links, offline reload.
 D. Visual: themes (System / Morning Linen / Forest Twilight / Moonlit Threads) as token overlays on theme-pair.css via
    <html data-atelier-theme> set before first paint from the pref key (no key created on first visit), floss swatches + palette strips,
-   gallery cards (color-strip fallback), comparison surface (FF39-09), micro-interactions. Needs Pixel token sheet + mockups.
+   gallery cards (color-strip fallback), comparison surface (FF39-09), micro-interactions. Pixel tokens + mockups landed; Moonlit Threads becomes DARK (new tokens pending from Pixel); Pip art + lantern halo follow the chosen theme;
+   replace ~28 fixed-color prefers-color-scheme rules in theme-pair.css per TOKENS.md.
    Gate: contrast (contrast.js) all themes, 360/390/768/1280, reduced motion, no flash.
-E. Fabric diagram from compute() only + named presets + cut slip (FF39-20); Stitch Session (FF39-16, timer per Myke); progress
-   clarity (FF39-14, manual % per Myke; otherwise stage badge only, celebration once per real transition).
+E. Fabric diagram from compute() only + named presets + cut slip (FF39-20); Stitch Session (FF39-16; timer OFF by default, never saved or backed up, wall-clock while the page is open, resets on close); progress
+   clarity (FF39-14, manual % ring per Pixel mockups: number as text, no ring when unset, 100% never auto-completes; celebration once per real transition).
 F. Pip events at verified points only (import, covers, receipt verified, return with note, finished), respecting level/cooldown and
-   siteAnnounces; seasonal toggle (FF39-22) default off, no fake outfits; visibility of the toggle pending Myke.
-G. Cover photos (FF39-13) in IndexedDB per Myke's backup decision; quota/rollback tests; legacy backup migrations; stress (500 colors).
+   siteAnnounces; seasonal art REQUIRED (Myke): build only the switch with graceful fallback; season-to-art mapping held for Myke's OK on SEASONAL-PLAN.md; to standard Pip when art is missing; toggle visibility pending Myke.
+G. Cover photos (FF39-13) in IndexedDB (downscaled, EXIF stripped, size-capped); Myke: one backup file that includes the photos
+   (versioned manifest, checksums, size limits, optional media section old importers ignore, readback + rollback on restore,
+   automatic copies exclude media; restore keeps every project even if one photo fails and names the failed photo;
+   cover-photo line ships only once backup + readback work); quota/rollback tests; legacy backup migrations; stress (500 colors).
 H. Full offline/PWA regression, cache bump, owner walkthrough on the test site (only after Myke says so), release report, rollback SHA.
    Production port only on Myke's explicit approval.
 

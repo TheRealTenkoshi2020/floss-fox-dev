@@ -69,6 +69,24 @@ function load(){let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){canSave=
 function backupChanged(){window.dispatchEvent(new CustomEvent('ff:data-saved',{detail:{area:'threads'}}));}
 function save(){bulkStorageUndoState=null;if(!canSave){if(!mem)say('Not saved: saving is paused (see the note above).');return false}
  try{localStorage.setItem(KEY,JSON.stringify(data));backupChanged();return true}catch(e){say(e&&(e.name==='QuotaExceededError'||e.code===22)?'Not saved: browser storage is full.':'Not saved: your browser blocked the save.');return false}}
+/* 3.9 Atelier (FF39-10): +/- skein steps are read back after saving. If the browser didn't keep the change, the count is put
+   back and the page says so plainly (never a "saved" message). The latest step offers Undo, which is saved and checked the same way.
+   In session-only mode (storage unavailable, banner shown) the existing in-memory behavior is unchanged. */
+const AC=(k,v,n,f)=>{const X=window.FlossFoxAtelierCopy;const r=X&&X.has&&X.has(k)?X.t(k,v,n):'';return r||f};
+function savedOk(){if(!save())return false;try{return localStorage.getItem(KEY)===JSON.stringify(data)}catch(e){return false}}
+let stepUndo=null;
+function stepMsg(text,undo){const s=$('thStatus');if(!s)return;s.textContent=text;let u=$('thStepUndo');
+ if(undo){if(!u){u=document.createElement('button');u.type='button';u.id='thStepUndo';u.className='ghost small';s.insertAdjacentElement('afterend',u);u.onclick=undoStep}u.textContent=AC('common.undo',{},undefined,'Undo');u.hidden=false}else if(u)u.hidden=true}
+function stepNow(b){const c=b.dataset.c,demo=b.dataset.m==='d',M=MM(b),id=b.id;if(!M[c])return;if(+b.dataset.step>0&&!okCap(c,M[c].n+1,M))return;
+ const before=JSON.stringify(M[c]);C.step(data,c,+b.dataset.step,{demo});const after=JSON.stringify(M[c]);
+ if(mem){render();keepFocus(id);say(`DMC ${lab(c)}: ${M[c].n} full skein${M[c].n===1?'':'s'}.`);return}
+ if(!savedOk()){M[c]=JSON.parse(before);try{localStorage.getItem(KEY)!==JSON.stringify(data)&&canSave&&localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}render();keepFocus(id);
+  const n=M[c].n;stepUndo=null;stepMsg(AC('lib.notSaved',{brand:'DMC',code:lab(c),n},n,`Not saved: your browser blocked the save. DMC ${lab(c)} is still ${n} full skein${n===1?'':'s'}.`),false);return}
+ stepUndo={c,demo,before,after};render();keepFocus(id);const n=M[c].n;stepMsg(AC('lib.saved',{brand:'DMC',code:lab(c),n},n,`DMC ${lab(c)}: ${n} full skein${n===1?'':'s'}.`),true)}
+function undoStep(){const u=stepUndo;stepUndo=null;if(!u){stepMsg('',false);return}const M=u.demo?data.demo||{}:data.threads;
+ if(!M[u.c]||JSON.stringify(M[u.c])!==u.after){stepMsg('',false);return} // changed since: never undo over a newer edit
+ M[u.c]=JSON.parse(u.before);if(!savedOk()){M[u.c]=JSON.parse(u.after);render();const n=M[u.c].n;stepMsg(AC('lib.notSaved',{brand:'DMC',code:lab(u.c),n},n,`Not saved: your browser blocked the save. DMC ${lab(u.c)} is still ${n} full skein${n===1?'':'s'}.`),false);return}
+ render();const n=M[u.c].n;stepMsg(AC('lib.saved',{brand:'DMC',code:lab(u.c),n},n,`DMC ${lab(u.c)}: ${n} full skein${n===1?'':'s'}.`),false);const f=$('tn-'+(u.demo?'d_':'')+u.c.replace(/[^\w]/g,'_'));if(f)f.focus()}
 const nm=c=>DMC[c].name.replace(/\b(vy|dk|lt|md|ul)\b/gi,m=>({vy:'very',dk:'dark',lt:'light',md:'medium',ul:'ultra'}[m.toLowerCase()]));
 const ST={stock:'In stock',partial:'Partial skein only',out:'Out of stock'};
 const thOpen=new Set();
@@ -106,7 +124,7 @@ function bind(){const L=$('thList');
  L.querySelectorAll('[data-n]').forEach(i=>i.onchange=()=>{const c=i.dataset.n,M=MM(i),v=i.value.trim(),e=M[c];
   if(!/^\d+$/.test(v)){say(`"${v}" isn't a whole number of skeins (0 or more), so nothing changed.`);i.value=e.n;return}
   const k=Math.min(999,+v);if(!okCap(c,k,M)){i.value=e.n;return}e.n=k;e.confirmed=true;stamp(e);save();render();keepFocus(i.id);say(`DMC ${lab(c)}: ${k} full skein${k===1?'':'s'}.`)});
- L.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{const c=b.dataset.c,M=MM(b),id=b.id;if(+b.dataset.step>0&&!okCap(c,M[c].n+1,M))return;C.step(data,c,+b.dataset.step,{demo:b.dataset.m==='d'});save();render();keepFocus(id);say(`DMC ${lab(c)}: ${M[c].n} full skein${M[c].n===1?'':'s'}.`)});
+ L.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>stepNow(b));
  L.querySelectorAll('[data-part]').forEach(x=>x.onchange=()=>{const c=x.dataset.part,e=MM(x)[c];e.partial=x.checked;stamp(e);save();render();keepFocus(x.id)});
  L.querySelectorAll('[data-rs]').forEach(x=>x.onchange=()=>{const c=x.dataset.rs,e=MM(x)[c];e.restock=x.checked;stamp(e);save();render();keepFocus(x.id)});
  L.querySelectorAll('[data-verify]').forEach(b=>b.onclick=()=>{const c=b.dataset.verify,e=MM(b)[c];e.confirmed=true;stamp(e);save();render();keepFocus('tn-'+(b.dataset.m==='d'?'d_':'')+c.replace(/[^\w]/g,'_'));say(`Confirmed ${e.n} full skein${e.n===1?'':'s'} of DMC ${lab(c)}.`)});
