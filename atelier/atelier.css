@@ -68,3 +68,57 @@
 #thList li.ffa-found{outline:3px solid var(--focus);outline-offset:2px}
 @media(prefers-reduced-motion:no-preference){.ffa-res,.ffa-qbtn{transition:background-color .12s ease,border-color .12s ease}}
 @media print{.ffa-searchbtn,.ffa-search,#tabWorkbasket{display:none!important}}
+
+/* Stage C fix: search never covers Pip's greeting. Wide: the panel sits beside the Pip column like the views do; any width: the
+   greeting text is hidden while search is open (the figure and controls stay). */
+body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa-searching .pipc .pipA-bubble{visibility:hidden}
+@media(min-width:880px){body.pipone .ffa-search{margin-left:0;margin-right:220px;max-width:none}}
+.ffa-sibnote{display:block;font-size:.85rem;color:var(--ink-2,#535B58);font-weight:600}
+/* Pixel Stage B review (REVIEW-39-stageB.md): S2-S5, N1-N4 */
+@media(min-width:880px){body.pipone #workbasketView{margin-right:200px}}
+.ffa-floss{border:1.5px solid var(--swatch-edge,var(--input-border))}
+#ffSearchIn::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
+.ffa-owned .ffa-mut{display:block;margin-top:2px}
+#workbasketView .ffa-eyebrow{display:none}
+#ffWbH{font-size:clamp(1.75rem,1.3rem + 1.6vw,2.25rem);line-height:1.15}
+@media(min-width:880px){.ffa-quickgrid{grid-template-columns:1fr}}
+@media (hover:none) and (pointer:coarse){.ffa-keys{display:none}}
+/* ---------- Stage C: in-store checklist (Store mode), provisional, existing tokens ---------- */
+.ffsm-check{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;font-weight:700}
+.ffsm-cb{-webkit-appearance:none;appearance:none;width:44px;height:44px;margin:0;flex:0 0 44px;border:2px solid var(--input-border,#8a8f86);border-radius:10px;background:var(--surface,#fffdf8);display:inline-grid;place-content:center;cursor:pointer}
+.ffsm-cb::before{content:"";width:22px;height:12px;border-left:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(-45deg) translate(2px,-3px)}
+.ffsm-cb:checked{background:var(--sage-700,#3f6b4f);border-color:var(--sage-700,#3f6b4f)}
+.ffsm-cb:checked::before{border-color:#fff}
+.ffsm-cb:focus-visible{outline:3px solid var(--focus,#2f6fb2);outline-offset:2px}
+.ffsm-row{min-height:72px}
+.ffsm-notin,.ffsm-also{display:block}
+.ffsm-views{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 8px}
+.ffsm-views button{min-height:44px}.ffsm-views button[aria-pressed=true]{background:var(--sage-700,#3f6b4f);color:#fff;border-color:var(--sage-700,#3f6b4f)}
+.ffsm-views select{min-height:44px}
+.ffsm-store{font-size:1rem;margin:12px 0 4px}
+.ffsm-home,.ffsm-take{border:1px solid var(--line,#DDD4C4);border-radius:var(--r3,16px);padding:12px 14px;margin:12px 0;background:var(--surface,#fffdf8)}
+.ffsm-home h4,.ffsm-take h4{margin:0 0 6px}.ffsm-home button,.ffsm-take button{min-height:44px}
+@media print{html.ffsm-printing body *{visibility:hidden!important}
+ html.ffsm-printing #pStore,html.ffsm-printing #pStore *{visibility:visible!important}
+ html.ffsm-printing #pStore{display:block!important;position:absolute;left:0;top:0;width:100%}
+ html.ffsm-printing #pStore .ffsm-tools,html.ffsm-printing #pStore .ffsm-views,html.ffsm-printing #pStore .ffsm-take,html.ffsm-printing #pStore .ffsm-home,html.ffsm-printing #pStore .ffsm-buy,html.ffsm-printing #pStore [data-smbuy],html.ffsm-printing #pStore #smBuyNote{display:none!important}
+ html.ffsm-printing .pipc{display:none!important}}
+/* Stage C: My threads tools, views, suggestions, restock (provisional) */
+.ffa-libtools{margin:8px 0}.ffa-librow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.ffa-libtools button,.ffa-libtools select,.ffa-libtools input{min-height:44px}.ffa-libtools input.qbox{width:4.5rem}
+.ffa-seg{display:inline-flex;gap:6px;flex-wrap:wrap}.ffa-seg button[aria-pressed=true],#ffLowOnly[aria-pressed=true]{background:var(--sage-700,#3f6b4f);color:#fff;border-color:var(--sage-700,#3f6b4f)}
+#thList .ffa-lowhide{display:none!important}
+#thList.ffa-view-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+#thList.ffa-view-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:8px}
+#thList.ffa-view-shelf .thtop small.mut{display:none}
+#thList.ffa-view-grid>.demohead,#thList.ffa-view-shelf>.demohead{grid-column:1/-1}
+#thList .ffa-low{box-shadow:inset 4px 0 0 var(--amber-500,#c98a2b)}
+.ffa-suggest{display:grid;gap:10px;margin:8px 0}
+.ffa-sug{border:1px solid var(--line,#DDD4C4);border-radius:var(--r3,16px);padding:10px 14px;background:var(--surface,#fffdf8)}
+.ffa-sug h3{margin:2px 0 4px;font-size:1rem}.ffa-sug p{margin:0 0 6px}.ffa-acts{display:flex;flex-wrap:wrap;gap:8px}.ffa-acts button{min-height:44px}
+.ffa-tag{display:inline-block;font-size:.78rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--eyebrow,var(--text-muted))}
+.ffa-restock h2{margin:0 0 4px}.ffa-restocklist{list-style:none;padding:0;margin:8px 0 0}
+.ffa-restocklist li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,#DDD4C4);min-height:56px}
+.ffa-restocklist .ffa-rmeta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}.ffa-restocklist button{min-height:44px}
+.ffsm-check .ffsm-cb{width:44px!important;height:44px!important;min-width:44px;min-height:44px}
+@media(max-width:520px){.ffsm-check>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}

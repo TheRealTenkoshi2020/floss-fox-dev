@@ -12,7 +12,9 @@
 if(window.FlossFoxAtelier)return; // idempotent: loading twice adds nothing
 const P=window.FlossFoxProjects,T=window.FlossFoxThreadsUI,PR=window.FlossFoxAtelierPreferences,SR=window.FlossFoxAtelierSearch,PA=window.FlossFoxAtelierPalette,CP=window.FlossFoxAtelierCopy;
 if(!P||!P.KEY||!P.showView||!PR||!SR||!CP||typeof document==='undefined')return;
-const $=id=>document.getElementById(id),t=(k,v,n)=>CP.t(k,v,n);
+// Placeholders until Pixel supplies the string (flagged in FF39_CHECKLIST.md). Pixel's copy wins as soon as the key exists.
+const PH={'pref.title':'Your preferences','pref.seasonal.hint.on':'Seasonal looks for Pip on the welcome and home screens. On unless you turn it off.','restock.title':'Restock for My threads','restock.sub':'Colors you chose to buy more of. This list never changes My threads.','restock.remove':'Remove from restock','restock.removed':'✓ {brand} {code} is off the restock list.','restock.none':'Nothing to restock. When My threads runs low, we can suggest colors, and you choose.','search.res.whiteSibling':'A different color from DMC {code}','pref.seasonal.state.none':'No seasonal art yet, so Pip looks the same.'};
+const $=id=>document.getElementById(id),t=(k,v,n)=>CP.has(k)?CP.t(k,v,n):String(PH[k]||'').replace(/\{(\w+)\}/g,(m,x)=>v&&x in v?String(v[x]):m);
 const CAT=(()=>{try{return typeof DMC==='object'&&DMC?DMC:null}catch(e){return null}})(); // index.html catalog (script-scoped const)
 function el(tag,attrs,text){const e=document.createElement(tag);if(attrs)for(const k in attrs){const v=attrs[k];if(v===null||v===undefined||v===false)continue;if(k==='class')e.className=v;else if(k==='hidden')e.hidden=!!v;else e.setAttribute(k,v===true?'':String(v))}if(text!==undefined&&text!==null)e.textContent=String(text);return e}
 const PKEY=PR.keyFor(P.KEY);
@@ -117,8 +119,8 @@ function mountSearch(){
   if(a!==sIn&&(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT'||(a&&a.isContentEditable)))return; // never steal a shortcut while typing elsewhere
   if(document.documentElement.classList.contains('ff-landing'))return;const c=$('ffConfirm');if(c&&!c.hidden)return;e.preventDefault();openSearch()});
 }
-function openSearch(){if(!sPanel)return;opener=document.activeElement;sPanel.hidden=false;sBtn.setAttribute('aria-expanded','true');sIn.focus();run()}
-function closeSearch(restore){if(!sPanel||sPanel.hidden)return;sPanel.hidden=true;sBtn.setAttribute('aria-expanded','false');sIn.setAttribute('aria-expanded','false');sIn.removeAttribute('aria-activedescendant');sDetail.hidden=true;
+function openSearch(){if(!sPanel)return;opener=document.activeElement;sPanel.hidden=false;document.body.classList.add('ffa-searching');sBtn.setAttribute('aria-expanded','true');sIn.focus();run()}
+function closeSearch(restore){if(!sPanel||sPanel.hidden)return;sPanel.hidden=true;document.body.classList.remove('ffa-searching');sBtn.setAttribute('aria-expanded','false');sIn.setAttribute('aria-expanded','false');sIn.removeAttribute('aria-activedescendant');sDetail.hidden=true;
  if(restore){const o=opener&&document.contains(opener)?opener:sBtn;try{o.focus()}catch(e){}}opener=null}
 function getIndex(){if(index&&!dirty)return index;const ps=projects();index=SR.build({projects:ps||[],threads:threads(),catalog:CAT});dirty=false;return index}
 const WH=['DMC:BLANC','DMC:WHITE','DMC:B5200'];
@@ -132,7 +134,7 @@ function run(){if(!sPanel||sPanel.hidden)return;let ix;sNote.textContent='';sNot
  const own=code=>{const e=th[code];if(!e)return t('search.res.notOwned');let s=t('search.res.owned',{n:e.n},e.n);if(e.partial)s+=' \u00b7 '+t('search.res.partial');return s};
  group(r.colors,'search.group.colors',row=>{const o=el('div',{class:'ffa-res'}),isD=row.brand.toUpperCase()==='DMC',hex=isD&&CAT&&CAT[row.exactCode]&&/^#[0-9a-f]{6}$/i.test(CAT[row.exactCode].hex)?CAT[row.exactCode].hex:null;
   const sw=el('span',{class:'ffa-floss'+(hex?'':' none')+(hex&&/^#f/i.test(hex)?' edge':''),'aria-hidden':'true'});if(hex)sw.style.setProperty('--c',hex);
-  const m=el('span',{class:'ffa-rmeta'});m.append(el('b',null,isD?(row.subtitle?t('search.res.color',{brand:row.brand,code:row.exactCode,name:cname(row.subtitle)}):`${row.brand} ${row.exactCode}`):`${row.brand} ${row.exactCode}`),el('span',null,isD?own(row.exactCode):t('search.res.chart',{dmc:row.dmc.slice(0,3).join(', ')})));o.append(sw,m);return o});
+  const m=el('span',{class:'ffa-rmeta'});m.append(el('b',null,isD?(row.subtitle?t('search.res.color',{brand:row.brand,code:row.exactCode,name:cname(row.subtitle)}):`${row.brand} ${row.exactCode}`):`${row.brand} ${row.exactCode}`),el('span',null,isD?own(row.exactCode):t('search.res.chart',{dmc:row.dmc.slice(0,3).join(', ')})));if(row.whiteSibling){o.classList.add('ffa-sib');m.append(el('span',{class:'ffa-sibnote'},t('search.res.whiteSibling',{code:row.whiteSibling})))}o.append(sw,m);return o});
  group(r.threads,'search.group.threads',row=>{const o=el('div',{class:'ffa-res'}),e=th[row.exactCode]||{};const m=el('span',{class:'ffa-rmeta'});m.append(el('b',null,row.label));let s=own(row.exactCode);if(row.location)s+=' \u00b7 '+t('search.res.location',{location:row.location});m.append(el('span',null,s));o.append(m);return o});
  group(r.projects,'search.group.projects',row=>{const o=el('div',{class:'ffa-res'}),m=el('span',{class:'ffa-rmeta'}),p=real().find(x=>x.id===row.key),qq=SR.canon(q).toUpperCase(),usesCode=p&&!SR.canon(p.name).includes(SR.canon(q))&&(p.items||[]).some(i=>String(i.code).toUpperCase()===qq);
   m.append(el('b',null,row.label),el('span',null,usesCode?t('search.res.project',{status:STATUS[p.status]||STATUS.planning,code:qq}):(STATUS[p&&p.status]||STATUS.planning)));o.append(m);return o});
@@ -165,11 +167,16 @@ function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.
  lab.append(cb,' ',t('pref.resume'));const hint=el('p',{class:'hint',id:'ffResumeHint'},t('pref.resume.hint'));
  const st=el('p',{class:'hint',role:'status','aria-live':'polite',id:'ffPrefStatus'});
  const rb=el('button',{type:'button',class:'sec',id:'ffPrefReset'},t('pref.reset'));
- box.append(lab,hint,rb,st);card.append(box);
+ const sl=el('label',{class:'ffa-check'});const sc=el('input',{type:'checkbox',id:'ffSeasonal','aria-describedby':'ffSeasonalHint ffSeasonalState'});sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;
+ sl.append(sc,' ',t('pref.seasonal'));const sh=el('p',{class:'hint',id:'ffSeasonalHint'},t('pref.seasonal.hint.on')) /* copy.json pref.seasonal.hint still says Off by default; ON is Myke's decision */;
+ const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[]; // no seasonal art shipped yet
+ const ss=el('p',{class:'hint ffa-small',id:'ffSeasonalState'},art.length?'':t('pref.seasonal.state.none'));
+ sc.addEventListener('change',()=>{const want=sc.checked;st.textContent=t('common.saving');const r=savePref({seasonalPip:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-seasonal',{detail:{on:want}}))}else{sc.checked=!want;st.textContent=t('common.notSaved')}});
+ box.append(el('h3',{id:'ffPrefH'},t('pref.title')),lab,hint,sl,sh,ss,rb,st);box.setAttribute('aria-labelledby','ffPrefH');card.append(box);
  cb.addEventListener('change',()=>{const want=cb.checked;st.textContent=t('common.saving');const r=savePref({rememberPlace:want,lastTab:current()==='settings'?'settings':current(),lastProjectId:null});
   if(r.ok)st.textContent=t('common.saved');else{cb.checked=!want;st.textContent=t('common.notSaved')}});
  rb.addEventListener('click',async()=>{const C=window.FlossFoxConfirm;const yes=C&&C.ask?await C.ask({title:t('pref.reset.title'),body:t('pref.reset.body'),keep:t('pref.reset.no'),go:t('pref.reset.yes'),pose:'thinking'}):window.confirm(t('pref.reset.title'));if(!yes)return;
-  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();cb.checked=false;cb.disabled=!pref.ok;st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'))}else st.textContent=t('common.notSaved')});
+  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();lowOnly=false;libApply();cb.checked=false;cb.disabled=!pref.ok;sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'))}else st.textContent=t('common.notSaved')});
 }
 // Records the last tab / open project ONLY while Resume where I was is on.
 function record(){const d=P0();if(!pref.ok||!d.rememberPlace)return;const v=current();if(v==='workbasket'&&!hasSaved())return;let pid=null;
@@ -188,16 +195,78 @@ function resume(){const d=P0();
  if(v==='projects'&&d.lastProjectId){if(openProjectSafe(d.lastProjectId,false))return'project';go('projects');const lc=$('projListCard');if(lc){const n=el('p',{class:'hint ffa-missing',role:'status'},t('wb.missing'));lc.insertBefore(n,lc.firstChild);const rm=()=>{n.remove();document.removeEventListener('click',rm,true)};setTimeout(()=>document.addEventListener('click',rm,true),0)}return'missing'}
  if(v==='workbasket'&&!hasSaved())return'default';
  return go(v)?'tab':'default'}
+// ---------- My threads: collection view, sort, Running low, low-stock suggestions (FF39-11, FF39-12, decision 6) ----------
+// Display only: reorders and hides rows that threads.js drew; never edits a thread except through the explicit
+// "Add to shopping list" (restock flag, verified by threads.js setRestock). Not now is remembered for this page visit only.
+const notNow=new Set();let lowOnly=false,libBusy=false;
+const hueOf=hex=>{const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return 999;const n=parseInt(m[1],16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;
+ if(d<.08)return 400+(1-mx)*10; /* neutrals last, light to dark */let h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;return h<0?h+360:h};
+const famKey=c=>{const e=CAT&&CAT[c];return hueOf(e&&e.hex)};
+const byCodeA=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true});
+function libApply(){const L=$('thList');if(!L||libBusy)return;libBusy=true;try{const d=P0(),th=threads();
+ L.classList.remove('ffa-view-list','ffa-view-grid','ffa-view-shelf');L.classList.add('ffa-view-'+d.collectionView);
+ const own=[...L.children].filter(li=>li.classList.contains('th')&&!li.classList.contains('demo')&&th[li.dataset.code]);
+ const k=d.collectionSort,cmp={code:(a,b)=>byCodeA(a,b),amount:(a,b)=>th[a].n-th[b].n||byCodeA(a,b),family:(a,b)=>famKey(a)-famKey(b)||byCodeA(a,b),
+  location:(a,b)=>{const x=SR.displayLocation(th[a].storage),y=SR.displayLocation(th[b].storage);return(!x)-(!y)||x.localeCompare(y,undefined,{numeric:true})||byCodeA(a,b)},
+  recent:(a,b)=>String(th[b].updated||'').localeCompare(String(th[a].updated||''))||byCodeA(a,b)}[k]||((a,b)=>byCodeA(a,b));
+ const sortedRows=own.slice().sort((x,y)=>cmp(x.dataset.code,y.dataset.code));
+ if(sortedRows.some((r,i)=>r!==own[i])){const fe=document.activeElement,frag=document.createDocumentFragment();sortedRows.forEach(r=>frag.append(r));L.insertBefore(frag,L.querySelector('.demohead'));if(fe&&fe!==document.activeElement&&L.contains(fe))fe.focus({preventScroll:true})}
+ const thr=d.lowStockThreshold;let shown=0;own.forEach(li=>{const low=th[li.dataset.code].n<=thr;li.classList.toggle('ffa-low',low);li.classList.toggle('ffa-lowhide',lowOnly&&!low);if(!li.hidden&&!(lowOnly&&!low))shown++});
+ L.querySelectorAll('.demohead, li.demo').forEach(li=>li.classList.toggle('ffa-lowhide',lowOnly));
+ const nm=$('ffLowNone');if(nm)nm.hidden=!(lowOnly&&own.length&&!shown);
+ renderSuggest(th,thr);syncLibTools()}finally{libBusy=false}}
+function syncLibTools(){const d=P0();document.querySelectorAll('#ffLibTools [data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===d.collectionView)));
+ const so=$('ffLibSort');if(so)so.value=d.collectionSort;const lo=$('ffLowOnly');if(lo)lo.setAttribute('aria-pressed',String(lowOnly));const tn=$('ffLowN');if(tn&&document.activeElement!==tn)tn.value=String(d.lowStockThreshold);
+ const tools=$('ffLibTools');if(tools)tools.hidden=!Object.keys(threads()).length}
+function libSave(patch,focusId){const st=$('ffLibStatus');const r=savePref(patch);if(!r.ok&&st)st.textContent=pref.ok?t('common.notSaved'):'';libApply();const f=focusId&&$(focusId);if(f)f.focus()}
+function mountLibrary(){const L=$('thList'),tools0=$('thTools');if(!L||!tools0)return;
+ const box=el('div',{id:'ffLibTools',class:'ffa-libtools noprint'});
+ const vg=el('div',{role:'group','aria-label':t('lib.view.aria'),class:'ffa-seg'});['list','grid','shelf'].forEach(v=>{const b=el('button',{type:'button',class:'sec','data-view':v,id:'ffLibV-'+v},t('lib.view.'+v));b.onclick=()=>libSave({collectionView:v},'ffLibV-'+v);vg.append(b)});
+ const sl=el('label',{for:'ffLibSort'},t('lib.sort'));const so=el('select',{id:'ffLibSort'});['code','amount','family','location','recent'].forEach(k=>so.append(el('option',{value:k},t('lib.sort.'+k))));so.onchange=()=>libSave({collectionSort:so.value},'ffLibSort');
+ const lo=el('button',{type:'button',class:'sec',id:'ffLowOnly','aria-pressed':'false'},t('lib.filter.low'));lo.onclick=()=>{lowOnly=!lowOnly;libApply();lo.focus()};
+ const ll=el('label',{for:'ffLowN'},t('lib.low.setting'));const ln=el('input',{type:'number',id:'ffLowN',min:'0',max:'20',step:'1',inputmode:'numeric',class:'qbox','aria-describedby':'ffLowHint'});
+ ln.onchange=()=>{const v=ln.value.trim();if(!/^\d{1,2}$/.test(v)||+v>20){ln.value=String(P0().lowStockThreshold);const st=$('ffLibStatus');if(st)st.textContent='Use a whole number from 0 to 20. Nothing changed.';return}libSave({lowStockThreshold:+v},'ffLowN')};
+ const lu=el('span',null,t('lib.low.setting.unit'));const hint=el('p',{class:'hint',id:'ffLowHint'},t('lib.low.hint',{n:P0().lowStockThreshold}));
+ const st=el('p',{class:'hint',id:'ffLibStatus',role:'status','aria-live':'polite'});
+ const r1=el('div',{class:'ffa-librow'});r1.append(vg,sl,so);const r2=el('div',{class:'ffa-librow'});r2.append(lo,ll,ln,lu);box.append(r1,r2,hint,st);
+ const sug=el('div',{id:'ffLowSuggest',class:'ffa-suggest',hidden:true});
+ tools0.after(box);box.after(sug);const none=el('p',{class:'hint',id:'ffLowNone',hidden:true},t('lib.low.none'));L.after(none);
+ new MutationObserver(()=>libApply()).observe(L,{childList:true});libApply()}
+function renderSuggest(th,thr){const box=$('ffLowSuggest');if(!box)return;const T=window.FlossFoxThreadsUI;
+ const list=Object.keys(th).filter(c=>th[c].n<=thr&&!th[c].restock&&!notNow.has(c)).sort((a,b)=>th[a].n-th[b].n||byCodeA(a,b));
+ const keepMsg=box.querySelector('.ffa-sugmsg');box.replaceChildren();if(keepMsg)box.append(keepMsg);
+ if(!list.length||!T||!T.setRestock){box.hidden=!keepMsg;return}box.hidden=false;
+ list.slice(0,3).forEach(c=>{const e=th[c],card=el('div',{class:'ffa-sug',role:'group','aria-labelledby':'ffSugH-'+c});
+  card.append(el('span',{class:'ffa-tag'},t('lib.suggest.tag')),el('h3',{id:'ffSugH-'+c},t('lib.suggest.title')),el('p',null,t('lib.suggest.body',{n:e.n,brand:'DMC',code:c},e.n)));
+  const add=el('button',{type:'button',class:'pri',id:'ffSugAdd-'+c},t('lib.suggest.add')),no=el('button',{type:'button',class:'ghost',id:'ffSugNo-'+c},t('lib.suggest.later'));
+  add.onclick=()=>{const cur=threads()[c];let msg;if(cur&&cur.restock)msg=t('lib.suggest.dupe',{brand:'DMC',code:c});else{const r=T.setRestock(c,true);msg=r.ok?t('lib.suggest.added',{brand:'DMC',code:c}):t('common.notSaved')}
+   sugMsg(msg);libApply();const f=$('ffSugMsg');if(f)f.focus()};
+  no.onclick=()=>{notNow.add(c);libApply();const nx=box.querySelector('.ffa-sug .pri');(nx||$('thSearch')||document.body).focus()};
+  const row=el('div',{class:'ffa-acts'});row.append(add,no);card.append(row);box.append(card)})}
+function sugMsg(text){const box=$('ffLowSuggest');if(!box)return;let m=$('ffSugMsg');if(!m){m=el('p',{class:'hint ffa-sugmsg',id:'ffSugMsg',role:'status','aria-live':'polite',tabindex:'-1'});box.prepend(m)}m.textContent=text;box.hidden=false}
+// ---------- Shop: Restock for My threads (decision 6). Lists colors the user flagged; only an explicit Remove changes anything. ----------
+function mountRestock(){const sv=$('shopView');if(!sv)return;const card=el('section',{class:'card ffa-restock',id:'ffRestock','aria-labelledby':'ffRestockH',hidden:true});sv.insertBefore(card,sv.firstChild);renderRestock()}
+function renderRestock(msg){const card=$('ffRestock');if(!card)return;const th=threads(),T=window.FlossFoxThreadsUI,codes=Object.keys(th).filter(c=>th[c].restock).sort(byCodeA);
+ card.replaceChildren();if(!codes.length&&!msg){card.hidden=true;return}card.hidden=false;
+ card.append(el('h2',{id:'ffRestockH'},t('restock.title')),el('p',{class:'hint'},t('restock.sub')));
+ const st=el('p',{class:'hint',id:'ffRestockMsg',role:'status','aria-live':'polite',tabindex:'-1'},msg||'');card.append(st);
+ if(!codes.length){card.append(el('p',{class:'hint'},t('restock.none')));return}
+ const ul=el('ul',{class:'ffa-restocklist'});codes.forEach(c=>{const e=th[c],li=el('li',{'data-code':c});const hex=CAT&&CAT[c]&&/^#[0-9a-f]{6}$/i.test(CAT[c].hex)?CAT[c].hex:null;
+  const sw=el('span',{class:'ffa-floss'+(hex?'':' none'),'aria-hidden':'true'});if(hex)sw.style.setProperty('--c',hex);
+  const m=el('span',{class:'ffa-rmeta'});m.append(el('b',null,'DMC '+c+(CAT&&CAT[c]?' \u00b7 '+cname(CAT[c].name):'')),el('span',null,t('search.res.owned',{n:e.n},e.n)));
+  const rm=el('button',{type:'button',class:'ghost',id:'ffRsRm-'+c,'aria-label':t('restock.remove')+': DMC '+c},t('restock.remove'));
+  rm.onclick=()=>{const r=T&&T.setRestock?T.setRestock(c,false):{ok:false};renderRestock(r.ok?t('restock.removed',{brand:'DMC',code:c}):t('common.notSaved'));const f=$('ffRestockMsg');if(f)f.focus()};
+  li.append(sw,m,rm);ul.append(li)});card.append(ul)}
 // ---------- wiring ----------
-function boot(){mountWorkbasket();mountSearch();mountSettings();
+function boot(){mountWorkbasket();mountSearch();mountSettings();mountLibrary();mountRestock();
  const obs=new MutationObserver(()=>{syncTab();if(current()==='workbasket')renderWB();record()});
  PR.TABS.forEach(k=>{const b=$(tabId(k));if(b)obs.observe(b,{attributes:true,attributeFilter:['aria-pressed']})});const pe=$('projEdit');if(pe)obs.observe(pe,{attributes:true,attributeFilter:['hidden']});
- window.addEventListener('ff:data-saved',()=>{markDirty();syncTab();if(current()==='workbasket')renderWB()});
+ window.addEventListener('ff:data-saved',e=>{markDirty();syncTab();if(current()==='workbasket')renderWB();if(!e.detail||e.detail.area==='threads'){libApply();if(!$('ffRestock')||!$('ffRestockMsg')||!$('ffRestockMsg').textContent)renderRestock()}});
  window.addEventListener('storage',e=>{if(!e.key||/^flossfox/.test(e.key)){markDirty();if(e.key===PKEY)loadPref()}});
  if(location.hash==='#workbasket')renderWB();
  const run1=()=>{resumeResult=resume();if(current()==='workbasket')renderWB()};
  if(document.readyState==='complete')setTimeout(run1,0);else addEventListener('load',()=>setTimeout(run1,0));
 }
-window.FlossFoxAtelier=Object.freeze({version:'3.9-stageB',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),_dirty:()=>dirty});
+window.FlossFoxAtelier=Object.freeze({version:'3.9-stageC',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),_dirty:()=>dirty});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
