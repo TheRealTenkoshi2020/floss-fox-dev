@@ -69,7 +69,7 @@ let screenK=null,screenT='',screenPose=null,secPose=null,secText='',evPose=null,
 function paint(a){// Visual refresh: in the hero (Find floss), Pip's resting poses show the theme art: gardener (light), starlight (dark). Other poses unchanged.
  const th=REST.includes(a)&&!!el.closest('.herogrid'),la=th?'gardener':a,key=th?'theme':a;
  if(img.dataset.art!==a||img.dataset.show!==key){src.srcset=set(la,'webp');img.srcset=set(la,'png');img.src=`assets/pip/pip-${la}-320.png`;img.dataset.art=a;img.dataset.show=key;
-  if(dk){dk.media=th?'(prefers-color-scheme: dark)':'not all'}}}
+  if(dk){const dark=document.documentElement.getAttribute('data-atelier-scheme')==='dark';dk.media=th?(dark?'all':'not all'):'not all'}}}
 function show(name,r,anim=true){if(screenK&&name===base)name='screen';const S=STATES[name];if(!S)return;if(r)lastR=r;const text=S.msg(lastR);const pz=typeof S.pose==='function'?S.pose(lastR):S.pose;
  if(cur===name&&msg.textContent===text&&el.dataset.pose===poseArt(pz))return; // nothing meaningful changed
  const a=poseArt(pz);cur=name;el.dataset.state=name;el.dataset.pose=a;

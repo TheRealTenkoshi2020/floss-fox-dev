@@ -1,4 +1,4 @@
-/* Floss Fox 3.9 Atelier, Stage B: Workbasket, universal search, Resume where I was, Reset display settings.
+/* Floss Fox 3.9 Atelier, Stage B–D: Workbasket, search, Display settings (Resume, seasonal Pip, Appearance), Reset display settings.
    Progressive enhancement loaded after every existing script. If anything it needs is missing, it does nothing.
    Safety rules:
    - Reads projects and threads only through FlossFoxProjects / FlossFoxThreadsUI and never changes them.
@@ -161,8 +161,19 @@ function markDirty(){dirty=true;if(sPanel&&!sPanel.hidden)run()}
 
 // ---------- Resume where I was + Reset display settings (Settings) ----------
 let resumeResult='not-run';
+function applyTheme(theme){if(window.FlossFoxAtelierTheme)FlossFoxAtelierTheme.apply(theme);syncThemeRadios(theme)}
+function syncThemeRadios(theme){document.querySelectorAll('#ffTheme input[name=ffTheme]').forEach(r=>{r.checked=r.value===(theme||'system')})}
 function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.querySelector('.card')||sv;
  const box=el('div',{class:'ffa-prefs',id:'ffAtelierPrefs'});
+ const fs=el('fieldset',{class:'ffa-theme',id:'ffTheme'});
+ fs.append(el('legend',{id:'ffThemeL'},t('theme.title')));
+ const curTheme=P0().theme||'system';
+ [['system','theme.system','theme.system.hint'],['morning','theme.morning','theme.morning.hint'],['forest','theme.forest','theme.forest.hint'],['moon','theme.moon','theme.moon.hint']].forEach(([val,lk,hk])=>{
+  const id='ffTheme-'+val;const lab=el('label',{class:'ffa-theme-opt',for:id});
+  const inp=el('input',{type:'radio',name:'ffTheme',id,value:val});inp.checked=curTheme===val;inp.disabled=!pref.ok;
+  const txt=el('span',{class:'ffa-theme-txt'});txt.append(el('span',{class:'ffa-theme-name'},t(lk)),el('span',{class:'hint'},t(hk)));
+  lab.append(inp,txt);fs.append(lab);
+ });
  const lab=el('label',{class:'ffa-check'});const cb=el('input',{type:'checkbox',id:'ffResume','aria-describedby':'ffResumeHint'});cb.checked=!!P0().rememberPlace;cb.disabled=!pref.ok;
  lab.append(cb,' ',t('pref.resume'));const hint=el('p',{class:'hint',id:'ffResumeHint'},t('pref.resume.hint'));
  const st=el('p',{class:'hint',role:'status','aria-live':'polite',id:'ffPrefStatus'});
@@ -172,11 +183,14 @@ function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.
  const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[]; // no seasonal art shipped yet
  const ss=el('p',{class:'hint ffa-small',id:'ffSeasonalState'},art.length?'':t('pref.seasonal.state.none'));
  sc.addEventListener('change',()=>{const want=sc.checked;st.textContent=t('common.saving');const r=savePref({seasonalPip:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-seasonal',{detail:{on:want}}))}else{sc.checked=!want;st.textContent=t('common.notSaved')}});
- box.append(el('h3',{id:'ffPrefH'},t('pref.title')),lab,hint,sl,sh,ss,rb,st);box.setAttribute('aria-labelledby','ffPrefH');card.append(box);
+ box.append(el('h3',{id:'ffPrefH'},t('pref.title')),fs,lab,hint,sl,sh,ss,rb,st);box.setAttribute('aria-labelledby','ffPrefH');card.append(box);
+ fs.addEventListener('change',e=>{const inp=e.target;if(!inp||inp.name!=='ffTheme')return;const want=inp.value,prev=P0().theme||'system';
+  st.textContent=t('common.saving');const r=savePref({theme:want});applyTheme(want);
+  if(r.ok)st.textContent=t('theme.saved');else{st.textContent=t('theme.notSaved')}});
  cb.addEventListener('change',()=>{const want=cb.checked;st.textContent=t('common.saving');const r=savePref({rememberPlace:want,lastTab:current()==='settings'?'settings':current(),lastProjectId:null});
   if(r.ok)st.textContent=t('common.saved');else{cb.checked=!want;st.textContent=t('common.notSaved')}});
  rb.addEventListener('click',async()=>{const C=window.FlossFoxConfirm;const yes=C&&C.ask?await C.ask({title:t('pref.reset.title'),body:t('pref.reset.body'),keep:t('pref.reset.no'),go:t('pref.reset.yes'),pose:'thinking'}):window.confirm(t('pref.reset.title'));if(!yes)return;
-  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();lowOnly=false;libApply();cb.checked=false;cb.disabled=!pref.ok;sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'))}else st.textContent=t('common.notSaved')});
+  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();lowOnly=false;libApply();cb.checked=false;cb.disabled=!pref.ok;sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;applyTheme('system');st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'))}else st.textContent=t('common.notSaved')});
 }
 // Records the last tab / open project ONLY while Resume where I was is on.
 function record(){const d=P0();if(!pref.ok||!d.rememberPlace)return;const v=current();if(v==='workbasket'&&!hasSaved())return;let pid=null;

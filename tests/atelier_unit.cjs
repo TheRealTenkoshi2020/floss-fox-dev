@@ -133,7 +133,7 @@ test('palette: no em dash in note', () => assert(!C.NOTE.includes('\u2014')));
 const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
 test('privacy: no network, analytics, eval or HTML injection in Atelier modules', () => { for (const [f, s] of mods) assert(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|goatcounter|innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function|import\s*\(/.test(s), f); });
 test('privacy: only the preferences module touches storage, and only via the passed-in object', () => { for (const [f, s] of mods) assert(!/localStorage|sessionStorage|indexedDB/.test(s), f); });
-test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-ui.js']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-94/.test(sw)); });
+test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-95/.test(sw)); });
 test('copy: no em dash in any Atelier module string', () => { for (const [f, s] of mods) { const strs = s.match(/'[^'\n]*'|`[^`\n]*`/g) || []; assert(!strs.some(x => x.includes('\u2014')), f); } });
 
 // ---------- new: landing.js first-visit detection (FF39-24) in a sandbox ----------
@@ -215,6 +215,60 @@ test('share: names, notes and storage never appear even if passed in', () => { c
 test('share: bought lines left out', () => { const tx = V.shareText([{ key: 'a', to: '310', q: 1, bought: true }, { key: 'b', to: '321', q: 2 }]); assert(!tx.includes('310') && tx.includes('DMC 321: 2 skeins')); });
 test('linesFromPlan: estimated flag from plan threads', () => { const r = V.linesFromPlan({ dest: 'dmc', lines: [{ key: 'dmc:1', to: '1', q: 1, from: ['1'], ts: [{ estimated: true }] }, { key: 'dmc:2', to: '2', q: 1, from: ['2'], ts: [{}] }] }); assert.deepEqual(r.map(x => x.estimated), [true, false]); });
 test('prefs: collectionSort validated, default code', () => { assert.equal(P.normalize({ collectionSort: 'amount' }).data.collectionSort, 'amount'); assert.equal(P.normalize({ collectionSort: 'evil' }).data.collectionSort, 'code'); assert.equal(P.DEFAULT.collectionSort, 'code'); });
+
+
+const themeJs = fs.readFileSync(path.join(root, 'atelier/atelier-theme.js'), 'utf8');
+test('theme: system / morning / forest / moon are the only values', () => {
+  const TH = require(path.join(root, 'atelier/atelier-preferences-core.js'));
+  assert.deepEqual(TH.THEMES.slice(), ['system', 'morning', 'forest', 'moon']);
+});
+test('theme: Morning is light, Forest and Moon are dark; System follows a stub OS', () => {
+  // Load the apply module in Node with no document: only schemeOf is used.
+  const g = globalThis; const prevDoc = g.document; const prevWin = g.window;
+  g.document = undefined;
+  delete require.cache[require.resolve(path.join(root, 'atelier/atelier-theme.js'))];
+  // The IIFE attaches to globalThis when window is missing
+  const src = fs.readFileSync(path.join(root, 'atelier/atelier-theme.js'), 'utf8');
+  const box = { matchMedia: () => ({ matches: false, addEventListener() {}, addListener() {} }) };
+  const wrapped = new Function('window', 'globalThis', 'document', src + '\nreturn window.FlossFoxAtelierTheme;');
+  const light = wrapped(box, box, undefined);
+  assert.equal(light.schemeOf('morning'), 'light');
+  assert.equal(light.schemeOf('forest'), 'dark');
+  assert.equal(light.schemeOf('moon'), 'dark');
+  assert.equal(light.schemeOf('system'), 'light');
+  const darkBox = { matchMedia: q => ({ matches: true, addEventListener() {}, addListener() {} }) };
+  const dark = wrapped(darkBox, darkBox, undefined);
+  assert.equal(dark.schemeOf('system'), 'dark');
+  assert.equal(dark.schemeOf('morning'), 'light');
+  if (prevDoc !== undefined) g.document = prevDoc; else delete g.document;
+});
+test('theme: boot script is inline in <head> before theme-pair.css and never writes localStorage', () => {
+  const head = html.split('</head>')[0];
+  const bootAt = head.indexOf('data-atelier-theme');
+  const cssAt = head.indexOf('theme-pair.css');
+  assert(bootAt > 0 && bootAt < cssAt, 'boot must run before theme-pair.css');
+  const boot = head.slice(bootAt - 200, cssAt);
+  assert(!/localStorage\.setItem/.test(boot));
+  assert(/flossfox-dev\.atelier\.v1/.test(head));
+});
+test('theme: themes.css is Pixel\'s file and lists morning, forest, moon and system', () => {
+  const css = fs.readFileSync(path.join(root, 'atelier/themes.css'), 'utf8');
+  assert(css.includes('data-atelier-theme="morning"') && css.includes('data-atelier-theme="forest"') && css.includes('data-atelier-theme="moon"') && css.includes('data-atelier-theme="system"'));
+  assert(css.includes('#141a2e') && css.includes('#faf6ee') && css.includes('#10201b')); // Moon, Morning, Forest page colors
+});
+test('theme: theme-pair dark component rules key off data-atelier-scheme, with a no-attribute fallback', () => {
+  const css = fs.readFileSync(path.join(root, 'theme-pair.css'), 'utf8');
+  assert(css.includes('html[data-atelier-scheme=dark] .sec:hover'));
+  assert(css.includes('var(--hover-tint)'));
+  assert(css.includes('var(--demo-bg)'));
+  // The old OS-only wrapper around those component hex values is gone
+  assert(!/@media \(prefers-color-scheme:dark\)\{\s*html \.sec:hover\{background:#22382f\}/.test(css));
+});
+test('theme: index loads atelier-theme.js before atelier-ui.js and marks Pip dark sources', () => {
+  const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]);
+  assert(srcs.indexOf('atelier/atelier-theme.js') > -1 && srcs.indexOf('atelier/atelier-theme.js') < srcs.indexOf('atelier/atelier-ui.js'));
+  assert((html.match(/data-atelier-darksrc/g) || []).length >= 3);
+});
 
 console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);
 process.exit(fail ? 1 : 0);

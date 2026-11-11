@@ -1,7 +1,7 @@
 /* Floss Fox 3.9 Atelier, Stage B: Workbasket + search + Settings additions.
    PROVISIONAL styling after Pixel's mockups (/workspace/pip-art/atelier39/mockups), using existing theme tokens only.
    Everything is scoped to .ffa-* / #ffSearch* / #workbasketView so it can be restyled or removed in one place.
-   Tokens Pixel added for 3.9 (--disabled-*, --swatch-edge, --fiber-*, --hover-tint) are used with fallbacks until Stage D. */
+   Stage D tokens live in atelier/themes.css (loaded after theme-pair.css). */
 .ffa-wbview{margin:0 0 16px}
 .ffa-wbgrid{display:grid;gap:16px;min-width:0}
 @media(min-width:900px){.ffa-wbgrid{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start}}
@@ -115,7 +115,7 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 #thList.ffa-view-shelf .thtop>:first-child{flex:0 0 auto}
 #thList.ffa-view-shelf .thname{flex:1 1 0;min-width:0}
 #thList.ffa-view-shelf .stepper{flex:1 0 100%}
-#thList .thname b{white-space:nowrap}
+#thList .thname b,.ffsm-code{white-space:nowrap}
 #thList.ffa-view-shelf .thtop small.mut{display:none}
 #thList.ffa-view-grid>.demohead,#thList.ffa-view-shelf>.demohead{grid-column:1/-1}
 #thList .ffa-low{box-shadow:inset 4px 0 0 var(--amber-500,#c98a2b)}
@@ -128,7 +128,6 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-restocklist .ffa-rmeta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}.ffa-restocklist button{min-height:44px}
 .ffsm-check .ffsm-cb{width:44px!important;height:44px!important;min-width:44px;min-height:44px}
 @media(max-width:520px){.ffsm-check{flex-direction:column;gap:2px;font-size:.75rem}.ffsm-check>span{position:static;width:auto;height:auto;overflow:visible;clip:auto}}
-
 .ffsm-row .bigsw{border:1.5px solid var(--swatch-edge,var(--input-border));box-sizing:border-box}
 .ghost.small[id$="Undo"],#kUndo{min-height:44px;min-width:44px;padding:0 12px}
 .ffsm-home .pri{margin-top:12px}
@@ -136,3 +135,14 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 #ffPrefReset{margin-top:12px}
 .ffa-prefs .ffa-small{margin-bottom:12px}
 #ffLowOnly.sec[aria-pressed=true]{background:var(--tab-on-bg,var(--sage-700,#3f6b4f));color:var(--tab-on-text,#fff);border-color:var(--tab-on-bg,var(--sage-700,#3f6b4f))}
+
+/* Appearance radios (Display settings) */
+.ffa-theme{border:0;margin:12px 0 16px;padding:0;min-width:0}
+.ffa-theme legend{font-family:var(--font-head);font-weight:600;color:var(--text-strong);padding:0;margin:0 0 8px}
+.ffa-theme-opt{display:flex;align-items:flex-start;gap:10px;min-height:44px;margin:0;padding:4px 0;cursor:pointer}
+.ffa-theme-opt input{flex:none;width:20px;height:20px;margin:12px 0 0}
+.ffa-theme-txt{display:flex;flex-direction:column;justify-content:center;min-height:44px;min-width:0}
+.ffa-theme-name{font-weight:700;color:var(--text-strong)}
+.ffa-theme-opt .hint{margin:0}
+.ffa-theme-opt input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.ffa-theme-opt, .ffa-floss{transition:none}}

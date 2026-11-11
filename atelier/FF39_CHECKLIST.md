@@ -9,9 +9,9 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
 |---|---|---|---|---|---|---|---|
 | FF39-01 | Workbasket / Your Stitching Corner | P0 | B | Mouse (Pixel mockup) | in progress (Stage B UI built + tested; provisional styling, awaiting Pixel sign-off) | Workbasket tab (hidden for fresh visitors), newest active project card, palette strip, leftOff, plan stats, quick links | atelier_stageb_e2e.py s1-2b, s7-9 (B, done) |
 | FF39-02 | Universal search | P0 | A core, B UI | Mouse (Pixel mockup) | in progress (Stage B UI built + tested; awaiting Pixel sign-off) | Search panel: Ctrl/Cmd+K, combobox/listbox, colors / My threads / projects, BLANC/WHITE/B5200 distinct + note, refresh on ff:data-saved, in memory only | atelier_unit.cjs search block (A); atelier_stageb_e2e.py s5 (B, done) |
-| FF39-03 | Micro-interactions, layout steadiness | P1 | D | Pixel design, Mouse | not started | theme-pair.css tokens, reduced-motion rules | atelier_themes_e2e.py (D) |
-| FF39-04 | Appearance choices (System / Morning Linen / Forest Twilight / Moonlit Threads) | P1 | A pref, D UI | Pixel tokens, Mouse | in progress (pref field + validation only) | theme-pair.css light/dark via prefers-color-scheme only; no manual override | prefs tests (A, done); themes e2e + contrast (D) |
-| FF39-05 | Floss swatches + palette strips | P1 | A core, D UI | Pixel design, Mouse | in progress (palette core done) | flat chips using DMC hex | palette tests (A, done); gallery e2e (D) |
+| FF39-03 | Micro-interactions, layout steadiness | P1 | D | Pixel design, Mouse | in progress (reduced-motion + scheme-keyed theme-pair rules; full micro-interaction pass still open) | theme-pair.css dark rules key off data-atelier-scheme; lantern halo and landing halo honor reduced motion | atelier_themes_e2e.py (D, halo + reduced motion) |
+| FF39-04 | Appearance choices (System / Morning Linen / Forest Twilight / Moonlit Threads) | P1 | A pref, D UI | Pixel tokens, Mouse | in progress (Stage D UI built + tested; awaiting Pixel sign-off) | Display settings radios; boot script sets data-atelier-theme/scheme before stylesheets; Pixel themes.css overlays; System maps light to Morning Linen and dark to Forest Twilight; manual pick beats the OS; Moonlit is DARK (starlight art); Reset restores System; theme lives in the atelier pref key only (not in backup files, same as Resume / Seasonal Pip) | prefs tests (A, done); atelier_themes_e2e.py + contrast.js (D, done) |
+| FF39-05 | Floss swatches + palette strips | P1 | A core, D UI | Pixel design, Mouse | in progress (palette core + --swatch-edge on Workbasket/My threads in every theme; gallery cards still open) | ffa-floss uses --swatch-edge so BLANC/WHITE stay visible | palette tests (A); atelier_themes_e2e.py swatch checks (D); gallery e2e still open |
 | FF39-06 | Saved location + preferences, reset | P0/P1 | A core, B UI | Mouse | in progress (Stage B: opt-in Resume + Reset settings built + tested) | Settings card: Resume where I was (OFF by default), Reset settings (removes only the pref key, never projects/threads); precedence safety > URL hash > onboarding > resume; deleted project falls back to Projects list | prefs tests (A); atelier_stageb_e2e.py s3-4 (B, done) |
 | FF39-07 | Accessibility + performance budget | P0 | every stage, H audit | Mouse, Pixel | in progress (search perf bound in unit test) | contrast.js, 44px work in flow-pass | per-stage e2e + H audit |
 | FF39-08 | Recent conversions + explicit Add actions | P0/P1 | A core, C/D UI | Mouse | in progress (recentConversions in prefs) | converter UI; threads add; projects add | prefs tests (A, done); color studio e2e |
@@ -34,7 +34,7 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
 | FF39-25 | Leave a review button | P0 | external | Myke (form URL) | blocked-external | draft PR 17 (review.js, REVIEW_FORM_URL empty, hidden) | review_button_e2e.py (in PR 17) |
 
 ## Copy status (dev only, all DRAFT until Myke approves at owner review)
-- String source for wiring: Pixel's /workspace/pip-art/atelier39/copy/copy.json (302 strings after Pixel's Stage B updates), flagged draft.
+- String source for wiring: Pixel's /workspace/pip-art/atelier39/copy/copy.json (320 strings after Pixel's Stage C pass, flagged draft). Stage C polish wired the new keys.
 - Relayed as Myke's choice for dev: dashboard name "Workbasket"; Pixel's starred Pip line per event; receipt copy: the "in your threads"
   line only on the confirmed "I received it" step, "Mark bought" uses the project-only line. Shown again at owner review.
 - Still pending Myke: two privacy lines, "Compare chart matches", seasonal accessories toggle visibility, pose swap, cover-photo warning variant.
@@ -110,3 +110,8 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
   seasonal ON hint.
 - Notes: the Shop "Shop my list" mode (renderShop) has no entry point on dev main; its form is wired to the same check-in anyway.
   The backup tip's first-shown flag can be set by a save that was then rolled back (display only, no data).
+
+## Stage D notes (themes)
+- Pixel's final tokens shipped as atelier/themes.css (verbatim). Cache bumped to flossfox-dev-v2.0a-ci005-95 because cached files changed; ci005-94 is used by support-links PR 19. Merge order: PR 17, PR 18, PR 19.
+- Gallery cards (color-strip fallback) and the comparison surface (FF39-09) were in the Stage D plan and are not in this commit; they stay open.
+- Theme is stored only in `<prefix>.atelier.v1`. Backup files and in-browser snapshots still omit that key, the same way Resume and Seasonal Pip are omitted (decision 8). If Myke wants the atelier key in backups, that is a later explicit change.
