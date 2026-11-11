@@ -12,7 +12,16 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   const BRAND = Object.freeze({ dmc: 'DMC', anchor: 'Anchor', sullivans: 'Sullivans' });
-  const WARNING = 'Marking bought does not change My threads. Check in what you received separately.';
+  // Strings: Pixel's DRAFT copy (copy.json keys in brackets), not yet approved by Myke. Do not ship to production as final.
+  const COPY = Object.freeze({
+    other: 'No store link: find it in any store', // [shop.group.other]
+    boughtNote: "Marking a color bought doesn't change My threads. Check it in when you have it.", // [shop.boughtNote]
+    header: 'Floss Fox shopping list', // [share.header]
+    none: 'Nothing to buy.', // [share.none]
+    footer: 'Check amounts and chart matches before you buy.' // [share.footer]
+  });
+  const WARNING = COPY.boughtNote;
+  const shareLine = x => `${x.brand} ${x.code}: ${x.quantity} skein${x.quantity === 1 ? '' : 's'}`; // [share.line] one/other
   const clean = v => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
   const code = v => clean(v).toUpperCase();
   const cmpCode = (a, b) => { const na = /^\d+$/.test(a), nb = /^\d+$/.test(b); if (na !== nb) return na ? -1 : 1; return na ? Number(a) - Number(b) || a.localeCompare(b) : a.localeCompare(b, 'en', { numeric: true }); };
@@ -54,7 +63,7 @@
       for (const line of filtered) {
         const possible = selected ? line.stores.find(x => x.id === selected) : line.stores[0];
         if (possible) put('m:' + possible.id, possible.name, line);
-        else put('unassigned', 'Other / find in store', line);
+        else put('unassigned', COPY.other, line);
       }
     } else for (const line of filtered) put('checklist', 'Shopping checklist', line);
     const sorted = [...groups.values()].sort((a, b) => a.key === 'unassigned' ? 1 : b.key === 'unassigned' ? -1 : cmp(a.label, b.label));
@@ -65,11 +74,11 @@
       warning: WARNING, selectedMerchant: selected || null
     };
   }
-  // Plain text for Share / Copy. Only brand, code, quantity and catalog color name: never project notes, storage or links.
+  // Plain text for Share / Copy. Only brand, code and quantity: never project notes, names, storage or links.
   function shareText(lines, options = {}) {
     const v = build(lines, [], { filter: options.filter || 'remaining' });
     const all = v.groups.flatMap(g => g.items);
-    return ['Floss Fox shopping list', ...all.map(x => `${x.brand} ${x.code}: ${x.quantity} skein${x.quantity === 1 ? '' : 's'}${x.name ? ` (${x.name})` : ''}`), ...(all.length ? [] : ['No threads to buy.']), 'Check quantities and alternatives before buying.'].join('\n');
+    return [COPY.header, ...all.map(shareLine), ...(all.length ? [] : [COPY.none]), COPY.footer].join('\n');
   }
-  return Object.freeze({ BRAND, WARNING, linesFromPlan, build, shareText });
+  return Object.freeze({ BRAND, COPY, WARNING, linesFromPlan, build, shareText });
 });
