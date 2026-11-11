@@ -13,7 +13,7 @@ if(window.FlossFoxAtelier)return; // idempotent: loading twice adds nothing
 const P=window.FlossFoxProjects,T=window.FlossFoxThreadsUI,PR=window.FlossFoxAtelierPreferences,SR=window.FlossFoxAtelierSearch,PA=window.FlossFoxAtelierPalette,CP=window.FlossFoxAtelierCopy;
 if(!P||!P.KEY||!P.showView||!PR||!SR||!CP||typeof document==='undefined')return;
 // Placeholders until Pixel supplies the string (flagged in FF39_CHECKLIST.md). Pixel's copy wins as soon as the key exists.
-const PH={'pref.title':'Your preferences','pref.seasonal.hint.on':'Seasonal looks for Pip on the welcome and home screens. On unless you turn it off.','restock.title':'Restock for My threads','restock.sub':'Colors you chose to buy more of. This list never changes My threads.','restock.remove':'Remove from restock','restock.removed':'✓ {brand} {code} is off the restock list.','restock.none':'Nothing to restock. When My threads runs low, we can suggest colors, and you choose.','search.res.whiteSibling':'A different color from DMC {code}','pref.seasonal.state.none':'No seasonal art yet, so Pip looks the same.'};
+const PH={'search.res.whiteSibling':'A different color from DMC {code}'}; // leftover Stage C placeholder; not yet in Pixel's copy.json
 const $=id=>document.getElementById(id),t=(k,v,n)=>CP.has(k)?CP.t(k,v,n):String(PH[k]||'').replace(/\{(\w+)\}/g,(m,x)=>v&&x in v?String(v[x]):m);
 const CAT=(()=>{try{return typeof DMC==='object'&&DMC?DMC:null}catch(e){return null}})(); // index.html catalog (script-scoped const)
 function el(tag,attrs,text){const e=document.createElement(tag);if(attrs)for(const k in attrs){const v=attrs[k];if(v===null||v===undefined||v===false)continue;if(k==='class')e.className=v;else if(k==='hidden')e.hidden=!!v;else e.setAttribute(k,v===true?'':String(v))}if(text!==undefined&&text!==null)e.textContent=String(text);return e}
@@ -168,7 +168,7 @@ function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.
  const st=el('p',{class:'hint',role:'status','aria-live':'polite',id:'ffPrefStatus'});
  const rb=el('button',{type:'button',class:'sec',id:'ffPrefReset'},t('pref.reset'));
  const sl=el('label',{class:'ffa-check'});const sc=el('input',{type:'checkbox',id:'ffSeasonal','aria-describedby':'ffSeasonalHint ffSeasonalState'});sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;
- sl.append(sc,' ',t('pref.seasonal'));const sh=el('p',{class:'hint',id:'ffSeasonalHint'},t('pref.seasonal.hint.on')) /* copy.json pref.seasonal.hint still says Off by default; ON is Myke's decision */;
+ sl.append(sc,' ',t('pref.seasonal'));const sh=el('p',{class:'hint',id:'ffSeasonalHint'},t('pref.seasonal.hint'));
  const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[]; // no seasonal art shipped yet
  const ss=el('p',{class:'hint ffa-small',id:'ffSeasonalState'},art.length?'':t('pref.seasonal.state.none'));
  sc.addEventListener('change',()=>{const want=sc.checked;st.textContent=t('common.saving');const r=savePref({seasonalPip:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-seasonal',{detail:{on:want}}))}else{sc.checked=!want;st.textContent=t('common.notSaved')}});
@@ -217,6 +217,7 @@ function libApply(){const L=$('thList');if(!L||libBusy)return;libBusy=true;try{c
  renderSuggest(th,thr);syncLibTools()}finally{libBusy=false}}
 function syncLibTools(){const d=P0();document.querySelectorAll('#ffLibTools [data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===d.collectionView)));
  const so=$('ffLibSort');if(so)so.value=d.collectionSort;const lo=$('ffLowOnly');if(lo)lo.setAttribute('aria-pressed',String(lowOnly));const tn=$('ffLowN');if(tn&&document.activeElement!==tn)tn.value=String(d.lowStockThreshold);
+ const lh=$('ffLowHint');if(lh)lh.textContent=t('lib.low.hint',{n:d.lowStockThreshold},d.lowStockThreshold);
  const tools=$('ffLibTools');if(tools)tools.hidden=!Object.keys(threads()).length}
 function libSave(patch,focusId){const st=$('ffLibStatus');const r=savePref(patch);if(!r.ok&&st)st.textContent=pref.ok?t('common.notSaved'):'';libApply();const f=focusId&&$(focusId);if(f)f.focus()}
 function mountLibrary(){const L=$('thList'),tools0=$('thTools');if(!L||!tools0)return;
@@ -226,7 +227,7 @@ function mountLibrary(){const L=$('thList'),tools0=$('thTools');if(!L||!tools0)r
  const lo=el('button',{type:'button',class:'sec',id:'ffLowOnly','aria-pressed':'false'},t('lib.filter.low'));lo.onclick=()=>{lowOnly=!lowOnly;libApply();lo.focus()};
  const ll=el('label',{for:'ffLowN'},t('lib.low.setting'));const ln=el('input',{type:'number',id:'ffLowN',min:'0',max:'20',step:'1',inputmode:'numeric',class:'qbox','aria-describedby':'ffLowHint'});
  ln.onchange=()=>{const v=ln.value.trim();if(!/^\d{1,2}$/.test(v)||+v>20){ln.value=String(P0().lowStockThreshold);const st=$('ffLibStatus');if(st)st.textContent='Use a whole number from 0 to 20. Nothing changed.';return}libSave({lowStockThreshold:+v},'ffLowN')};
- const lu=el('span',null,t('lib.low.setting.unit'));const hint=el('p',{class:'hint',id:'ffLowHint'},t('lib.low.hint',{n:P0().lowStockThreshold}));
+ const lu=el('span',null,t('lib.low.setting.unit'));const hint=el('p',{class:'hint',id:'ffLowHint'},t('lib.low.hint',{n:P0().lowStockThreshold},P0().lowStockThreshold));
  const st=el('p',{class:'hint',id:'ffLibStatus',role:'status','aria-live':'polite'});
  const r1=el('div',{class:'ffa-librow'});r1.append(vg,sl,so);const r2=el('div',{class:'ffa-librow'});r2.append(lo,ll,ln,lu);box.append(r1,r2,hint,st);
  const sug=el('div',{id:'ffLowSuggest',class:'ffa-suggest',hidden:true});
@@ -237,9 +238,9 @@ function renderSuggest(th,thr){const box=$('ffLowSuggest');if(!box)return;const 
  const keepMsg=box.querySelector('.ffa-sugmsg');box.replaceChildren();if(keepMsg)box.append(keepMsg);
  if(!list.length||!T||!T.setRestock){box.hidden=!keepMsg;return}box.hidden=false;
  list.slice(0,3).forEach(c=>{const e=th[c],card=el('div',{class:'ffa-sug',role:'group','aria-labelledby':'ffSugH-'+c});
-  card.append(el('span',{class:'ffa-tag'},t('lib.suggest.tag')),el('h3',{id:'ffSugH-'+c},t('lib.suggest.title')),el('p',null,t('lib.suggest.body',{n:e.n,brand:'DMC',code:c},e.n)));
+  card.append(el('span',{class:'ffa-tag'},t('lib.suggest.tag')),el('h3',{id:'ffSugH-'+c},t('lib.suggest.title')),el('p',null,t('lib.suggest.body',{n:e.n,brand:'DMC',code:c},e.n).replace('DMC '+c,'DMC\u00a0'+c)));
   const add=el('button',{type:'button',class:'pri',id:'ffSugAdd-'+c},t('lib.suggest.add')),no=el('button',{type:'button',class:'ghost',id:'ffSugNo-'+c},t('lib.suggest.later'));
-  add.onclick=()=>{const cur=threads()[c];let msg;if(cur&&cur.restock)msg=t('lib.suggest.dupe',{brand:'DMC',code:c});else{const r=T.setRestock(c,true);msg=r.ok?t('lib.suggest.added',{brand:'DMC',code:c}):t('common.notSaved')}
+  add.onclick=()=>{const cur=threads()[c];let msg;if(cur&&cur.restock)msg=t('lib.suggest.dupe',{brand:'DMC',code:c}).replace('DMC '+c,'DMC\u00a0'+c);else{const r=T.setRestock(c,true);msg=r.ok?t('lib.suggest.added',{brand:'DMC',code:c}).replace('DMC '+c,'DMC\u00a0'+c):t('common.notSaved')}
    sugMsg(msg);libApply();const f=$('ffSugMsg');if(f)f.focus()};
   no.onclick=()=>{notNow.add(c);libApply();const nx=box.querySelector('.ffa-sug .pri');(nx||$('thSearch')||document.body).focus()};
   const row=el('div',{class:'ffa-acts'});row.append(add,no);card.append(row);box.append(card)})}

@@ -165,6 +165,21 @@ test('copy: matches Pixel copy.json exactly when present (generated, not hand-ed
 test('copy: every t(\'key\') used by atelier-ui.js exists in the table', () => { const used = [...ui.matchAll(/\bt\('([a-zA-Z0-9_.]+)'/g)].map(m => m[1]).filter(k => !k.endsWith('.')); assert(used.length > 20); const PH = [...ui.split('\n').find(l => l.startsWith('const PH=')).matchAll(/'([A-Za-z0-9_.]+)':'/g)].map(m => m[1]); const miss = [...new Set(used)].filter(k => !AC.has(k) && !PH.includes(k)); assert.deepEqual(miss, []); });
 test('copy: plural and variable substitution', () => { const k = AC.keys().find(k => /\{/.test(AC.t(k)) === false && AC.t(k)); assert(k); assert.equal(typeof AC.t('no.such.key'), 'string'); });
 test('copy: no em dash in generated copy', () => { for (const k of AC.keys()) assert(!AC.t(k, {}, 2).includes('\u2014'), k); });
+test('copy: lib.low.hint is singular at 1 and plural otherwise', () => {
+  assert.equal(AC.t('lib.low.hint', { n: 1 }, 1), 'Colors with 1 full skein or fewer. You choose this number.');
+  assert.equal(AC.t('lib.low.hint', { n: 2 }, 2), 'Colors with 2 full skeins or fewer. You choose this number.');
+  assert.equal(AC.t('lib.low.hint', { n: 0 }, 0), 'Colors with 0 full skeins or fewer. You choose this number.');
+});
+test('copy: checkin.done.threads is singular at 1 and plural otherwise', () => {
+  assert.match(AC.t('checkin.done.threads', { brand: 'DMC', code: '310', n: 1 }, 1), /1 full skein added/);
+  assert.match(AC.t('checkin.done.threads', { brand: 'DMC', code: '310', n: 3 }, 3), /3 full skeins added/);
+});
+test('copy: Pixel Stage C keys are live (notCheckedIn, seasonal hint, reset lists Seasonal Pip)', () => {
+  assert.equal(AC.t('shop.notCheckedIn'), 'Not checked in yet');
+  assert.match(AC.t('pref.seasonal.hint'), /On unless you turn it off/);
+  assert.match(AC.t('pref.reset.body'), /Seasonal Pip/);
+});
+
 test('privacy: atelier-ui.js never calls GoatCounter', () => assert(!/goatcounter\s*\.|window\.goatcounter|count\(\s*\{/i.test(ui)));
 test('privacy: atelier-ui.js has no network, analytics, eval or innerHTML', () => { for (const re of [/\bfetch\s*\(/, /XMLHttpRequest/, /sendBeacon/, /WebSocket/, /\beval\s*\(/, /new Function/, /innerHTML/, /insertAdjacentHTML/, /document\.write/, /https?:\/\/(?!www\.w3\.org\/2000\/svg)/]) assert(!re.test(ui), String(re)); });
 test('privacy: atelier-ui.js writes storage only through the preferences core', () => { const sets = [...ui.matchAll(/localStorage\.(setItem|removeItem|clear)/g)]; assert.equal(sets.length, 0); });

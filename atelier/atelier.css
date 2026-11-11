@@ -76,6 +76,7 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-sibnote{display:block;font-size:.85rem;color:var(--ink-2,#535B58);font-weight:600}
 /* Pixel Stage B review (REVIEW-39-stageB.md): S2-S5, N1-N4 */
 @media(min-width:880px){body.pipone #workbasketView{margin-right:200px}}
+@media(min-width:880px){.pipc{right:max(16px,calc((100vw - 1040px)/2 + 16px))}}
 .ffa-floss{border:1.5px solid var(--swatch-edge,var(--input-border))}
 #ffSearchIn::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none}
 .ffa-owned .ffa-mut{display:block;margin-top:2px}
@@ -109,7 +110,12 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-seg{display:inline-flex;gap:6px;flex-wrap:wrap}.ffa-seg button[aria-pressed=true],#ffLowOnly[aria-pressed=true]{background:var(--sage-700,#3f6b4f);color:#fff;border-color:var(--sage-700,#3f6b4f)}
 #thList .ffa-lowhide{display:none!important}
 #thList.ffa-view-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
-#thList.ffa-view-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:8px}
+#thList.ffa-view-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:8px}
+#thList.ffa-view-shelf .thtop{flex-wrap:wrap}
+#thList.ffa-view-shelf .thtop>:first-child{flex:0 0 auto}
+#thList.ffa-view-shelf .thname{flex:1 1 0;min-width:0}
+#thList.ffa-view-shelf .stepper{flex:1 0 100%}
+#thList .thname b{white-space:nowrap}
 #thList.ffa-view-shelf .thtop small.mut{display:none}
 #thList.ffa-view-grid>.demohead,#thList.ffa-view-shelf>.demohead{grid-column:1/-1}
 #thList .ffa-low{box-shadow:inset 4px 0 0 var(--amber-500,#c98a2b)}
@@ -121,4 +127,12 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-restocklist li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,#DDD4C4);min-height:56px}
 .ffa-restocklist .ffa-rmeta{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}.ffa-restocklist button{min-height:44px}
 .ffsm-check .ffsm-cb{width:44px!important;height:44px!important;min-width:44px;min-height:44px}
-@media(max-width:520px){.ffsm-check>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}}
+@media(max-width:520px){.ffsm-check{flex-direction:column;gap:2px;font-size:.75rem}.ffsm-check>span{position:static;width:auto;height:auto;overflow:visible;clip:auto}}
+
+.ffsm-row .bigsw{border:1.5px solid var(--swatch-edge,var(--input-border));box-sizing:border-box}
+.ghost.small[id$="Undo"],#kUndo{min-height:44px;min-width:44px;padding:0 12px}
+.ffsm-home .pri{margin-top:12px}
+.ffa-prefs .hint{margin:2px 0 12px}
+#ffPrefReset{margin-top:12px}
+.ffa-prefs .ffa-small{margin-bottom:12px}
+#ffLowOnly.sec[aria-pressed=true]{background:var(--tab-on-bg,var(--sage-700,#3f6b4f));color:var(--tab-on-text,#fff);border-color:var(--tab-on-bg,var(--sage-700,#3f6b4f))}
