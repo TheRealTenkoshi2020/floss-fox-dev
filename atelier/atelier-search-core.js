@@ -86,6 +86,18 @@
     }
     const dmcFirst = r => r.type === 'color' && String(r.brand || 'DMC').toUpperCase() !== 'DMC' ? 1 : 0; // bare codes are DMC codes in Floss Fox
     ranked.sort((a, b) => a.rank - b.rank || dmcFirst(a.row) - dmcFirst(b.row) || a.row.label.localeCompare(b.row.label, undefined, { numeric: true }) || a.row.key.localeCompare(b.row.key));
+    // DMC BLANC, WHITE and B5200 are three different colors. When any one of them matches, show all three together right after
+    // the first match, the others marked as siblings so the "3 different colors" note is visible, never merged or hidden.
+    const WHITES = ['DMC:WHITE', 'DMC:BLANC', 'DMC:B5200'];
+    const wi = ranked.findIndex(r => r.row.type === 'color' && WHITES.includes(r.row.key));
+    if (wi >= 0) {
+      const first = ranked[wi].row;
+      const sib = WHITES.filter(k => k !== first.key).map(k => { const hit = ranked.find(r => r.row.key === k && r.row.type === 'color'); const base = hit ? hit.row : index.find(r => r && r.type === 'color' && r.key === k); return base ? { row: { ...base, whiteSibling: first.exactCode } } : null; }).filter(Boolean);
+      const rest = ranked.filter(r => !(r.row.type === 'color' && WHITES.includes(r.row.key)));
+      const at = rest.findIndex(r => r.row.type === 'color'), ins = at < 0 ? rest.length : at;
+      rest.splice(ins, 0, { row: first }, ...sib);
+      ranked.length = 0; ranked.push(...rest);
+    }
     const out = { ...empty, total: ranked.length };
     for (const { row } of ranked) {
       const bucket = row.type === 'project' ? out.projects : row.type === 'thread' ? out.threads : out.colors;

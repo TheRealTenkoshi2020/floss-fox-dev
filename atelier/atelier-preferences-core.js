@@ -5,7 +5,8 @@
    - Never touches project, thread, journal, snapshot or backup keys. Writes only when a caller explicitly saves.
    - Saves are read back and compared; a blocked or unverified write is reported, never shown as saved.
    - A stored value from a newer schema, or unreadable JSON, fails closed: it is not overwritten by save() (reset() is explicit).
-   - "Resume where I was" is OFF by default (opt-in, FF39-06). */
+   - "Resume where I was" is OFF by default (opt-in, FF39-06).
+   - Seasonal Pip is ON by default (Myke decided, relayed by Pixel): Northern hemisphere; standard Pip until seasonal art exists. */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -16,9 +17,10 @@
   const THEMES = Object.freeze(['system', 'morning', 'forest', 'moon']);
   const TABS = Object.freeze(['workbasket', 'convert', 'threads', 'projects', 'shop', 'help', 'settings']); // matches projects.js showView(); Fabric is its own page
   const VIEWS = Object.freeze(['list', 'grid', 'shelf']);
+  const SORTS = Object.freeze(['code', 'amount', 'family', 'location', 'recent']); // My threads sort (lib.sort.*)
   const BRANDS = Object.freeze(['dmc', 'anchor', 'sullivans']); // BRAND keys in index.html
   const MAX_RECENT = 12;
-  const DEFAULT = Object.freeze({ v: SCHEMA, theme: 'system', rememberPlace: false, lastTab: 'convert', lastProjectId: null, collectionView: 'list', lowStockThreshold: 1, seasonalPip: false, recentConversions: Object.freeze([]) });
+  const DEFAULT = Object.freeze({ v: SCHEMA, theme: 'system', rememberPlace: false, lastTab: 'convert', lastProjectId: null, collectionView: 'list', collectionSort: 'code', lowStockThreshold: 1, seasonalPip: true, recentConversions: Object.freeze([]) });
   const code = v => typeof v === 'string' && /^[A-Za-z0-9-]{1,35}$/.test(v.trim()) ? v.trim().toUpperCase() : null;
   const brand = v => typeof v === 'string' && BRANDS.includes(v.trim().toLowerCase()) ? v.trim().toLowerCase() : null;
   const projectId = v => typeof v === 'string' && v.length >= 1 && v.length <= 80 && /^[\w.-]+$/.test(v) ? v : null;
@@ -39,6 +41,7 @@
     if (TABS.includes(d.lastTab)) o.lastTab = d.lastTab;
     o.lastProjectId = projectId(d.lastProjectId);
     if (VIEWS.includes(d.collectionView)) o.collectionView = d.collectionView;
+    if (SORTS.includes(d.collectionSort)) o.collectionSort = d.collectionSort;
     if (Number.isInteger(d.lowStockThreshold) && d.lowStockThreshold >= 0 && d.lowStockThreshold <= 20) o.lowStockThreshold = d.lowStockThreshold;
     if (typeof d.seasonalPip === 'boolean') o.seasonalPip = d.seasonalPip;
     const seen = new Set();
@@ -91,5 +94,5 @@
     try { storage.removeItem(storageKey); return storage.getItem(storageKey) === null ? { ok: true } : { ok: false, reason: 'unverified-reset' }; }
     catch (e) { return { ok: false, reason: 'storage-unavailable' }; }
   }
-  return Object.freeze({ SCHEMA, DEFAULT, THEMES, TABS, VIEWS, BRANDS, MAX_RECENT, normalize, rememberConversion, keyFor, isPrefKey, load, save, reset });
+  return Object.freeze({ SCHEMA, DEFAULT, THEMES, TABS, VIEWS, SORTS, BRANDS, MAX_RECENT, normalize, rememberConversion, keyFor, isPrefKey, load, save, reset });
 });

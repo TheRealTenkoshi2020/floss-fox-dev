@@ -18,7 +18,10 @@
     boughtNote: "Marking a color bought doesn't change My threads. Check it in when you have it.", // [shop.boughtNote]
     header: 'Floss Fox shopping list', // [share.header]
     none: 'Nothing to buy.', // [share.none]
-    footer: 'Check amounts and chart matches before you buy.' // [share.footer]
+    footer: 'Check amounts and chart matches before you buy.', // [share.footer]
+    ready: 'Ready to buy', // [share.sec.ready]
+    review: 'Check first', // [share.sec.review]
+    est: 'Estimated amounts' // [share.sec.est]
   });
   const WARNING = COPY.boughtNote;
   const shareLine = x => `${x.brand} ${x.code}: ${x.quantity} skein${x.quantity === 1 ? '' : 's'}`; // [share.line] one/other
@@ -30,7 +33,7 @@
   function linesFromPlan(P, names) {
     if (!P || !Array.isArray(P.lines)) throw new TypeError('Expected a plan with lines');
     const brand = BRAND[P.dest] || 'DMC';
-    return P.lines.map(l => ({ key: l && l.key, to: l && l.to, q: l && l.q, bought: !!(l && l.bought), brand, from: Array.isArray(l && l.from) ? l.from.slice(0, 50) : [], name: names && l && typeof names[l.key] === 'string' ? names[l.key] : '' }));
+    return P.lines.map(l => ({ key: l && l.key, to: l && l.to, q: l && l.q, bought: !!(l && l.bought), brand, estimated: !!(l && Array.isArray(l.ts) && l.ts.some(t => t && t.estimated)), from: Array.isArray(l && l.from) ? l.from.slice(0, 50) : [], name: names && l && typeof names[l.key] === 'string' ? names[l.key] : '' }));
   }
   function build(lines, merchantLinks = [], options = {}) {
     if (!Array.isArray(lines) || !Array.isArray(merchantLinks)) throw new TypeError('Invalid shopping data');
@@ -78,7 +81,17 @@
   function shareText(lines, options = {}) {
     const v = build(lines, [], { filter: options.filter || 'remaining' });
     const all = v.groups.flatMap(g => g.items);
-    return [COPY.header, ...all.map(shareLine), ...(all.length ? [] : [COPY.none]), COPY.footer].join('\n');
+    const est = new Set((Array.isArray(lines) ? lines : []).filter(l => l && l.estimated === true).map(l => l.key));
+    const check = (Array.isArray(options.checkFirst) ? options.checkFirst : []).map(x => clean(x).slice(0, 40)).filter(Boolean).slice(0, 200);
+    const ready = all.filter(x => !est.has(x.key)), guess = all.filter(x => est.has(x.key));
+    if (!guess.length && !check.length) return [COPY.header, ...all.map(shareLine), ...(all.length ? [] : [COPY.none]), COPY.footer].join('\n');
+    const out = [COPY.header];
+    if (ready.length) out.push('', COPY.ready, ...ready.map(shareLine));
+    if (guess.length) out.push('', COPY.est, ...guess.map(shareLine));
+    if (check.length) out.push('', COPY.review, ...check);
+    if (!all.length) out.push('', COPY.none);
+    out.push('', COPY.footer);
+    return out.join('\n');
   }
   return Object.freeze({ BRAND, COPY, WARNING, linesFromPlan, build, shareText });
 });
