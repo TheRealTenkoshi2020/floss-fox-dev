@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-91';
+const CACHE = 'flossfox-dev-v2.0a-ci005-95'; // 3.9 Atelier (ci005-94 is taken by support-links PR 19)
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -79,6 +79,7 @@ const CORE = [
   "flow-pass.js",
   "flow-pass.css",
   "tab-hint.js",
+  "atelier/atelier.css","atelier/atelier-copy.js","atelier/atelier-preferences-core.js","atelier/atelier-search-core.js","atelier/atelier-palette-core.js","atelier/atelier-store-visit-core.js","atelier/atelier-theme.js","atelier/atelier-ui.js","atelier/themes.css",
   "flow-strings.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",

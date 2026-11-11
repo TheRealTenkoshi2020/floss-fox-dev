@@ -69,7 +69,7 @@ let screenK=null,screenT='',screenPose=null,secPose=null,secText='',evPose=null,
 function paint(a){// Visual refresh: in the hero (Find floss), Pip's resting poses show the theme art: gardener (light), starlight (dark). Other poses unchanged.
  const th=REST.includes(a)&&!!el.closest('.herogrid'),la=th?'gardener':a,key=th?'theme':a;
  if(img.dataset.art!==a||img.dataset.show!==key){src.srcset=set(la,'webp');img.srcset=set(la,'png');img.src=`assets/pip/pip-${la}-320.png`;img.dataset.art=a;img.dataset.show=key;
-  if(dk){dk.media=th?'(prefers-color-scheme: dark)':'not all'}}}
+  if(dk){const dark=document.documentElement.getAttribute('data-atelier-scheme')==='dark';dk.media=th?(dark?'all':'not all'):'not all'}}}
 function show(name,r,anim=true){if(screenK&&name===base)name='screen';const S=STATES[name];if(!S)return;if(r)lastR=r;const text=S.msg(lastR);const pz=typeof S.pose==='function'?S.pose(lastR):S.pose;
  if(cur===name&&msg.textContent===text&&el.dataset.pose===poseArt(pz))return; // nothing meaningful changed
  const a=poseArt(pz);cur=name;el.dataset.state=name;el.dataset.pose=a;
@@ -165,6 +165,8 @@ const AS={ // GENERATED from /workspace/pip-art/m-involved/a-strings.csv (Pixel)
  'pipA.pcheck.other':v=>`A few things are worth a second look. See Pattern check. I haven't changed anything.`,
  'pipA.checkin.full':v=>`Checked in. That thread now counts as yours for this project.`,
  'pipA.checkin.part':v=>`Got part of it. I've kept the rest on your shopping list.`,
+ // 3.9 (Pixel pip.receipt.a, starred): only when the confirmed check-in really changed My threads (read back OK).
+ 'pipA.checkin.threads':v=>{const X=window.FlossFoxAtelierCopy,n=v.n,f=n===1?`Checked in 1 skein of ${v.brand} ${v.code}. It's in My threads now.`:`Checked in ${n} skeins of ${v.brand} ${v.code}. They're in My threads now.`;return X&&X.has&&X.has('pip.receipt.a')?X.t('pip.receipt.a',{n,brand:v.brand,code:v.code},n):f},
  'pipA.ready':v=>`Every color is covered and checked. Ready to stitch!`};
 const AL={label:"How much should Pip chat?",chatty:"Chatty: every helpful moment",important:"Just the important ones (recommended)",quiet:"Quiet: only when I ask",off:"Off: hide Pip",saved:"Pip setting saved on this device.",dismiss:"Dismiss Pip's message",settings:'Pip settings'};
 // event -> pose, levels, cap. gapFree: direct result of the user's tap (Undo, Ready), so no 20 s gap.
@@ -187,7 +189,7 @@ function variant(key,v){v=v||{};
  if(key==='pipA.cmp.done'){if(v.u>=1)return v.u===1?'pipA.cmp.unsure.one':'pipA.cmp.unsure';return v.total===1?'pipA.cmp.done.one':v.have===0?'pipA.cmp.done.none':'pipA.cmp.done.many'}
  if(key==='pipA.cmp.undo')return v.n===1?'pipA.cmp.undo.one':key;
  if(key==='pipA.pcheck.fake')return v.n===1?'pipA.pcheck.fake.one':key;
- if(key==='pipA.checkin')return v.full?'pipA.checkin.full':'pipA.checkin.part';
+ if(key==='pipA.checkin')return v.threads&&Number.isInteger(v.n)&&v.code?'pipA.checkin.threads':v.full?'pipA.checkin.full':'pipA.checkin.part';
  return key}
 function level(){if(fig.hidden)return'off';let s=null;try{s=localStorage.getItem(LEVEL_KEY)}catch(e){}return s&&LEVELS.includes(s)&&s!=='off'?s:LEVEL_DEFAULT}
 // Off stays in sync with the existing hide key: hidden there = Off here (old hidden users stay hidden). Nothing else is touched.
