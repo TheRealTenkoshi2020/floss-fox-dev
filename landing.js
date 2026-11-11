@@ -18,7 +18,10 @@
  // ci005-85: first visit only (nothing saved under any flossfox key): a gentle "Start here" from Pip on Find floss.
  // Stores only a tiny seen flag; never reads or changes saved projects or threads.
  var SH='flossfox-dev.startHere.v1';
- function fresh(){try{for(var i=0;i<localStorage.length;i++){if(/^flossfox/.test(localStorage.key(i)||''))return false}return true}catch(_){return false}}
+ // 3.9 Atelier (FF39-24): a convenience-preference key (theme, Resume where I was) is not saved work and not a confirmed
+ // welcome, so it alone must not hide Start here. Every other flossfox key still counts, exactly as before.
+ var PREFONLY=/^flossfox(-dev)?\.atelier\.v1$/;
+ function fresh(){try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'';if(/^flossfox/.test(k)&&!PREFONLY.test(k))return false}return true}catch(_){return false}}
  function seenSH(){try{localStorage.setItem(SH,'seen')}catch(_){}var n=el('ffStartHere');if(n)n.remove();n=el('ffStartHereDot');if(n)n.remove();var t=document.querySelector('#ffLanding .ffsh');if(t)t.remove();var c=document.querySelector('#ffLanding .ch.ffshch');if(c)c.classList.remove('ffshch')}
  function startHere(L){if(!fresh())return;var f=L.querySelector('a[data-tab="tabConvert"]'),say=el('ffLandSay'),q=L.querySelector('p.quiet');if(!f||!say||!q)return;
    f.classList.add('ffshch');var t=document.createElement('span');t.className='ffsh';t.textContent='Start here';var sr=document.createElement('span');sr.className='sr';sr.textContent=', ';t.prepend(sr);f.append(t);

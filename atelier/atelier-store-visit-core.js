@@ -1,26 +1,40 @@
-/* Floss Fox Atelier 3.9 reference: canonical shopping lines, nonduplicated store grouping.
-   Read-only: never purchases, never increments inventory, never opens a merchant. */
+/* Floss Fox 3.9 Atelier: canonical shopping lines with non-duplicated store grouping (adapted from Samira's reference).
+   Read-only: never marks bought, never changes inventory, never opens a merchant link.
+   Accepts the real FlossFoxProjects.plan(p).lines shape ({key:'dmc:310', from:['310'], to:'310', q, bought}) via linesFromPlan(),
+   or the store-mode-core.js input shape ({key, to, q, bought, brand, name}). Same validation rules as store-mode-core.js:
+   unique non-empty key, code <= 35 chars, whole quantity 1..9999.
+   merchantLinks must already have passed shop/offers.js gatekeeping; only entries with verified:true are used, and URLs are
+   never read here. One line = one checkbox, however many stores link to it. */
 (function (root, factory) {
   const api = factory();
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.FlossFoxAtelierStoreVisit = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
-  const clean = x => String(x == null ? '' : x).trim();
-  const code = x => clean(x).toUpperCase();
-  const cmp = (a, b) => a.localeCompare(b, undefined, { numeric: true });
+  const BRAND = Object.freeze({ dmc: 'DMC', anchor: 'Anchor', sullivans: 'Sullivans' });
+  const WARNING = 'Marking bought does not change My threads. Check in what you received separately.';
+  const clean = v => typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]/g, ' ').trim() : '';
+  const code = v => clean(v).toUpperCase();
+  const cmpCode = (a, b) => { const na = /^\d+$/.test(a), nb = /^\d+$/.test(b); if (na !== nb) return na ? -1 : 1; return na ? Number(a) - Number(b) || a.localeCompare(b) : a.localeCompare(b, 'en', { numeric: true }); };
+  const cmp = (a, b) => String(a).localeCompare(String(b), 'en', { numeric: true, sensitivity: 'base' });
+  // plan(p) result -> input lines. dest is the project's buy brand key; codes are kept exactly (BLANC stays BLANC).
+  function linesFromPlan(P, names) {
+    if (!P || !Array.isArray(P.lines)) throw new TypeError('Expected a plan with lines');
+    const brand = BRAND[P.dest] || 'DMC';
+    return P.lines.map(l => ({ key: l && l.key, to: l && l.to, q: l && l.q, bought: !!(l && l.bought), brand, from: Array.isArray(l && l.from) ? l.from.slice(0, 50) : [], name: names && l && typeof names[l.key] === 'string' ? names[l.key] : '' }));
+  }
   function build(lines, merchantLinks = [], options = {}) {
-    if (!Array.isArray(lines) || !Array.isArray(merchantLinks)) throw new TypeError('Invalid inputs');
+    if (!Array.isArray(lines) || !Array.isArray(merchantLinks)) throw new TypeError('Invalid shopping data');
     const filter = ['all', 'remaining', 'purchased'].includes(options.filter) ? options.filter : 'all';
+    const view = options.view === 'by-store' ? 'by-store' : 'checklist';
     const query = clean(options.query).toLowerCase().slice(0, 120);
     const selected = clean(options.selectedMerchant);
-    const view = options.view === 'by-store' ? 'by-store' : 'checklist';
     const seen = new Set(), normalized = [];
     for (const line of lines) {
-      if (!line || typeof line !== 'object' || !clean(line.key) || seen.has(line.key)) throw new TypeError('Shopping line needs unique key');
-      const c = code(line.code || line.to), b = code(line.brand || 'DMC');
+      if (!line || typeof line !== 'object' || typeof line.key !== 'string' || !clean(line.key) || seen.has(line.key)) throw new TypeError('Shopping line needs unique key');
+      const c = code(line.code || line.to), b = clean(line.brand || 'DMC');
       const q = line.quantity === undefined ? line.q : line.quantity;
-      if (!c || !b || !Number.isInteger(q) || q < 1 || q > 9999) throw new TypeError('Invalid line');
+      if (!c || c.length > 35 || !b || b.length > 35 || !Number.isInteger(q) || q < 1 || q > 9999) throw new TypeError('Invalid line');
       seen.add(line.key);
       normalized.push({ key: line.key, brand: b, code: c, quantity: q, bought: line.bought === true, name: clean(line.name).slice(0, 120) });
     }
@@ -29,35 +43,33 @@
       if (!link || link.verified !== true || !clean(link.merchantId) || !clean(link.code)) continue; // upstream gate is authoritative
       const k = `${code(link.brand || 'DMC')}|${code(link.code)}`;
       const x = byColor.get(k) || new Map();
-      if (!x.has(link.merchantId)) x.set(link.merchantId, { id: link.merchantId, name: clean(link.merchantName || link.merchantId) });
+      if (!x.has(link.merchantId)) x.set(link.merchantId, { id: link.merchantId, name: clean(link.merchantName || link.merchantId).slice(0, 60) });
       byColor.set(k, x);
     }
-    const withStores = normalized.map(line => ({ ...line, stores: [...(byColor.get(`${line.brand}|${line.code}`) || new Map()).values()].sort((a,b)=>cmp(a.name,b.name)) }));
+    const withStores = normalized.map(line => ({ ...line, stores: [...(byColor.get(`${line.brand.toUpperCase()}|${line.code}`) || new Map()).values()].sort((a, b) => cmp(a.name, b.name)) }));
     const filtered = withStores.filter(x => (filter === 'all' || (filter === 'purchased') === x.bought) && (!query || `${x.brand} ${x.code} ${x.name}`.toLowerCase().includes(query)));
     const groups = new Map();
     const put = (key, label, line) => { if (!groups.has(key)) groups.set(key, { key, label, items: [] }); groups.get(key).items.push(line); };
     if (view === 'by-store') {
       for (const line of filtered) {
         const possible = selected ? line.stores.find(x => x.id === selected) : line.stores[0];
-        if (possible) put(possible.id, possible.name, line);
+        if (possible) put('m:' + possible.id, possible.name, line);
         else put('unassigned', 'Other / find in store', line);
       }
-    } else {
-      for (const line of filtered) put('checklist', 'Shopping checklist', line);
-    }
-    const sorted = [...groups.values()].sort((a,b) => a.key === 'unassigned' ? 1 : b.key === 'unassigned' ? -1 : cmp(a.label,b.label));
-    for (const g of sorted) g.items.sort((a,b)=>cmp(a.brand,b.brand)||cmp(a.code,b.code));
+    } else for (const line of filtered) put('checklist', 'Shopping checklist', line);
+    const sorted = [...groups.values()].sort((a, b) => a.key === 'unassigned' ? 1 : b.key === 'unassigned' ? -1 : cmp(a.label, b.label));
+    for (const g of sorted) g.items.sort((a, b) => cmp(a.brand, b.brand) || cmpCode(a.code, b.code) || cmp(a.key, b.key));
     return {
       groups: sorted,
-      counts: { total: normalized.length, remaining: normalized.filter(x=>!x.bought).length, bought: normalized.filter(x=>x.bought).length, visible: filtered.length },
-      warning: 'Marking bought does not change inventory. Receipt and quantity must be confirmed separately.',
-      selectedMerchant: selected || null
+      counts: { total: normalized.length, remaining: normalized.filter(x => !x.bought).length, bought: normalized.filter(x => x.bought).length, visible: filtered.length },
+      warning: WARNING, selectedMerchant: selected || null
     };
   }
+  // Plain text for Share / Copy. Only brand, code, quantity and catalog color name: never project notes, storage or links.
   function shareText(lines, options = {}) {
     const v = build(lines, [], { filter: options.filter || 'remaining' });
     const all = v.groups.flatMap(g => g.items);
-    return ['Floss Fox shopping list', ...all.map(x => `${x.brand} ${x.code} — ${x.quantity} skein${x.quantity === 1 ? '' : 's'}${x.name ? ` — ${x.name}` : ''}`), ...(all.length ? [] : ['No threads to buy.']), 'Check quantities and alternatives before buying.'].join('\n');
+    return ['Floss Fox shopping list', ...all.map(x => `${x.brand} ${x.code}: ${x.quantity} skein${x.quantity === 1 ? '' : 's'}${x.name ? ` (${x.name})` : ''}`), ...(all.length ? [] : ['No threads to buy.']), 'Check quantities and alternatives before buying.'].join('\n');
   }
-  return Object.freeze({ build, shareText });
+  return Object.freeze({ BRAND, WARNING, linesFromPlan, build, shareText });
 });

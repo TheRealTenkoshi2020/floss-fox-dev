@@ -1,0 +1,157 @@
+// node tests/atelier_unit.cjs : Floss Fox 3.9 Atelier Stage A pure modules against REAL-SHAPED data
+// (DMC catalog parsed from index.html, thread collection built by threads.js core, plan(p).lines shape from projects.js,
+// store-mode-core.js cross-check, landing.js first-visit detection in a sandbox). No DOM, no network. Simulated, Node only.
+'use strict';
+const fs = require('fs'), path = require('path'), vm = require('vm'), assert = require('node:assert/strict');
+const root = path.join(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const DMC = JSON.parse(html.match(/const DMC=(\{.*?\});/)[1]);
+const TC = require('../threads.js').core(DMC);
+const S = require('../atelier/atelier-search-core.js');
+const P = require('../atelier/atelier-preferences-core.js');
+const V = require('../atelier/atelier-store-visit-core.js');
+const C = require('../atelier/atelier-palette-core.js');
+const SM = require('../store-mode-core.js');
+let pass = 0, fail = 0;
+const test = (name, fn) => { try { fn(); pass++; console.log('PASS', name); } catch (e) { fail++; console.log('FAIL', name, '->', e && e.message); } };
+
+// ---------- real-shaped fixtures ----------
+// Threads: built with the real threads.js core (schema 2), storage normalized by its own normalizeStorage.
+const coll = TC.empty();
+TC.add(coll, [{ code: '310', qty: 2 }, { code: 'BLANC', qty: 1 }, { code: 'WHITE', qty: 1 }, { code: 'B5200', qty: 3 }, { code: '321', qty: 1 }]);
+coll.threads['310'].partial = true;
+coll.threads['310'].storage = TC.normalizeStorage({ container: 'Box 2', slot: 'Row B' });
+coll.threads['WHITE'].n = 0;
+coll.demo = { '999': { n: 5, partial: false, restock: false, updated: '' } }; // demo map must never be indexed
+// Projects: shape of projects.js normProject() output (schema 2).
+const proj = (id, name, codes, extra = {}) => ({ id, name, notes: 'private notes 12345', buyBrand: 'dmc', items: codes.map(c => ({ code: c, qty: 1, assumed: 0, stated: true, src: [] })), decisions: {}, purchased: {}, status: 'planning', created: '2026-11-01T00:00:00.000Z', updated: '2026-11-02T00:00:00.000Z', ...extra });
+const projects = [
+  proj('3f2b6a9e-1c2d-4e5f-8a9b-0c1d2e3f4a5b', 'Foxes in Snow', ['310', 'BLANC', '321'], { status: 'progress', leftOff: 'Finished page 2, Box 7 secret' }),
+  proj('pdemo', 'Demo only', ['310'], { demo: true }),
+  proj('pl2x9a', 'Café Garden', ['3865', 'B5200'], { status: 'done' })
+];
+const index = S.build({ projects, threads: coll.threads, catalog: DMC });
+
+// ---------- Samira's 30 reference cases, ported to the adapted API (same intent) ----------
+test('ref search: project by name', () => assert.equal(S.search(index, 'snow').projects[0].key, projects[0].id));
+test('ref search: project palette code', () => assert.equal(S.search(index, 'BLANC').projects[0].key, projects[0].id));
+test('ref search: storage location', () => assert.equal(S.search(index, 'Box 2').threads[0].key, 'DMC:310'));
+test('ref search: BLANC kept distinct', () => assert.equal(S.search(index, 'BLANC').colors[0].key, 'DMC:BLANC'));
+test('ref search: WHITE kept distinct', () => assert.equal(S.search(index, 'WHITE').colors[0].key, 'DMC:WHITE'));
+test('ref search: demo project excluded', () => assert.equal(S.search(index, 'Demo').projects.length, 0));
+test('ref search: empty string safe', () => assert.equal(S.search(index, '').total, 0));
+test('ref search: no mutation of index', () => { const d = JSON.stringify(index); S.search(index, 'DMC 310'); assert.equal(JSON.stringify(index), d); });
+test('ref search: bounded grouped output', () => { const x = S.search(index, 'White', { limit: 1 }); assert.equal(x.colors.length, 1); assert(x.total >= 2); });
+test('ref prefs: default theme system', () => assert.equal(P.normalize(null).data.theme, 'system'));
+test('ref prefs: future schema fails closed', () => assert.equal(P.normalize({ v: 3 }).reason, 'future-schema'));
+test('ref prefs: malformed controls sanitized', () => { const v = P.normalize({ theme: 'evil', lastTab: 'admin', lastProjectId: 'x'.repeat(200), lowStockThreshold: -999 }); assert.equal(v.data.theme, 'system'); assert.equal(v.data.lastTab, 'convert'); assert.equal(v.data.lastProjectId, null); assert.equal(v.data.lowStockThreshold, 1); });
+test('ref prefs: preview namespace isolated', () => assert.notEqual(P.keyFor('flossfox-dev.v1'), P.keyFor('flossfox.v1')));
+test('ref prefs: conversion deduped and bounded', () => { let p = P.normalize(null).data; for (let i = 0; i < 15; i++) p = P.rememberConversion(p, { from: 'dmc', to: 'anchor', code: String(i) }).data; assert.equal(p.recentConversions.length, 12); p = P.rememberConversion(p, { from: 'dmc', to: 'anchor', code: '14' }).data; assert.equal(p.recentConversions.length, 12); assert.equal(p.recentConversions[0].code, '14'); });
+test('ref prefs: forbidden conversion rejected', () => assert.equal(P.rememberConversion({}, { from: 'dmc', to: 'anchor', code: '../../bad' }).ok, false));
+const mem = () => { const m = new Map(); return { m, getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) }; };
+const ls = mem(), DK = P.keyFor('flossfox-dev.v1');
+test('ref prefs: verified write/read', () => { assert(P.save(ls, DK, { theme: 'forest', lastTab: 'projects' }).ok); assert.equal(P.load(ls, DK).data.theme, 'forest'); });
+test('ref prefs: blocked write does not masquerade as saved', () => assert.equal(P.save({ getItem: () => null, setItem() { throw new Error('quota'); } }, DK, {}).ok, false));
+test('ref prefs: unrelated collection key untouched', () => { ls.setItem('flossfox-dev.threads.v1', 'untouched'); P.save(ls, DK, {}); assert.equal(ls.getItem('flossfox-dev.threads.v1'), 'untouched'); });
+const lines = [{ key: 'a', brand: 'DMC', code: '310', quantity: 2, bought: false }, { key: 'b', brand: 'DMC', code: 'BLANC', quantity: 1, bought: false }, { key: 'c', brand: 'DMC', code: 'WHITE', quantity: 1, bought: true }];
+const links = [{ merchantId: 'michaels', merchantName: 'Michaels', brand: 'DMC', code: '310', verified: true }, { merchantId: 'hobby', merchantName: 'Hobby Lobby', brand: 'DMC', code: '310', verified: true }, { merchantId: 'michaels', merchantName: 'Michaels', brand: 'DMC', code: 'BLANC', verified: false }];
+test('ref store: one canonical checkbox per item despite multiple stores', () => { const v = V.build(lines, links, { view: 'by-store' }); assert.equal(v.groups.reduce((x, g) => x + g.items.length, 0), 3); assert.equal(v.counts.total, 3); });
+test('ref store: unverified merchant ignored', () => { const v = V.build(lines, links, { view: 'by-store' }); assert(v.groups.some(x => x.key === 'unassigned' && x.items.some(y => y.code === 'BLANC'))); });
+test('ref store: selected merchant retains unlinked under Other', () => { const v = V.build(lines, links, { view: 'by-store', selectedMerchant: 'hobby' }); assert(v.groups.some(x => x.key === 'unassigned' && x.items.length === 2)); });
+test('ref store: bought filter correct', () => { const v = V.build(lines, links, { filter: 'purchased' }); assert.equal(v.groups[0].items[0].code, 'WHITE'); });
+test('ref store: remaining filter correct', () => assert.equal(V.build(lines, links, { filter: 'remaining' }).counts.visible, 2));
+test('ref store: duplicate key rejected', () => assert.throws(() => V.build([lines[0], lines[0]]), /unique/));
+test('ref store: read-only', () => { const b = JSON.stringify(lines); V.build(lines, links); assert.equal(JSON.stringify(lines), b); });
+test('ref store: share text contains only buy-needed canonical items', () => { const t = V.shareText(lines); assert(t.includes('DMC BLANC')); assert(!t.includes('DMC WHITE')); assert.equal(t.split('DMC 310').length - 1, 1); });
+test('ref palette: specials distinct', () => assert.equal(C.strip([{ code: 'BLANC' }, { code: 'WHITE' }, { code: 'B5200' }]).total, 3));
+test('ref palette: invalid rgb fallback', () => assert.equal(C.strip([{ code: '310' }], { '310': 'javascript:alert(1)' }).swatches[0].rgb, null));
+test('ref palette: deterministic six color sample and overflow', () => { const cs = Array.from({ length: 20 }, (_, i) => ({ code: String(i + 100) })); const a = C.strip(cs); assert.equal(a.swatches.length, 6); assert.equal(a.remaining, 14); assert.deepEqual(a, C.strip(cs)); });
+test('ref palette: input untouched', () => { const arr = [{ code: '310' }]; C.strip(arr); assert.equal(arr[0].code, '310'); });
+
+// ---------- new: search against the real DMC catalog and real thread data ----------
+test('catalog: every DMC catalog code indexed once (534+ incl. specials)', () => { const n = index.filter(r => r.type === 'color' && r.key.startsWith('DMC:')).length; assert.equal(n, Object.keys(DMC).length); assert(n >= 533); });
+test('catalog: BLANC, WHITE, B5200 are three different color rows', () => { const k = index.filter(r => r.type === 'color' && ['DMC:BLANC', 'DMC:WHITE', 'DMC:B5200'].includes(r.key)).map(r => r.key); assert.deepEqual(k.sort(), ['DMC:B5200', 'DMC:BLANC', 'DMC:WHITE']); });
+test('search "B5200" finds DMC B5200 first, never WHITE or BLANC', () => { const r = S.search(index, 'B5200'); assert.equal(r.colors[0].key, 'DMC:B5200'); assert(!r.colors.some(x => x.key === 'DMC:WHITE' || x.key === 'DMC:BLANC')); });
+test('search "WHITE" ranks DMC WHITE first and never relabels BLANC', () => { const r = S.search(index, 'white'); assert.equal(r.colors[0].key, 'DMC:WHITE'); const b = r.colors.find(x => x.key === 'DMC:BLANC'); assert(!b || b.label === 'DMC BLANC'); });
+test('search "310": exact code ranks DMC 310 thread + color first', () => { const r = S.search(index, '310'); assert.equal(r.threads[0].key, 'DMC:310'); assert.equal(r.colors[0].key, 'DMC:310'); });
+test('search "DMC 310" exact brand+code first', () => assert.equal(S.search(index, 'DMC 310').colors[0].key, 'DMC:310'));
+test('Anchor rows only from catalog anchor lists, pointing to DMC', () => { const want = Object.keys(DMC).filter(c => (DMC[c].anchor || []).map(String).map(s => s.toUpperCase()).includes('403')); const r = S.search(index, 'Anchor 403').colors.find(x => x.key === 'ANCHOR:403'); if (!want.length) return assert(!r); assert(r); assert.deepEqual(r.dmc.slice().sort(), want.slice().sort()); });
+test('no invented brands: no Sullivans rows without catalog data', () => assert(!index.some(r => r.type === 'color' && /^SULLIVANS:/.test(r.key))));
+test('thread subtitle: whole skeins + partial flag only (no fractions)', () => { const t = index.find(r => r.key === 'DMC:310' && r.type === 'thread'); assert.match(t.subtitle, /^2 full skeins \+ a partial skein · Box 2 · Row B$/); assert(!/0\.5|½/.test(t.subtitle)); });
+test('thread with 0 skeins still indexed honestly', () => assert.match(index.find(r => r.key === 'DMC:WHITE' && r.type === 'thread').subtitle, /^0 full skeins/));
+test('demo threads are never indexed (data().threads only)', () => assert(!index.some(r => r.type === 'thread' && r.key === 'DMC:999')));
+test('project notes and Where I left off are NOT indexed', () => { assert.equal(S.search(index, 'secret').total, 0); assert.equal(S.search(index, '12345').total, 0); });
+test('project subtitle uses real status labels', () => { assert.match(index.find(r => r.key === projects[0].id).subtitle, /^In progress · 3 colors$/); assert.match(index.find(r => r.key === 'pl2x9a').subtitle, /^Completed/); });
+test('diacritics: "cafe" finds "Café Garden"', () => assert.equal(S.search(index, 'cafe').projects[0].key, 'pl2x9a'));
+test('control chars and long queries are bounded', () => { const r = S.search(index, '\u0000310' + 'x'.repeat(500)); assert(r.query.length <= 120); });
+test('search refreshes from current state (rebuild sees new thread)', () => { const c2 = JSON.parse(JSON.stringify(coll)); TC.add(c2, [{ code: '3865', qty: 1 }]); const i2 = S.build({ projects, threads: c2.threads, catalog: DMC }); assert.equal(S.search(i2, '3865').threads.length, 1); assert.equal(S.search(index, '3865').threads.length, 0); });
+test('build accepts data() wrapper {schema,threads} and rejects arrays', () => { assert.equal(S.build({ threads: coll }).filter(r => r.type === 'thread').length, 5); assert.throws(() => S.build({ threads: [] })); });
+test('duplicate project ids indexed once', () => assert.equal(S.build({ projects: [projects[0], projects[0]] }).length, 1));
+test('large index (300 projects x 50 colors) searches under 200ms', () => { const many = Array.from({ length: 300 }, (_, i) => proj('p' + i, 'Project ' + i, Object.keys(DMC).slice(i % 400, i % 400 + 50))); const big = S.build({ projects: many, threads: coll.threads, catalog: DMC }); const t0 = Date.now(); S.search(big, 'project 2'); S.search(big, '310'); assert(Date.now() - t0 < 200); });
+
+// ---------- new: preferences lifecycle ----------
+test('prefs: Resume where I was is OFF by default (opt-in)', () => assert.equal(P.DEFAULT.rememberPlace, false));
+test('prefs: key derived like other keys (dev + prod)', () => { assert.equal(P.keyFor('flossfox-dev.v1'), 'flossfox-dev.atelier.v1'); assert.equal(P.keyFor('flossfox.v1'), 'flossfox.atelier.v1'); assert.throws(() => P.keyFor('evil.v1')); });
+test('prefs: save refuses any non-preference key', () => { const s = mem(); assert.equal(P.save(s, 'flossfox-dev.v1', {}).ok, false); assert.equal(s.getItem('flossfox-dev.v1'), null); });
+test('prefs: load of missing key = defaults, not stored, writes nothing', () => { const s = mem(); const r = P.load(s, DK); assert(r.ok && r.stored === false); assert.equal(s.m.size, 0); });
+test('prefs: corrupted JSON fails closed and is not overwritten', () => { const s = mem(); s.setItem(DK, '{bad'); assert.equal(P.load(s, DK).reason, 'unreadable'); assert.equal(P.save(s, DK, { theme: 'moon' }).ok, false); assert.equal(s.getItem(DK), '{bad'); });
+test('prefs: newer-schema value fails closed and is not overwritten', () => { const s = mem(); s.setItem(DK, '{"v":2,"theme":"aurora"}'); assert.equal(P.load(s, DK).reason, 'future-schema'); assert.equal(P.save(s, DK, { theme: 'moon' }).reason, 'future-schema-existing'); assert.equal(s.getItem(DK), '{"v":2,"theme":"aurora"}'); });
+test('prefs: non-numeric schema fails closed', () => assert.equal(P.normalize({ v: 'x' }).ok, false));
+test('prefs: silent storage (write ignored) reported as unverified', () => { const s = { getItem: () => null, setItem() {} }; assert.equal(P.save(s, DK, {}).reason, 'unverified-save'); });
+test('prefs: reset removes only the preference key', () => { const s = mem(); s.setItem('flossfox-dev.v1', 'P'); s.setItem('flossfox-dev.threads.v1', 'T'); P.save(s, DK, { theme: 'forest' }); assert(P.reset(s, DK).ok); assert.equal(s.getItem(DK), null); assert.equal(s.getItem('flossfox-dev.v1'), 'P'); assert.equal(s.getItem('flossfox-dev.threads.v1'), 'T'); assert.equal(P.reset(s, 'flossfox-dev.v1').ok, false); assert.equal(s.getItem('flossfox-dev.v1'), 'P'); });
+test('prefs: unknown fields dropped (no smuggled data)', () => assert(!('notes' in P.normalize({ notes: 'secret', theme: 'moon' }).data)));
+test('prefs: brands limited to real brand keys', () => { assert.equal(P.rememberConversion({}, { from: 'dmc', to: 'Acme', code: '310' }).ok, false); assert.equal(P.rememberConversion({}, { from: 'DMC', to: 'Anchor', code: 'blanc' }).data.recentConversions[0].code, 'BLANC'); });
+test('prefs: lastProjectId accepts real UUID and p+base36 ids', () => { assert.equal(P.normalize({ lastProjectId: projects[0].id }).data.lastProjectId, projects[0].id); assert.equal(P.normalize({ lastProjectId: 'pl2x9a' }).data.lastProjectId, 'pl2x9a'); assert.equal(P.normalize({ lastProjectId: '<img>' }).data.lastProjectId, null); });
+test('prefs: tabs match projects.js showView names', () => { const src = fs.readFileSync(path.join(root, 'projects.js'), 'utf8'); const m = src.match(/const V=\{([^}]*)\}/)[1]; const names = [...m.matchAll(/(\w+):\[/g)].map(x => x[1]).sort(); assert.deepEqual(P.TABS.slice().sort(), names); });
+test('prefs: huge recent list bounded to 12', () => assert.equal(P.normalize({ recentConversions: Array.from({ length: 5000 }, (_, i) => ({ from: 'dmc', to: 'anchor', code: String(i) })) }).data.recentConversions.length, 12));
+
+// ---------- new: shopping lines in the real plan(p).lines shape ----------
+const plan = { dest: 'dmc', lines: [{ key: 'dmc:310', from: ['310'], to: '310', q: 2, bought: false, ts: [] }, { key: 'dmc:BLANC', from: ['BLANC'], to: 'BLANC', q: 1, bought: false, ts: [] }, { key: 'dmc:WHITE', from: ['WHITE'], to: 'WHITE', q: 1, bought: true, ts: [] }, { key: 'dmc:B5200', from: ['B5200'], to: 'B5200', q: 1, bought: false, ts: [] }] };
+const real = V.linesFromPlan(plan, { 'dmc:310': 'black' });
+test('plan lines: linesFromPlan keeps canonical keys and codes', () => { assert.deepEqual(real.map(l => l.key), ['dmc:310', 'dmc:BLANC', 'dmc:WHITE', 'dmc:B5200']); assert.deepEqual(real.map(l => l.to), ['310', 'BLANC', 'WHITE', 'B5200']); });
+test('plan lines: does not mutate the plan', () => { const b = JSON.stringify(plan); V.linesFromPlan(plan); V.build(real, links, { view: 'by-store' }); assert.equal(JSON.stringify(plan), b); });
+test('plan lines: DMC 310 linked by 3 stores = exactly one line', () => { const l3 = links.concat([{ merchantId: 'joann', merchantName: 'Joann', brand: 'DMC', code: '310', verified: true }]); const v = V.build(real, l3, { view: 'by-store' }); assert.equal(v.groups.flatMap(g => g.items).filter(i => i.code === '310').length, 1); const x = v.groups.flatMap(g => g.items).find(i => i.code === '310'); assert.equal(x.stores.length, 3); });
+test('plan lines: switching store keeps bought state on the line, not the store', () => { const a = V.build(real, links, { view: 'by-store', selectedMerchant: 'hobby' }), b = V.build(real, links, { view: 'by-store', selectedMerchant: 'michaels' }); const st = v => Object.fromEntries(v.groups.flatMap(g => g.items).map(i => [i.key, i.bought])); assert.deepEqual(st(a), st(b)); });
+test('plan lines: Anchor plan brand label + grouped DMC whites stay one line', () => { const ap = { dest: 'anchor', lines: [{ key: 'anchor:2', from: ['WHITE', 'BLANC'], to: '2', q: 2, bought: false }] }; const v = V.build(V.linesFromPlan(ap)); assert.equal(v.counts.total, 1); assert.equal(v.groups[0].items[0].brand, 'Anchor'); });
+test('plan lines: same accept/reject rules as store-mode-core.js', () => { const smIn = real.map(l => ({ key: l.key, to: l.to, q: l.q, bought: l.bought, brand: l.brand })); assert.equal(SM.prepare(smIn).counts.visible, V.build(real).counts.visible); for (const bad of [[{ key: '', to: '310', q: 1 }], [{ key: 'k', to: '310', q: 0 }], [{ key: 'k', to: '310', q: 1.5 }], [{ key: 'k', to: 'X'.repeat(36), q: 1 }], [{ key: 'k', to: '310', q: 1 }, { key: 'k', to: '321', q: 1 }]]) { assert.throws(() => SM.prepare(bad)); assert.throws(() => V.build(bad)); } });
+test('share text: no em dash, no notes, storage, links or project names', () => { const t = V.shareText(real); assert(!t.includes('\u2014')); for (const s of ['private', 'Box 2', 'http', 'Foxes', 'michaels']) assert(!t.includes(s), s); assert(t.includes('DMC 310: 2 skeins (black)')); });
+test('share text: stable order and no duplicate colors', () => { const t1 = V.shareText(real), t2 = V.shareText(real.slice().reverse()); assert.equal(t1, t2); const ls2 = t1.split('\n').filter(x => /^DMC /.test(x)); assert.equal(new Set(ls2).size, ls2.length); });
+test('store: merchant id "unassigned" cannot hijack the Other group', () => { const v = V.build(real, [{ merchantId: 'unassigned', merchantName: 'Evil', code: '310', verified: true }], { view: 'by-store' }); assert.equal(v.groups.filter(g => g.key === 'unassigned').length, 1); assert(!v.groups.find(g => g.key === 'unassigned').items.some(i => i.code === '310')); });
+test('store: warning copy literal, no em dash', () => { assert(!V.WARNING.includes('\u2014')); assert.match(V.WARNING, /does not change My threads/); });
+
+// ---------- new: palette with the real catalog ----------
+test('palette: real catalog hex used; BLANC/WHITE/B5200 separate labelled entries with outline', () => { const v = C.strip(projects[0].items.concat([{ code: 'WHITE' }, { code: 'B5200' }]), DMC); const w = v.swatches.filter(s => ['BLANC', 'WHITE', 'B5200'].includes(s.code)); assert.equal(w.length, 3); assert(w.every(s => s.outline && s.label === 'DMC ' + s.code)); assert.equal(v.swatches.find(s => s.code === '310').rgb, DMC['310'].hex.toLowerCase()); });
+test('palette: unknown code -> neutral (rgb null) with outline, code kept', () => { const s = C.strip([{ code: '9999' }], DMC).swatches[0]; assert.equal(s.rgb, null); assert(s.outline); assert.equal(s.code, '9999'); });
+test('palette: uses the project\'s own order (no popularity bias)', () => { const v = C.strip([{ code: '3865' }, { code: '310' }], DMC); assert.deepEqual(v.swatches.map(s => s.code), ['3865', '310']); });
+test('palette: 500-color project still returns 6 + overflow', () => { const v = C.strip(Object.keys(DMC).slice(0, 500).map(code => ({ code })), DMC); assert.equal(v.swatches.length, 6); assert.equal(v.remaining, 494); });
+test('palette: no em dash in note', () => assert(!C.NOTE.includes('\u2014')));
+
+// ---------- new: privacy / inertness scan of module sources ----------
+const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
+test('privacy: no network, analytics, eval or HTML injection in Atelier modules', () => { for (const [f, s] of mods) assert(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|goatcounter|innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function|import\s*\(/.test(s), f); });
+test('privacy: only the preferences module touches storage, and only via the passed-in object', () => { for (const [f, s] of mods) assert(!/localStorage|sessionStorage|indexedDB/.test(s), f); });
+test('inert: Atelier modules are not loaded by index.html or cached by sw.js yet', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); assert(!/atelier/i.test(html.replace(/<!--[\s\S]*?-->/g, '').match(/<script[^>]*src="[^"]*"/g).join(' '))); assert(!/atelier\//.test(sw)); });
+test('copy: no em dash in any Atelier module string', () => { for (const [f, s] of mods) { const strs = s.match(/'[^'\n]*'|`[^`\n]*`/g) || []; assert(!strs.some(x => x.includes('\u2014')), f); } });
+
+// ---------- new: landing.js first-visit detection (FF39-24) in a sandbox ----------
+function landingFresh(keys) {
+  const store = new Map(Object.entries(keys));
+  const localStorage = { get length() { return store.size; }, key: i => [...store.keys()][i] ?? null, getItem: k => store.has(k) ? store.get(k) : null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  const cl = { add() {}, remove() {}, contains: () => false };
+  const window = { localStorage, sessionStorage: { getItem: () => '1', setItem() {} }, location: { hash: '' }, performance: { getEntriesByType: () => [{ type: 'reload' }] }, document: { documentElement: { classList: cl }, readyState: 'loading', addEventListener() {}, getElementById: () => null, querySelector: () => null }, addEventListener() {}, scrollTo() {} };
+  window.window = window;
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'landing.js'), 'utf8'), window);
+  return { fresh: window.FlossFoxStartHere.fresh(), store };
+}
+test('first visit: empty storage is fresh', () => assert.equal(landingFresh({}).fresh, true));
+test('first visit: ONLY an Atelier preference key (dev) is still fresh -> Start here shows', () => assert.equal(landingFresh({ 'flossfox-dev.atelier.v1': '{"v":1,"theme":"moon"}' }).fresh, true));
+test('first visit: ONLY an Atelier preference key (prod name) is still fresh', () => assert.equal(landingFresh({ 'flossfox.atelier.v1': '{"v":1}' }).fresh, true));
+test('first visit: projects key still means returning user', () => assert.equal(landingFresh({ 'flossfox-dev.atelier.v1': '{}', 'flossfox-dev.v1': '{"schema":2,"projects":[]}' }).fresh, false));
+test('first visit: threads key still means returning user', () => assert.equal(landingFresh({ 'flossfox-dev.threads.v1': '{}' }).fresh, false));
+test('first visit: Start here "seen" flag still suppresses', () => assert.equal(landingFresh({ 'flossfox-dev.startHere.v1': 'seen' }).fresh, false));
+test('first visit: other prefs (pipLevel, tour) still suppress as before', () => { assert.equal(landingFresh({ 'flossfox-dev.pipLevel.v1': 'quiet' }).fresh, false); assert.equal(landingFresh({ 'flossfox-dev.tour.v1': '{}' }).fresh, false); });
+test('first visit: look-alike keys are not treated as preference-only', () => { assert.equal(landingFresh({ 'flossfox-dev.atelier.v2': '{}' }).fresh, false); assert.equal(landingFresh({ 'flossfox-dev.atelier.v1.x': '{}' }).fresh, false); });
+test('first visit: detection reads only, never writes', () => { const r = landingFresh({ 'flossfox-dev.atelier.v1': '{}' }); assert.deepEqual([...r.store.keys()], ['flossfox-dev.atelier.v1']); });
+
+console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);
+process.exit(fail ? 1 : 0);
