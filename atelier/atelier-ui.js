@@ -426,33 +426,54 @@ function paintProgress(host,p){
   wrap.append(setB,editor);
   host.append(wrap);
 }
-// Stitch session timer: in-memory only. Never written to prefs, projects, threads or backups.
-let sess={mode:'idle',start:null,frozen:0},tickT=null,sessHost=null,sessProject=null;
+// Stitch session: a focus-mode panel (FF39-16, PRODUCT_SPEC). Timer is optional and
+// in-memory only. Never written to prefs, projects, threads or backups. Focus itself
+// is also in-memory: a reload returns to the full project editor.
+let sess={mode:'idle',start:null,frozen:0},tickT=null,sessHost=null,sessProject=null,focusOn=false;
 function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60),h=Math.floor(m/60),mm=String(m%60).padStart(h?2:1,'0'),ss=String(s%60).padStart(2,'0');return h?h+':'+String(m%60).padStart(2,'0')+':'+ss: (m>=10||h?mm:String(m))+':'+ss}
 function fmtSitting(ms){const m=Math.max(0,Math.floor(ms/60000));if(m<1)return 'under 1 min';const h=Math.floor(m/60),r=m%60;if(!h)return m+' min';return r?h+' hr '+r+' min':h+' hr'}
 function sessElapsed(){if(sess.mode==='running'&&sess.start!=null)return Date.now()-sess.start;return sess.frozen||0}
-function sayTimer(ms){try{if(window.FlossFoxPip&&typeof FlossFoxPip.say==='function')FlossFoxPip.say(t('pip.timer.a',{time:fmtSitting(ms)}))}catch(e){}}
+function sayTimer(ms){try{if(window.FlossFoxAtelierPip&&FlossFoxAtelierPip.timerStopped)FlossFoxAtelierPip.timerStopped(ms,$('ffaFocus')||$('ffaSession')||$('projStatus'))}catch(e){}}
 function sessStopTick(){if(tickT){clearInterval(tickT);tickT=null}}
 function sessTick(){sessStopTick();if(sess.mode==='running')tickT=setInterval(()=>{paintSession(sessHost,sessProject,true)},250)}
-function paintSession(host,p,isTick){
-  sessHost=host||sessHost;sessProject=p||sessProject;
-  if(!sessHost)return;
-  const on=!!(P0()&&P0().sessionTimer);
-  if(!on){sessStopTick();sessHost.replaceChildren();sessHost.hidden=true;return}
-  sessHost.hidden=false;
-  const clock=fmtTime(sessElapsed());
-  if(isTick){
-    const elc=sessHost.querySelector('.ffa-clock');
-    if(elc)elc.textContent=clock; // clock face only; do not retouch aria-label every tick (announce Start/Pause/Resume/Stop only)
-    return;
-  }
-  sessHost.replaceChildren();
+function goTab(id){const b=$(id);if(b)b.click()}
+function locText(s){
+  if(!s)return '';
+  if(typeof s==='string')return s.trim();
+  try{if(window.FlossFoxThreadLocations&&typeof FlossFoxThreadLocations.text==='function'){const x=FlossFoxThreadLocations.text(s);if(x)return x}}catch(e){}
+  const mid={box:'box',bag:'bag',bobbin:'bobbin',card:'card',skein:'skein'};
+  return [s.container,s.slot,s.medium?mid[s.medium]||s.medium:''].filter(Boolean).join(' · ');
+}
+function focusColors(p){
+  const wrap=el('section',{class:'ffa-focus-colors'});
+  wrap.append(el('h3',null,t('session.colors')||'Colors for this project'));
+  const items=(p&&Array.isArray(p.items))?p.items:[];
+  if(!items.length){wrap.append(el('p',{class:'hint'},'No colors listed yet.'));return wrap}
+  const data=window.FlossFoxThreadsUI&&FlossFoxThreadsUI.data?FlossFoxThreadsUI.data():null;
+  const threads=data&&data.threads?data.threads:{};
+  const D=window.DMC||{};
+  const ul=el('ul',{class:'ffa-colors'});
+  items.forEach(it=>{
+    const code=it&&it.code?String(it.code):'';
+    const li=el('li');
+    const sw=el('span',{class:'ffa-floss','aria-hidden':'true'});
+    if(D[code]&&D[code].hex)sw.style.background=D[code].hex;
+    li.append(sw,el('span',null,'DMC '+code));
+    const rec=threads[code];
+    const loc=rec?locText(rec.storage):'';
+    if(loc)li.append(el('span',{class:'ffa-loc'},t('session.location',{location:loc})||('In '+loc)));
+    ul.append(li);
+  });
+  wrap.append(ul);return wrap;
+}
+function paintTimerCard(){
   const card=el('section',{class:'ffa-session',id:'ffaSession'});
+  const clock=fmtTime(sessElapsed());
   card.append(el('h3',null,t('session.title')||'Stitch session'));
   if(sess.mode==='idle'||sess.mode==='stopped'){
     if(sess.mode==='stopped'){
       const sitting=fmtSitting(sessElapsed());
-      const sum=el('p',{class:'ffa-sess-sum',role:'status'},t('session.timer.summary',{time:sitting})||('This sitting: '+sitting+'. We don\'t save this time.'));
+      const sum=el('p',{class:'ffa-sess-sum',role:'status'},t('session.timer.summary',{time:sitting})||('This sitting: '+sitting+". We don't save this time."));
       card.append(sum);
       const again=el('button',{type:'button',class:'sec',id:'ffaTimerAgain'},t('session.timer.again'));
       again.onclick=()=>{sess={mode:'idle',start:null,frozen:0};paintSession(sessHost,sessProject)};
@@ -488,17 +509,67 @@ function paintSession(host,p,isTick){
     sp.onclick=()=>{const elapsed=sess.frozen||0;sess={mode:'stopped',start:null,frozen:elapsed};paintSession(sessHost,sessProject);sayTimer(elapsed)};
     acts.append(rs,sp);card.append(acts,el('p',{class:'hint small'},t('session.timer.hint')));
   }
+  return card;
+}
+function paintFocus(isTick){
+  const ed=$('projEdit');if(!ed)return;
+  let foc=$('ffaFocus');
+  if(!foc){foc=el('section',{class:'ffa-focus',id:'ffaFocus','aria-labelledby':'ffaFocusTitle'});ed.append(foc)}
+  foc.hidden=false;ed.classList.add('ffa-focus-on');
+  const clock=fmtTime(sessElapsed());
+  if(isTick){const elc=foc.querySelector('.ffa-clock');if(elc)elc.textContent=clock;return} // clock face only; do not retouch aria-label every tick (announce Start/Pause/Resume/Stop only)
+  foc.replaceChildren();
+  const p=sessProject;
+  const head=el('header',{class:'ffa-focus-head'});
+  head.append(el('h2',{id:'ffaFocusTitle'},(p&&p.name)||(t('session.title')||'Stitch session')));
+  const exit=el('button',{type:'button',class:'sec',id:'ffaSessionExit'},t('session.exit')||'Back to the full project');
+  exit.onclick=()=>exitSession();
+  head.append(exit);foc.append(head);
+  const lo=p&&typeof p.leftOff==='string'?p.leftOff.trim():'';
+  if(lo){const note=el('section',{class:'ffa-focus-note'});note.append(el('h3',null,t('wb.leftOff.label')||'Where I left off'),el('p',null,lo));foc.append(note)}
+  foc.append(focusColors(p));
+  let blockers=0;
+  try{const plan=window.FlossFoxProjects&&FlossFoxProjects.plan?FlossFoxProjects.plan(p):null;if(plan&&Array.isArray(plan.checkFirst))blockers=plan.checkFirst.length}catch(e){}
+  if(blockers)foc.append(el('p',{class:'ffa-focus-block',id:'ffaFocusBlockers',role:'status'},t('session.blockers',{n:blockers},blockers)));
+  const links=el('nav',{class:'ffa-focus-links','aria-label':'Tools'});
+  const mk=(id,label,tab)=>{const b=el('button',{type:'button',class:'sec',id:id},label);b.onclick=()=>{exitSession();goTab(tab)};return b};
+  links.append(mk('ffaFocusShop',t('wb.quick.shop')||'Shop missing threads','tabShop'),mk('ffaFocusThreads',t('wb.quick.threads')||'My threads','tabThreads'));
+  foc.append(links);
+  const on=!!(P0()&&P0().sessionTimer);
+  if(on)foc.append(paintTimerCard());
+}
+function enterSession(p){focusOn=true;if(p)sessProject=p;if(sessHost){sessHost.replaceChildren();sessHost.hidden=true}paintFocus(false)}
+function exitSession(){
+  focusOn=false;
+  const ed=$('projEdit');if(ed)ed.classList.remove('ffa-focus-on');
+  const foc=$('ffaFocus');if(foc){foc.hidden=true;foc.replaceChildren()}
+  if(sessHost)sessHost.hidden=false;
+  paintSession(sessHost,sessProject);
+}
+function onEditorClosed(){if(focusOn){focusOn=false;const ed=$('projEdit');if(ed)ed.classList.remove('ffa-focus-on')}sessStopTick()}
+function paintSession(host,p,isTick){
+  sessHost=host||sessHost;sessProject=p||sessProject;
+  if(focusOn){if(isTick){paintFocus(true);return}paintFocus(false);return}
+  if(!sessHost)return;
+  sessHost.hidden=false;
+  if(isTick)return; // clock only ticks inside the focus panel
+  sessHost.replaceChildren();
+  const card=el('section',{class:'ffa-session',id:'ffaSession'});
+  card.append(el('h3',null,t('session.title')||'Stitch session'));
+  const start=el('button',{type:'button',class:'pri',id:'ffaSessionStart'},t('session.btn.start')||'Start a stitch session');
+  start.onclick=()=>enterSession(sessProject);
+  card.append(start);
   sessHost.append(card);
 }
 function celebrateDone(p){
   const name=p&&p.name?p.name:'this project';
   const msg=t('journal.finished.status',{name:name})||('✓ '+name+' is marked Completed.');
-  const slot=$('pCelebrate')||$('projStatus')||$('ffaPctMsg');
   if($('pCelebrate'))$('pCelebrate').textContent=msg;
   else if($('projStatus'))$('projStatus').textContent=msg;
-  try{if(window.FlossFoxPip&&typeof FlossFoxPip.say==='function')FlossFoxPip.say(t('pip.finish.a',{name:name}))}catch(e){}
+  try{if(window.FlossFoxAtelierPip&&FlossFoxAtelierPip.finished)FlossFoxAtelierPip.finished(p,$('pCelebrate')||$('projStatus')||$('pip'))}catch(e){}
 }
 
-window.FlossFoxAtelier=Object.freeze({version:'3.9-stageE',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),paintProjects:paintProjects,paintProgress:paintProgress,paintSession:paintSession,celebrateDone:celebrateDone,_dirty:()=>dirty,_session:()=>({mode:sess.mode,elapsed:sessElapsed()})});
+window.FlossFoxAtelier=Object.freeze({version:'3.9-stageF',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),paintProjects:paintProjects,paintProgress:paintProgress,paintSession:paintSession,celebrateDone:celebrateDone,enterSession:enterSession,exitSession:exitSession,inSession:()=>focusOn,onEditorClosed:onEditorClosed,_dirty:()=>dirty,_fmtSitting:fmtSitting,_session:()=>({mode:sess.mode,elapsed:sessElapsed(),focus:focusOn}),_debugSession:(o)=>{if(!o)return;if(o.elapsed!=null){const ev=o.elapsed;sess={mode:o.mode||'running',start:Date.now()-ev,frozen:ev};paintSession(sessHost,sessProject)}}});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+try{if(window.FlossFoxAtelierSeasonal&&FlossFoxAtelierSeasonal.refresh)FlossFoxAtelierSeasonal.refresh()}catch(e){}
 })();

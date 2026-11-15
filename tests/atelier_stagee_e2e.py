@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""3.9 Atelier Stage E: optional manual % done ring (FF39-14) and Stitch Session timer (FF39-16).
+"""3.9 Atelier Stage E: optional manual % done ring (FF39-14) and Stitch Session focus mode and timer (FF39-16).
 Progress is saved on the project and in backups; 100% never auto-completes; celebration once per
-real status transition to Completed. Timer is OFF by default, in-memory only, counts from a start
+real status transition to Completed. Focus is in-memory (reload returns to the full project). Timer is OFF by default, lives inside the session, in-memory only, counts from a start
 timestamp (keeps going if the tab is hidden), resets on close, never touches inventory or stitches.
 SIMULATED: headless Chrome with synthetic data, not real phones.
 Usage: FF_KEY=flossfox-dev.v1 python3 tests/atelier_stagee_e2e.py http://localhost:PORT/
@@ -28,7 +28,7 @@ PROJ = {'schema': 2, 'projects': [
     proj('p1', 'Sample Autumn Wreath', ['310', 'BLANC', 'WHITE', '321'], leftOff='Finished page 2'),
     proj('p2', 'Sample Done Bookmark', ['310'], status='done', upd='2026-11-09T10:00:00.000Z')]}
 THR = {'schema': 2, 'threads': {
-    '310': {'n': 2, 'partial': True, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z'},
+    '310': {'n': 2, 'partial': True, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z', 'storage': {'container':'Top drawer','slot':'A1','medium':''}},
     'WHITE': {'n': 1, 'partial': False, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z'},
     'BLANC': {'n': 1, 'partial': False, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z'},
     '321': {'n': 5, 'partial': False, 'restock': False, 'confirmed': True, 'updated': '2026-11-01T00:00:00Z'}}}
@@ -67,6 +67,12 @@ def open_p1(g):
     g.evaluate("() => window.FlossFoxProjects.openProject('p1')")
     g.wait_for_function("() => FlossFoxProjects.openId && FlossFoxProjects.openId()==='p1' && document.getElementById('pProgress')")
     g.wait_for_timeout(150)
+
+def enter_session(g):
+    g.wait_for_selector('#ffaSessionStart')
+    g.click('#ffaSessionStart')
+    g.wait_for_function("() => document.getElementById('ffaFocus') && document.getElementById('projEdit').classList.contains('ffa-focus-on')")
+    g.wait_for_timeout(100)
 
 with sync_playwright() as p:
     br = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
@@ -126,10 +132,22 @@ with sync_playwright() as p:
     ok('progress: no page errors', not g.errs, g.errs)
     c.close()
 
-    # ---- Timer off by default ----
+    # ---- Focus mode + timer (timer stays off by default; lives inside the session) ----
     c, g = ctx(br, seed_all())
     g.goto(B + '?nosw'); ready(g); open_p1(g)
-    ok('timer: no stitch-session timer while the pref is off', g.locator('#ffaSession').count()==0 or not g.locator('#pSession').is_visible() or g.inner_text('#pSession').strip()=='')
+    ok('focus: Start a stitch session is on the full project', g.locator('#ffaSessionStart').count()==1 and 'Start a stitch session' in g.inner_text('#pSession'))
+    ok('timer: no clock on the full project while the pref is off', g.locator('#ffaTimerStart').count()==0)
+    enter_session(g)
+    ok('focus: panel shows the project name', 'Sample Autumn Wreath' in g.inner_text('#ffaFocusTitle'))
+    ok('focus: last note is shown', 'Finished page 2' in g.inner_text('#ffaFocus'))
+    ok('focus: planned colors are listed', 'DMC 310' in g.inner_text('#ffaFocus') and 'DMC WHITE' in g.inner_text('#ffaFocus') and 'DMC BLANC' in g.inner_text('#ffaFocus'))
+    ok('focus: storage location is shown for an owned color', 'In Top drawer' in g.inner_text('#ffaFocus') and 'A1' in g.inner_text('#ffaFocus'))
+    ok('focus: exit control uses Pixel copy', g.locator('#ffaSessionExit').count()==1 and g.inner_text('#ffaSessionExit').strip()=='Back to the full project')
+    ok('timer: still no timer inside the session while the pref is off', g.locator('#ffaTimerStart').count()==0)
+    before_focus = dump_inv(g)
+    g.click('#ffaSessionExit'); g.wait_for_timeout(150)
+    ok('focus: exit restores the full project editor', g.locator('#pProgress').is_visible() and g.locator('#ffaSessionStart').is_visible() and 'ffa-focus-on' not in (g.get_attribute('#projEdit','class') or '') and g.locator('#ffaFocus:visible').count()==0)
+    ok('focus: exit does not write projects or threads', dump_inv(g)==before_focus)
     g.click('#tabSettings'); g.wait_for_timeout(200)
     ok('timer: settings switch is off by default', g.evaluate("()=>document.getElementById('ffTimer').checked") is False)
     g.screenshot(path=os.path.join(SHOTS, 'stageE-timer-off-1280.png'))
@@ -137,7 +155,9 @@ with sync_playwright() as p:
     ok('timer: turning the switch on saves only the atelier pref, not elapsed time',
        g.evaluate(f"()=>{{const a=JSON.parse(localStorage.getItem({AK!r})||'{{}}');return a.sessionTimer===true && !('elapsed' in a) && !('timer' in a && typeof a.timer==='number')}}"))
     open_p1(g)
-    ok('timer: session card appears once the pref is on', g.locator('#ffaSession').count()==1)
+    ok('timer: start-session stays on the full project when the pref is on', g.locator('#ffaSessionStart').count()==1 and g.locator('#ffaTimerStart').count()==0)
+    enter_session(g)
+    ok('timer: session card appears inside the focus panel once the pref is on', g.locator('#ffaFocus #ffaSession').count()==1)
     ok('timer: starts at 0:00 and is not running yet', '0:00' in g.inner_text('#ffaSession') and g.locator('#ffaTimerStart').count()==1)
     before = dump_inv(g)
     stitches_before = g.evaluate("()=>FlossFoxProjects._store().projects.find(p=>p.id==='p1').items.map(i=>i.stitchCount)")
@@ -171,8 +191,10 @@ with sync_playwright() as p:
     ok('timer: stop shows a sitting summary and does not save the time',
        'We don\'t save this time' in summary and 'under 1 min' in summary, summary)
     g.screenshot(path=os.path.join(SHOTS, 'stageE-timer-stopped-1280.png'))
-    # reload resets the clock
+    # reload returns to the full project and resets the clock (focus and timer are in-memory)
     g.reload(); ready(g); open_p1(g)
+    ok('focus: reload returns to the full project, not the session', g.locator('#ffaSessionStart').count()==1 and g.locator('#pProgress').is_visible() and g.locator('#ffaFocus:visible').count()==0)
+    enter_session(g)
     ok('timer: reload (page close) resets the clock and does not restore elapsed',
        '0:00' in g.inner_text('#ffaSession') and g.locator('#ffaTimerStart').count()==1)
     ok('timer: no page errors', not g.errs, g.errs)
@@ -186,11 +208,16 @@ with sync_playwright() as p:
     box = g.locator('#ffaPctOpen').bounding_box()
     ok('390: Change estimate meets 44px', box and box['height']>=44, box)
     g.screenshot(path=os.path.join(SHOTS, 'stageE-progress-35-390.png'), full_page=True)
-    ok('390: timer is present when pref is on', g.locator('#ffaTimerStart').count()==1)
+    sbox = g.locator('#ffaSessionStart').bounding_box()
+    ok('390: Start a stitch session meets 44px', sbox and sbox['height']>=44, sbox)
+    enter_session(g)
+    ok('390: timer is present inside the session when pref is on', g.locator('#ffaTimerStart').count()==1)
     tbox = g.locator('#ffaTimerStart').bounding_box()
     ok('390: Start timer meets 44px', tbox and tbox['height']>=44, tbox)
+    ebox = g.locator('#ffaSessionExit').bounding_box()
+    ok('390: Back to the full project meets 44px', ebox and ebox['height']>=44, ebox)
     g.click('#ffaTimerStart'); g.wait_for_timeout(400)
-    g.screenshot(path=os.path.join(SHOTS, 'stageE-timer-running-390.png'), full_page=True)
+    g.screenshot(path=os.path.join(SHOTS, 'stageE-timer-running-390.png'), full_page=False)
     ok('390: no page errors', not g.errs, g.errs)
     c.close()
 

@@ -223,3 +223,23 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 @media (prefers-reduced-motion:reduce){
   .ffa-ring-val,.ffa-ring svg,.ffa-clock,.ffa-session,.ffa-progress{transition:none;animation:none}
 }
+
+/* Stage F: Stitch Session focus mode (FF39-16). Hides the full editor while the reduced panel is open. */
+#projEdit.ffa-focus-on > *:not(#ffaFocus){display:none !important}
+#ffaFocus{display:none;margin:0;padding:16px 0 32px}
+#projEdit.ffa-focus-on #ffaFocus{display:block}
+.ffa-focus-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.ffa-focus-head h2{margin:0;font-size:1.4rem;color:var(--text-strong)}
+#ffaSessionStart,#ffaSessionExit,#ffaFocusShop,#ffaFocusThreads,.pipA-act{min-height:44px;min-width:44px}
+.ffa-focus-note,.ffa-focus-colors{margin:14px 0;padding:14px;border:1px solid var(--line,var(--surface-border));border-radius:16px;background:var(--psurface)}
+.ffa-focus-note h3,.ffa-focus-colors h3{margin:0 0 8px;font-size:1.1rem;color:var(--text-strong)}
+.ffa-colors{list-style:none;margin:0;padding:0}
+.ffa-colors li{display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-height:44px;padding:6px 0;border-bottom:1px solid var(--line,var(--surface-border))}
+.ffa-colors li:last-child{border-bottom:0}
+.ffa-colors .ffa-floss{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--swatch-edge,#ccc);background:var(--c,#ccc);flex:none}
+.ffa-colors .ffa-loc{color:var(--text-muted);font-size:.95rem}
+.ffa-focus-block{margin:12px 0;font-weight:700}
+.ffa-focus-links{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+@media (prefers-reduced-motion:reduce){
+  .ffa-focus,.ffa-focus-head,#ffaFocus{transition:none;animation:none}
+}

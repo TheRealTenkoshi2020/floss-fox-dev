@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-98'; // 3.9 Atelier (94 PR 19; 95 themes; 96 gallery+compare; 97 theme polish; 98 Stage E fabric/timer/progress)
+const CACHE = 'flossfox-dev-v2.0a-ci005-99'; // 3.9 Atelier (94 PR 19; 95 themes; 96 gallery+compare; 97 theme polish; 98 Stage E; 99 Stage F session focus + Pip reactions + seasonal wiring)
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -79,7 +79,7 @@ const CORE = [
   "flow-pass.js",
   "flow-pass.css",
   "tab-hint.js",
-  "atelier/atelier.css","atelier/atelier-copy.js","atelier/atelier-preferences-core.js","atelier/atelier-search-core.js","atelier/atelier-palette-core.js","atelier/atelier-store-visit-core.js","atelier/atelier-theme.js","atelier/atelier-compare-core.js","atelier/atelier-studio.js","atelier/atelier-ui.js","atelier/themes.css",
+  "atelier/atelier.css","atelier/atelier-copy.js","atelier/atelier-preferences-core.js","atelier/atelier-search-core.js","atelier/atelier-palette-core.js","atelier/atelier-store-visit-core.js","atelier/atelier-seasonal-core.js","atelier/atelier-theme.js","atelier/atelier-seasonal-ui.js","atelier/atelier-compare-core.js","atelier/atelier-studio.js","atelier/atelier-pip.js","atelier/atelier-ui.js","atelier/themes.css",
   "flow-strings.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",

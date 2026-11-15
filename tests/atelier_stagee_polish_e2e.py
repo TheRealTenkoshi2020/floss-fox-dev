@@ -209,6 +209,8 @@ with sync_playwright() as p:
     g.click('#tabProjects'); g.wait_for_timeout(150)
     g.evaluate("() => FlossFoxProjects.openProject('p1')")
     g.wait_for_timeout(250)
+    if g.locator('#ffaSessionStart').count():
+        g.click('#ffaSessionStart'); g.wait_for_timeout(200)
     if g.locator('#ffaTimerStart').count():
         g.click('#ffaTimerStart'); g.wait_for_timeout(300)
         box = g.evaluate("""() => {
@@ -320,6 +322,8 @@ with sync_playwright() as p:
     g.screenshot(path=os.path.join(SHOTS, 'stageE-polish-gallery-390.png'), full_page=False)
     g.evaluate("() => FlossFoxProjects.openProject('p1')")
     g.wait_for_timeout(250)
+    if g.locator('#ffaSessionStart').count():
+        g.click('#ffaSessionStart'); g.wait_for_timeout(200)
     if g.locator('#ffaTimerStart').count():
         g.click('#ffaTimerStart'); g.wait_for_timeout(200)
     g.screenshot(path=os.path.join(SHOTS, 'stageE-polish-timer-390.png'), full_page=False)

@@ -205,7 +205,7 @@ function checkIn(p,key,n){const P=plan(p),l=P.lines.find(x=>x.key===key);if(!l||
  let tk=null;if(into){const r=T.receiveFull(code,n);if(!r.ok)return fail();tk=r.token}
  checkUndo={id:p.id,before,after:pSnap(p),tk,nm};
  const msg=into?(ACp('checkin.done.threads',{brand:'DMC',code:lab(code),n},n)+ (n>=l.q?' You have enough now.':'')):text;
- return{ok:true,msg,threads:into,code,full:n>=l.q}}
+ return{ok:true,msg,threads:into,code,full:n>=l.q,q:l.q,brand:into?'DMC':(BRAND[P.dest]||'DMC')}}
 function undoCheckIn(){const u=checkUndo;checkUndo=null;const p=u&&proj(u.id);if(!p)return{ok:false,msg:''};
  if(pSnap(p)!==u.after)return{ok:false,msg:'This changed since, so we left it as it is.'};
  const T=window.FlossFoxThreadsUI;if(u.tk){const r=T&&T.undoReceive(u.tk);if(!r||!r.ok)return{ok:false,msg:r&&r.reason==='changed'?'My threads changed since, so we left it as it is.':ACp('common.notSaved',{},undefined,'Not saved: your browser blocked the save.')}}
@@ -214,7 +214,7 @@ function undoCheckIn(){const u=checkUndo;checkUndo=null;const p=u&&proj(u.id);if
 // Shared by both check-in forms (project page and Shop my list): message + one Undo button next to it.
 function checkInUI(p,key,n,msgId,re){const r=checkIn(p,key,n);re(r.msg);const m=$(msgId);if(r.ok&&m){const b=document.createElement('button');b.type='button';b.className='ghost small';b.id=msgId+'Undo';b.textContent=ACp('common.undo',{},undefined,'Undo');
   b.onclick=()=>{const u=undoCheckIn();re(u.msg);const f=$(msgId);if(f){f.setAttribute('tabindex','-1');f.focus({preventScroll:true})}};m.append(' ',b)}
- if(r.ok&&window.FlossFoxPip&&FlossFoxPip.react)FlossFoxPip.react('pipA.checkin',{full:r.full,threads:r.threads,n,brand:'DMC',code:r.code?lab(r.code):''},'#'+msgId,{siteAnnounces:true});return r}
+ if(r.ok&&window.FlossFoxPip&&FlossFoxPip.react)FlossFoxPip.react('pipA.checkin',{full:r.full,threads:r.threads,n,q:r.q,brand:r.brand||'DMC',code:r.code?lab(r.code):''},'#'+msgId,{siteAnnounces:true});return r}
 
 // ---- Rendering ----
 const foxSvg=cls=>{const l=document.querySelector('header .logo');return l?l.outerHTML.replace('class="logo"',`class="${cls}" aria-hidden="true"`).replace(/role="img" aria-label="[^"]*"/,''):''};
@@ -233,8 +233,9 @@ async function delProject(id){const p=proj(id);if(!p)return;
  {const S=ALS();if(S&&S.writable())S.read().allocations.filter(r=>r.projectId===id).forEach(r=>S.update({projectId:id,code:r.code,qty:0},{projects:store.projects,collection:COL()}))}
  store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
 var kitFresh=false;
-function openProject(id,m){kitFresh=true;{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(openId!==id){expanded.clear();touched.clear();haveShown=false;filt='all';query='';shopPanel=null;if(typeof openSec==='object')for(const k in openSec)delete openSec[k]}openId=id;mode=m||'edit';{const pp=proj(id);if(pp)autoCmp(pp)}renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Back in the hoop: “${proj(id).name}”.`)}
-function closeProject(){setTimeout(ensureShop);if(window.FlossFoxThreadsUI)FlossFoxThreadsUI.tipDone('compare');openId=null;mode='edit';$('projEdit').hidden=true;$('projListCard').hidden=false;renderList()}
+function openProject(id,m){kitFresh=true;{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(openId!==id){expanded.clear();touched.clear();haveShown=false;filt='all';query='';shopPanel=null;if(typeof openSec==='object')for(const k in openSec)delete openSec[k]}openId=id;mode=m||'edit';{const pp=proj(id);if(pp)autoCmp(pp)}renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Back in the hoop: “${proj(id).name}”.`);
+ {const pp=proj(id);if(pp&&pp.status!=='done'&&typeof pp.leftOff==='string'&&pp.leftOff.trim()&&window.FlossFoxAtelierPip&&FlossFoxAtelierPip.returned)try{FlossFoxAtelierPip.returned(pp,$('projEdit')||$('pip'))}catch(e){}}}
+function closeProject(){if(window.FlossFoxAtelier&&FlossFoxAtelier.onEditorClosed)try{FlossFoxAtelier.onEditorClosed()}catch(e){}setTimeout(ensureShop);if(window.FlossFoxThreadsUI)FlossFoxThreadsUI.tipDone('compare');openId=null;mode='edit';$('projEdit').hidden=true;$('projListCard').hidden=false;renderList()}
 function destCell(p,it){const d=p.decisions[it.code],dest=p.buyBrand,c=it.code,f=fam(c),L=esc(lab(c));
  if(dest==='anchor'&&f==='solid'&&DMC[c].anchor.length>1||dest==='anchor'&&(c==='WHITE'||c==='BLANC'||c==='B5200')&&DMC[c].anchor.length){const disputed=c==='WHITE'||c==='BLANC'||c==='B5200';
   return`<label class="flbl" for="anc-${esc(c)}">Choose the Anchor match</label><select id="anc-${esc(c)}" data-anc="${esc(c)}"><option value=""${d.anchor?'':' selected'}>Choose a match…</option>${DMC[c].anchor.map(a=>`<option value="${esc(a)}"${d.anchor===a?' selected':''}>Anchor ${esc(a)}</option>`).join('')}</select><p class="hint">${disputed?esc(WHITE_DISPUTE):'The chart lists more than one Anchor match for this color. Pick the one you want to use.'}</p>`}
@@ -488,7 +489,7 @@ function applyFilter(P){const cards=[...document.querySelectorAll('#pCards .tcar
  const nr=$('pNoRes');if(nr){nr.hidden=!!n||!cards.length;nr.innerHTML=n?'':`${q?`No colors match “${esc(query)}”${filt!=='all'?' in this view':''}.`:'Nothing here right now.'} <button type="button" class="sec small" id="pNoResClear">Show all colors</button>`;const b=$('pNoResClear');if(b)b.onclick=()=>{query='';filt='all';renderEditor()}}
  if(!cards.length&&nr){nr.hidden=false;nr.innerHTML='No colors in this project yet. Use <b>Add more colors</b> below.';const ab=$('pAddBox');if(ab)ab.open=true}
  const m=$('pFiltMsg');if(m)m.textContent=`Showing ${s2(n)}.`;const cb=$('pSearchClear');if(cb)cb.hidden=!query}
-function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxPip.projectReady(p.id,P.ready));if(cel&&FlossFoxPip.react)setTimeout(()=>FlossFoxPip.react('pipA.ready',{},()=>[...document.querySelectorAll('p.headline')].find(e=>e.offsetParent),{siteAnnounces:true}),0);const s=P.sum,tb=P.lines.filter(l=>!l.bought),aw=P.lines.filter(l=>l.bought),pct=s.total?Math.round(100*s.sufficient/s.total):0;
+function renderPlan(p,P){P=P||plan(p);const cel=!!(window.FlossFoxPip&&FlossFoxPip.projectReady(p.id,P.ready));if(cel){const anchor=()=>[...document.querySelectorAll('p.headline')].find(e=>e.offsetParent);if(window.FlossFoxAtelierPip&&FlossFoxAtelierPip.covers)setTimeout(()=>FlossFoxAtelierPip.covers(p,P,anchor),0);else if(FlossFoxPip.react)setTimeout(()=>FlossFoxPip.react('pipA.ready',{},anchor,{siteAnnounces:true}),0)}const s=P.sum,tb=P.lines.filter(l=>!l.bought),aw=P.lines.filter(l=>l.bought),pct=s.total?Math.round(100*s.sufficient/s.total):0;
  const skeins=P.lines.reduce((a,l)=>a+l.q,0),colorOnly=P.threads.filter(t=>t.kind==='amount'&&t.d.status==='buy').length;
  const isAsm=l=>l.ts.some(t=>!t.estimated&&asmOf(t.it)>0);const li=l=>`<b>${BRAND[P.dest]} ${esc(disp(P.dest,l.to))}</b> × ${l.q}${isAsm(l)?FF_EST.badge:''} <small class="mut">(for DMC ${l.from.map(c=>esc(lab(c))).join(', ')} · ${[...l.prov].map(esc).join('; ')}${l.partial?' · after subtracting what you have':''}${l.recvd?` · ${l.recvd} already received`:''}${l.ts.some(t=>t.estimated)?' · includes Pip estimates':''}${l.ts.some(t=>!t.estimated&&asmOf(t.it)>0)?' · includes an assumed amount':''})</small>`;
  const mw=l=>l.from.length>1?'<div class="hint">Note: several pattern colors use this one thread. Check that\'s what you want.</div>':'';
