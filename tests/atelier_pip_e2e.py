@@ -61,6 +61,22 @@ def bubble(g):
     if g.locator('.pipA-bubble .pipA-text').count()==0: return ''
     return g.inner_text('.pipA-bubble .pipA-text')
 
+def clear_bubbles(g):
+    g.evaluate("() => { if (window.FlossFoxPip && FlossFoxPip.closeBubble) FlossFoxPip.closeBubble(); if (window.FlossFoxPip && FlossFoxPip._capsReset) FlossFoxPip._capsReset(); }")
+    g.wait_for_timeout(80)
+
+def bubble_info(g):
+    return g.evaluate("""() => {
+      const b = document.querySelector('.pipA-bubble');
+      if (!b) return {pose:'', src:'', text:'', act:'', clamp:0};
+      const img = b.querySelector('img');
+      const tx = b.querySelector('.pipA-text');
+      const act = b.querySelector('.pipA-act');
+      const src = img ? (img.currentSrc || img.getAttribute('src') || '') : '';
+      const clamp = tx ? Math.max(0, tx.scrollHeight - tx.clientHeight) : 0;
+      return {pose: b.dataset.pose||'', src, text: tx ? (tx.textContent||'') : '', act: act ? act.className : '', clamp};
+    }""")
+
 def hero_src(g):
     return g.evaluate("() => ({src: document.getElementById('pipImg')&&pipImg.src, show: document.getElementById('pipImg')&&pipImg.dataset.show, art: document.getElementById('pipImg')&&pipImg.dataset.art, complete: document.getElementById('pipImg')&&pipImg.complete, w: document.getElementById('pipImg')&&pipImg.naturalWidth, nwBroken: document.getElementById('pipImg')&&pipImg.naturalWidth===0 && pipImg.complete, darkMedia: document.getElementById('pipSrcDark')&&pipSrcDark.media})")
 
@@ -170,6 +186,10 @@ with sync_playwright() as p:
     ok('return: Pip quotes the leftOff note', 'Welcome back' in txt and 'Finished page 2' in txt, txt)
     ok('return: note is trimmed to 44 with an ellipsis and Pip does not claim to remember it', '…' in txt and 'remember' not in txt.lower(), txt)
     ok('return: pose is greeting-alt', g.locator('.pipA-bubble').get_attribute('data-pose')=='greeting-alt')
+    info = bubble_info(g)
+    ok('return: art file is greeting-alt, not the greeting pose', 'greeting-alt' in (info['src'] or ''), info)
+    ok('return: line is not mid-sentence clamped', info['clamp']<=1, info)
+    ok('return: action button uses pipA-act sec', 'pipA-act' in info['act'] and 'sec' in info['act'].split(), info)
     g.screenshot(path=os.path.join(SHOTS, 'stageF-pip-return-1280.png'), full_page=False)
     # second open in the same session is capped
     g.evaluate("() => { document.getElementById('pBack') ? document.getElementById('pBack').click() : FlossFoxProjects.refreshList(); }")
@@ -256,9 +276,26 @@ with sync_playwright() as p:
         g.wait_for_timeout(500)
         txt = bubble(g)
         ok('import: clean import uses pip.import.a', 'I found' in txt and 'colors in your pattern' in txt and 'Pattern check' not in txt, txt)
-        ok('import: pose is pattern-reader', g.locator('.pipA-bubble').count()==0 or g.locator('.pipA-bubble').get_attribute('data-pose')=='pattern-reader')
+        info = bubble_info(g)
+        src = (info['src'] or '')
+        ok('import: pose is pattern-reader', info['pose']=='pattern-reader' and 'pattern-reader' in src, info)
+        ok('import: the image is pattern-reader art, not the greeting pose', 'pattern-reader' in src and 'pip-greeting-' not in src, info)
+        ok('import: action button uses pipA-act sec', 'pipA-act' in info['act'] and 'sec' in info['act'].split(), info)
+        # Close the pattern dialog so the named shot shows the import reaction, not the dialog on top of it.
+        # Re-fire so the single companion figure takes the pattern-reader pose (a converter result() after close can reset it).
+        g.evaluate("() => { const d=document.getElementById('ffPatternDialog'); if(d && d.open) d.close(); FlossFoxPip._capsReset(); FlossFoxPip.react('pip.import',{n:2},document.getElementById('pip')||document.body,{action:{label:'Review colors',go:function(){}}}); }")
+        g.wait_for_timeout(300)
+        info = bubble_info(g)
+        vis = g.evaluate("() => { const i=document.getElementById('pipImg'); return i ? (i.currentSrc||i.src||'') : ''; }")
+        ok('import shot: pattern-reader reaction is visible with the dialog closed', info['pose']=='pattern-reader' and 'pattern-reader' in (info['src'] or '') and 'I found' in info['text'], info)
+        ok('import shot: the visible companion figure is pattern-reader, not gardener/greeting', 'pattern-reader' in vis, vis)
+        g.screenshot(path=os.path.join(SHOTS, 'stageF-pip-import-1280.png'), full_page=False)
         # flagged: pcheck instead of import
         g.evaluate("() => { FlossFoxPip._capsReset(); FlossFoxPip.closeBubble && FlossFoxPip.closeBubble(); }")
+        g.evaluate("() => { if (window.FFImportOpen) FFImportOpen(); else { const d=document.getElementById('ffPatternDialog'); if(d && !d.open) d.showModal(); } }")
+        g.wait_for_timeout(200)
+        if g.locator('#ffPatternDialog .pat-manual').count():
+            g.evaluate("document.querySelector('#ffPatternDialog .pat-manual').open=true")
         g.fill('#patPaste', FLAGGED)
         g.click('#ffPatternDialog .pat-manual button:has-text("Find colors")')
         g.wait_for_timeout(500)
@@ -279,7 +316,6 @@ with sync_playwright() as p:
     g.wait_for_timeout(200)
     ok('companion: only one Pip bubble at a time', g.locator('.pipA-bubble').count()==1)
     ok('reactions: no page errors (context 2)', not g.errs, g.errs)
-    g.screenshot(path=os.path.join(SHOTS, 'stageF-pip-import-1280.png'), full_page=False)
     c.close()
 
     # 390 focus + seasonal fallback (phone shot, full_page=False so mobile emulation holds)
@@ -288,24 +324,38 @@ with sync_playwright() as p:
     src = hero_src(g)
     ok('390: standard Pip (no seasonal art) is intact', src['w'] and src['w']>0 and ('gardener' in (src['src'] or '') or 'starlight' in (src['src'] or '')), src)
     g.click('#tabProjects'); g.wait_for_timeout(150)
+    clear_bubbles(g)
     g.evaluate("() => { FlossFoxPip._capsReset(); FlossFoxProjects.openProject('p1') }")
-    g.wait_for_timeout(300)
+    g.wait_for_timeout(400)
+    info = bubble_info(g)
+    ok('390: return reaction is on screen before focus opens', 'Welcome back' in info['text'] and info['pose']=='greeting-alt' and 'greeting-alt' in (info['src'] or ''), info)
+    g.screenshot(path=os.path.join(SHOTS, 'stageF-pip-return-390.png'), full_page=False)
     if g.locator('#ffaSessionStart').count():
-        g.click('#ffaSessionStart'); g.wait_for_timeout(200)
+        clear_bubbles(g)
+        g.click('#ffaSessionStart'); g.wait_for_timeout(250)
         ok('390: focus mode opens', g.locator('#ffaFocus').count()==1 and 'Sample Autumn Wreath' in g.inner_text('#ffaFocus'))
         ebox = g.locator('#ffaSessionExit').bounding_box()
         ok('390: Back to the full project meets 44px', ebox and ebox['height']>=44, ebox)
+        fbox = g.locator('#ffaFocus').bounding_box()
+        ok('390: focus panel is scrolled into view', fbox and fbox['y'] >= -1, fbox)
+        ok('390: focus heading is focused', g.evaluate("() => document.activeElement && document.activeElement.id")=='ffaFocusTitle')
         g.screenshot(path=os.path.join(SHOTS, 'stageF-focus-390.png'), full_page=False)
-    g.screenshot(path=os.path.join(SHOTS, 'stageF-pip-return-390.png'), full_page=False)
+        g.click('#ffaSessionExit'); g.wait_for_timeout(200)
+        ok('390: exiting focus focuses Start a stitch session', g.evaluate("() => document.activeElement && document.activeElement.id")=='ffaSessionStart')
     ok('390: no page errors', not g.errs, g.errs)
     c.close()
 
-    # Theme shots of standard Pip (art missing) at 1280
+    # Theme shots: a real return reaction in each theme (not the landing greeting)
     for theme, name in (('morning','Morning'),('forest','Forest'),('moon','Moonlit')):
-        c, g = ctx(br, seed_all({AK: json.dumps({'v':1,'theme':theme,'seasonalPip':True})}))
+        c, g = ctx(br, seed_all({AK: json.dumps({'v':1,'theme':theme,'seasonalPip':True}), LVK: 'important'}))
         g.goto(B + '?nosw'); ready(g)
-        src = hero_src(g)
-        ok(f'{name}: established Pip art is used (no seasonal file)', src['w'] and src['w']>0 and not src['nwBroken'], src)
+        g.click('#tabProjects'); g.wait_for_timeout(150)
+        clear_bubbles(g)
+        g.evaluate("() => { FlossFoxPip._capsReset(); FlossFoxProjects.openProject('p1') }")
+        g.wait_for_timeout(400)
+        info = bubble_info(g)
+        ok(f'{name}: return reaction is showing, not the greeting pose', 'Welcome back' in info['text'] and info['pose']=='greeting-alt' and 'greeting-alt' in (info['src'] or ''), info)
+        ok(f'{name}: return line is not mid-sentence clamped', info['clamp']<=1, info)
         g.screenshot(path=os.path.join(SHOTS, f'stageF-pip-{theme}-1280.png'), full_page=False)
         ok(f'{name}: no page errors', not g.errs, g.errs)
         c.close()

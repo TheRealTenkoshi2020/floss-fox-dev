@@ -379,5 +379,22 @@ test('progress: 100% copy is hidden once the project is Completed', () => {
   const ui = fs.readFileSync(path.join(root, 'atelier/atelier-ui.js'), 'utf8');
   assert(ui.includes("if(p.progressPct===100&&p.status!=='done')"));
 });
+test('Stage F polish: pattern-reader ART, unclamped bubble, scoped .hero .num, focus --c, singular verb', () => {
+  const pip = fs.readFileSync(path.join(root, 'pip.js'), 'utf8');
+  assert(pip.includes("'pattern-reader':'pattern-reader'"), 'ART maps pattern-reader');
+  assert(pip.includes("go.className='pipA-act sec'"), 'bubble action uses pipA-act sec');
+  assert(html.includes('.pipA-bubble .pipA-text{-webkit-line-clamp:unset;display:block}'), 'Pip lines are not 3-line clamped');
+  const pair = fs.readFileSync(path.join(root, 'theme-pair.css'), 'utf8');
+  assert(pair.includes('.hero .num{background:var(--step2);color:var(--step-text)}'), 'global .num is scoped to .hero .num');
+  const ui = fs.readFileSync(path.join(root, 'atelier/atelier-ui.js'), 'utf8');
+  assert(ui.includes("sw.style.setProperty('--c',hex)"), 'focus swatches set --c');
+  assert(/BLANC\|WHITE/.test(ui), 'BLANC/WHITE keep an edge');
+  assert(ui.includes("foc.scrollIntoView({block:'start'})"), 'enterSession scrolls #ffaFocus into view');
+  assert(ui.includes("const start=$('ffaSessionStart');if(start)try{start.focus()}catch(e){}"), 'exit focuses Start a stitch session');
+  const proj = fs.readFileSync(path.join(root, 'projects.js'), 'utf8');
+  assert(proj.includes("s.total===1?'has enough or has been checked in':'have enough or have been checked in'"), 'singular verb when total is 1');
+  const fab = fs.readFileSync(path.join(root, 'fabric.html'), 'utf8');
+  assert(fab.includes('background:none;color:inherit'), 'fabric .num has no theme bar');
+});
 console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);
 process.exit(fail ? 1 : 0);

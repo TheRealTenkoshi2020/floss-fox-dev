@@ -456,8 +456,11 @@ function focusColors(p){
   items.forEach(it=>{
     const code=it&&it.code?String(it.code):'';
     const li=el('li');
-    const sw=el('span',{class:'ffa-floss','aria-hidden':'true'});
-    if(D[code]&&D[code].hex)sw.style.background=D[code].hex;
+    const src=rgbCatalog()||D||{};
+    const hex=src[code]&&typeof src[code].hex==='string'&&/^#[0-9a-fA-F]{6}$/.test(src[code].hex)?src[code].hex:null;
+    const white=/^(BLANC|WHITE|B5200)$/i.test(code);
+    const sw=el('span',{class:'ffa-floss'+(hex?'':' none')+(hex&&(/^#f/i.test(hex)||white)?' edge':''),'aria-hidden':'true'});
+    if(hex)sw.style.setProperty('--c',hex);
     li.append(sw,el('span',null,'DMC '+code));
     const rec=threads[code];
     const loc=rec?locText(rec.storage):'';
@@ -521,7 +524,7 @@ function paintFocus(isTick){
   foc.replaceChildren();
   const p=sessProject;
   const head=el('header',{class:'ffa-focus-head'});
-  head.append(el('h2',{id:'ffaFocusTitle'},(p&&p.name)||(t('session.title')||'Stitch session')));
+  head.append(el('h2',{id:'ffaFocusTitle',tabindex:'-1'},(p&&p.name)||(t('session.title')||'Stitch session')));
   const exit=el('button',{type:'button',class:'sec',id:'ffaSessionExit'},t('session.exit')||'Back to the full project');
   exit.onclick=()=>exitSession();
   head.append(exit);foc.append(head);
@@ -538,13 +541,16 @@ function paintFocus(isTick){
   const on=!!(P0()&&P0().sessionTimer);
   if(on)foc.append(paintTimerCard());
 }
-function enterSession(p){focusOn=true;if(p)sessProject=p;if(sessHost){sessHost.replaceChildren();sessHost.hidden=true}paintFocus(false)}
+function enterSession(p){focusOn=true;if(p)sessProject=p;if(sessHost){sessHost.replaceChildren();sessHost.hidden=true}paintFocus(false);
+  const foc=$('ffaFocus');if(foc)try{foc.scrollIntoView({block:'start'})}catch(e){}
+  const h=$('ffaFocusTitle');if(h){if(!h.hasAttribute('tabindex'))h.tabIndex=-1;try{h.focus({preventScroll:true})}catch(e){try{h.focus()}catch(e2){}}}}
 function exitSession(){
   focusOn=false;
   const ed=$('projEdit');if(ed)ed.classList.remove('ffa-focus-on');
   const foc=$('ffaFocus');if(foc){foc.hidden=true;foc.replaceChildren()}
   if(sessHost)sessHost.hidden=false;
   paintSession(sessHost,sessProject);
+  const start=$('ffaSessionStart');if(start)try{start.focus()}catch(e){}
 }
 function onEditorClosed(){if(focusOn){focusOn=false;const ed=$('projEdit');if(ed)ed.classList.remove('ffa-focus-on')}sessStopTick()}
 function paintSession(host,p,isTick){

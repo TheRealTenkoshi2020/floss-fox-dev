@@ -45,7 +45,7 @@ input[aria-invalid=true]{border-color:#a3361b;background:#fff6f3}.err{color:#a33
 .seg input{width:18px;height:18px;accent-color:var(--pink);margin:0}.seg label:has(input:checked){border-color:var(--pink);background:#eef2ea}.seg label:has(input:focus-visible){outline:3px solid #e9a77f;outline-offset:2px}
 .note{background:#eef2ea;border-radius:10px;padding:8px 12px;font-size:.92rem;margin:8px 0 0}
 .fcres .big{background:#fff;border:2px solid var(--lime);border-radius:14px;padding:12px 14px;margin:0 0 12px}
-.fcres h2{font-size:1.05rem;margin:0 0 4px}.fcres h2::before{content:''}.fcres .num{font-size:1.9rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}.fcres .sub{color:var(--mut);font-size:.95rem;font-variant-numeric:tabular-nums}
+.fcres h2{font-size:1.05rem;margin:0 0 4px}.fcres h2::before{content:''}.fcres .num{font-size:1.9rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;background:none;color:inherit}.fcres .sub{color:var(--mut);font-size:.95rem;font-variant-numeric:tabular-nums}
 .fcres .design{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin:0 0 12px}.fcres .design .num{font-size:1.4rem}
 details.others summary,details.tips summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:650}
 .otab td,.otab th{font-variant-numeric:tabular-nums;padding:6px}.tip{display:flex;gap:10px;align-items:flex-start;margin:8px 0}.tip img{width:56px;height:auto;flex:none;object-fit:contain}
@@ -64,7 +64,7 @@ details.others summary,details.tips summary{cursor:pointer;min-height:44px;displ
 #fcPresets li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
 #fcPresets button{min-height:44px}
 #fcPresetName{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:15px system-ui,sans-serif;background:var(--input-bg,#fff);color:var(--txt)}
-@media print{#fcDiagram{border-color:#000;background:#fff;break-inside:avoid}#fcDiagram .fc-cut{fill:#fff;stroke:#000}#fcDiagram .fc-stitched{fill:#e6e6e6;stroke:#000}#fcDiagram .fc-cut,#fcDiagram .fc-stitched{-webkit-print-color-adjust:exact;print-color-adjust:exact}body,h1,h2,h3{color:#000;background:#fff}#fcPresets,#fcDiagNote{display:none!important}.fcres .big, #fcDesign, #fcDiagram{display:block!important}}
+@media print{#fcDiagram{border-color:#000;background:#fff;break-inside:avoid}#fcDiagram .fc-cut{fill:#fff;stroke:#000}#fcDiagram .fc-stitched{fill:#e6e6e6;stroke:#000}#fcDiagram .fc-cut,#fcDiagram .fc-stitched{-webkit-print-color-adjust:exact;print-color-adjust:exact}body,h1,h2,h3{color:#000;background:#fff}#fcPresets,#fcDiagNote{display:none!important}.fcres .big, #fcDesign, #fcDiagram{display:block!important}.fcres .num{background:none;color:inherit}}
 @media (prefers-reduced-motion:reduce){#fcDiagram,#fcDiagram svg, #fcDiagram .fc-cut, #fcDiagram .fc-stitched{transition:none;animation:none}}
 
 .fc button{min-height:44px}.brand span{color:var(--lime)}

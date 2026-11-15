@@ -130,8 +130,17 @@ with sync_playwright() as p:
         ok(f'print {label}: .fc-cut stroke is black', cut_stroke and is_near_black(cut_stroke), cut)
         ok(f'print {label}: .fc-stitched is a light fill with a black line', st_fill and not is_navy(st_fill) and st_stroke and is_near_black(st_stroke), stitched)
         ok(f'print {label}: heading text is dark, not pale on white', head and max(head)<=50, h1)
+        # Stage F polish #5: result numbers must not sit on a theme-colored bar
+        if g.locator('#fcCutNum').count():
+            num = styles(g, '#fcCutNum')
+            nbg = parse_rgb(num and num['bg'])
+            ok(f'print {label}: .fcres .num has no theme-colored bar', nbg is None or (nbg[3] if len(nbg)>3 else 1)==0 or is_near_white(nbg[:3]) or (num and ('rgba(0, 0, 0, 0)' in str(num['bg']) or num['bg'] in ('transparent','rgba(0,0,0,0)'))), num)
         g.screenshot(path=os.path.join(SHOTS, f'stageE-polish-print-{theme}-1280.png'), full_page=False)
         g.emulate_media(media='screen')
+        if g.locator('#fcCutNum').count():
+            num = styles(g, '#fcCutNum')
+            nbg = parse_rgb(num and num['bg'])
+            ok(f'screen {label}: .fcres .num has no theme-colored bar', nbg is None or (num and ('rgba(0, 0, 0, 0)' in str(num['bg']) or 'transparent' in str(num['bg']))) or (nbg and is_near_white(nbg[:3])), num)
         ok(f'print {label}: no page errors', not g.errs, g.errs)
         c.close()
 

@@ -64,7 +64,7 @@ code{background:var(--surface-2);color:var(--text)}
 .hero h1{font-family:var(--font-head);font-weight:600;line-height:1.12;padding-right:40px}
 .hero .steps li{background:var(--chip-bg);border:1px solid var(--chip-border);color:var(--chip-text);font-weight:700}
 .hero .steps li:nth-child(1) .num{background:var(--step1)}.hero .steps li:nth-child(2) .num{background:var(--step2)}.hero .steps li:nth-child(3) .num{background:var(--step3)}
-.num{background:var(--step2);color:var(--step-text)}
+.hero .num{background:var(--step2);color:var(--step-text)}
 .hero .steps::after{content:none}
 .hero .steps{position:relative}
 .herogrid{position:relative}

@@ -140,3 +140,12 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
 - FF39-16 focus mode: PRODUCT_SPEC lines on Stitch Session (and QA "Session focus and browser restart") ask for a reduced panel with "Back to the full project". Built in this stage. Timer is unchanged in policy (never saved) and now appears only after entering the session, when the Settings switch is on.
 - FF39-21: reactions fire only at verified points via FlossFoxPip.react. "covers" means the collection covers the pattern (pip.covers.a / pip.covers.est), not cover photos. A cover-photo hook is exported as coverPhoto() and always returns false until Stage G. celebrateDone now uses react(pip.finish.a) (the old FlossFoxPip.say path was a no-op). Confirmed receipts stay on the existing check-in path, with Pixel pip.receipt.project / pip.receipt.part companions and important-level visibility. Import uses pip.import.a only when Pattern check has no flags (flagged imports keep pipA.pcheck).
 - FF39-22: seasonal core is loaded. No art exists; standard Pip is shown. Tests mock the local clock at each season and moment edge.
+
+## Stage F polish (Pixel REVIEW-39-stageF.md, no blockers)
+- Should-fix 1: `ART` in `pip.js` now maps `'pattern-reader':'pattern-reader'`. Import uses the pattern-reader art, not the greeting fallback. e2e checks `data-pose` and the image URL.
+- Should-fix 2: `.pipA-bubble .pipA-text{-webkit-line-clamp:unset;display:block}` so approved lines are not cut mid-sentence. Bubble actions use `go.className='pipA-act sec'`.
+- Should-fix 3: Focus-mode swatches set `style="--c:<hex>"` from the same catalog lookup as Workbasket. BLANC, WHITE and B5200 keep the swatch edge.
+- Should-fix 4: Opening a stitch session scrolls `#ffaFocus` into view and focuses `#ffaFocusTitle` (`tabindex=-1`). Exiting focuses `#ffaSessionStart`.
+- Should-fix 5: `theme-pair.css` scopes the step color to `.hero .num`. `.fcres .num{background:none;color:inherit}` on screen and in print, so cutting-slip numbers have no theme-colored bar.
+- Nit 6: the hoop-ready line uses "has enough or has been checked in" when the total is 1.
+- Shot hygiene: leftover bubbles are closed before a named shot. `stageF-pip-return-390` is the return reaction (taken before focus opens). `stageF-pip-import-1280` is a real import with pattern-reader art. Theme shots show the return reaction, not the landing greeting. Cache stays ci005-99.

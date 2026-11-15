@@ -10,7 +10,7 @@ const ART={greeting:'greeting',curious:'curious',puzzled:'puzzled',duplicates:'d
  reassuring:'reassuring',presenting:'presenting',discovery:'discovery',saved:'saved','face-icon':'face-icon',
  needle:'needle','needle-alt':'needle-alt',organizing:'organizing',goodbye:'goodbye','cross-stitch':'cross-stitch',
  // new-15 (Pixel's placement plan): only these 11 are placed; wink, skeptical, determined, rainbow-hoop are held
- magnifier:'magnifier',phew:'phew','dropped-bobbin':'dropped-bobbin','floss-box':'floss-box','proud-finish':'proud-finish',explorer:'explorer',meditating:'meditating','shy-heart':'shy-heart','grumpy-knot':'grumpy-knot',worried:'worried',surprised:'surprised'};
+ magnifier:'magnifier',phew:'phew','dropped-bobbin':'dropped-bobbin','floss-box':'floss-box','proud-finish':'proud-finish',explorer:'explorer',meditating:'meditating','shy-heart':'shy-heart','grumpy-knot':'grumpy-knot',worried:'worried',surprised:'surprised','pattern-reader':'pattern-reader'};
 const FUTURE={proud:'greeting',teaching:'curious'};
 const poseArt=p=>ART[p]||ART[FUTURE[p]]||'greeting';
 const short=t=>{t=String(t).replace(/\s+/g,' ').trim();return t.length>24?t.slice(0,23)+'…':t};
@@ -232,7 +232,7 @@ function react(key,vars,anchor,opts){opts=opts||{};vars=vars||{};if(key==='pipA.
  b.innerHTML=`<picture aria-hidden="true"><source type="image/webp" srcset="assets/pip/pip-${pose}-160.webp"><img src="assets/pip/pip-${pose}-160.png" alt="" aria-hidden="true" width="48" height="71" decoding="async"></picture><p class="pipA-text"></p><button type="button" class="pipA-x" aria-label="${AL.dismiss}">✕</button><a href="#pipSettings" class="pipA-set">${AL.settings}</a>`;
  b.querySelector('.pipA-text').textContent=text;b.querySelector('.pipA-x').onclick=closeBubble;
  b.querySelector('.pipA-set').onclick=e=>{e.preventDefault();closeBubble();const t=document.getElementById('tabHelp');if(t)t.click();setTimeout(()=>{const s=document.getElementById('pipSettings');if(s)s.scrollIntoView({block:'start'})},50)};
- if(opts.action&&opts.action.label){const go=document.createElement('button');go.type='button';go.className='pipA-act';go.textContent=opts.action.label;go.onclick=()=>{closeBubble();if(typeof opts.action.go==='function')opts.action.go()};b.appendChild(go)}
+ if(opts.action&&opts.action.label){const go=document.createElement('button');go.type='button';go.className='pipA-act sec';go.textContent=opts.action.label;go.onclick=()=>{closeBubble();if(typeof opts.action.go==='function')opts.action.go()};b.appendChild(go)}
  b.addEventListener('keydown',e=>{if(e.key==='Escape')closeBubble()});['mouseenter','focusin'].forEach(x=>b.addEventListener(x,()=>clearTimeout(bubT)));['mouseleave','focusout'].forEach(x=>b.addEventListener(x,()=>setTimeout(armFade,0)));
  el.appendChild(b);bub=b;armFade();evPose=pose;evText='';clearOver();over='event';show('event');// one-Pip: the bubble lives in the single companion, which takes the event pose
  // One polite announcement: if the site already announces this event (opts.siteAnnounces), Pip's line is visual only.
