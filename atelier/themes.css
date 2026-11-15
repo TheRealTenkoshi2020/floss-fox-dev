@@ -430,3 +430,19 @@
 @media (prefers-reduced-motion:reduce){:root{--motion-fast:0ms;--motion:0ms}}
 /* Floss strand swatch (CSS only, no per-code images). --c comes from app thread data; text label always sits beside it. */
 .ff-floss{--c:#9a9a9a;display:inline-block;width:30px;height:26px;flex:none;border-radius:7px;border:1.5px solid var(--swatch-edge);background:repeating-linear-gradient(100deg,var(--fiber-hi) 0 1.5px,transparent 1.5px 4px,var(--fiber-lo) 4px 5px,transparent 5px 7px),var(--c);box-shadow:inset 0 2px 2px var(--fiber-hi),inset 0 -3px 4px var(--fiber-lo)}
+
+/* Stage E polish: every theme prints as Morning/light paper. No navy .fc-cut under print-color-adjust:exact. */
+@media print{
+  html[data-atelier-theme],html[data-atelier-scheme],html{
+    color-scheme:light;
+    --pbg:#faf6ee;--bg-art:none;--text:#343b39;--text-strong:#24302a;--text-muted:#4f5b53;
+    --psurface:#fffdf8;--surface-border:#e6dcc8;--canvas:#faf6ee;--surface:#fffdf8;--surface-2:#f5eee0;
+    --bg:#fff;--card:#fff;--txt:#24302a;--ink:#24302a;--ink-2:#343b39;--mut:#343b39;
+    --lime:#000;--pink:#000;--blush:#e6e6e6;--sage:#5f8a6a;--sage-ink:#000;--sage-100:#e6e6e6;--line:#000;
+  }
+  html[data-atelier-theme] body,html[data-atelier-scheme] body,body{background:#fff !important;color:#000 !important;}
+  h1,h2,h3,h4,legend,p,label,.fc .intro{color:#000 !important;}
+  #fcDiagram{background:#fff;border-color:#000;}
+  #fcDiagram .fc-cut{fill:#fff;stroke:#000;}
+  #fcDiagram .fc-stitched{fill:#e6e6e6;stroke:#000;}
+}

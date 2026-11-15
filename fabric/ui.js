@@ -89,7 +89,7 @@ function paintPresets(){
  const host=$('fcPresets');if(!host)return;
  const list=$('fcPresetList');
  if(!namedPresets.length){list.innerHTML='<p class="hint" id="fcPresetEmpty">'+esc(t('fabric.preset.empty'))+'</p>';return}
- list.innerHTML='<ul class="fc-preset-ul">'+namedPresets.map((p,i)=>`<li><span class="fc-pname">${esc(p.name)}</span><span class="row" style="margin:0"><button type="button" class="sec" data-use="${i}">${esc(t('fabric.preset.use'))}</button><button type="button" class="ghost" data-del="${i}">${esc(t('fabric.preset.delete'))}</button></span></li>`).join('')+'</ul>';
+ list.innerHTML='<ul class="fc-preset-ul">'+namedPresets.map((p,i)=>`<li><span class="fc-pname">${esc(p.name)}</span><span class="row" style="margin:0"><button type="button" class="sec" data-use="${i}">${esc(t('fabric.preset.use'))}</button><button type="button" class="sec" data-del="${i}">${esc(t('fabric.preset.delete'))}</button></span></li>`).join('')+'</ul>';
  list.querySelectorAll('[data-use]').forEach(b=>b.addEventListener('click',()=>usePreset(+b.dataset.use)));
  list.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>delPreset(+b.dataset.del)));
 }

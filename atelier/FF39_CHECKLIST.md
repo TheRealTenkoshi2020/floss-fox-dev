@@ -128,3 +128,9 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
 - FF39-16: timer OFF by default in the atelier preference key; elapsed time is never saved or backed up; wall-clock from an in-memory start timestamp; keeps counting when the tab is hidden; resets on close; no rewards; never touches stitch counts or inventory.
 - FF39-14: optional progressPct on the project, included in backups; number shown as text; no ring when unset; 100% never auto-completes; celebration once per real transition to Completed; old projects without a % are unchanged.
 - Cover photos, add-to-threads/project on the studio (FF39-08), and Pixel visual sign-off stay open.
+## Stage E polish (Pixel REVIEW-39-stageE.md, no blockers)
+- Should-fix 1: print uses a white sheet, black outlines and black text (Morning/light tokens in `themes.css` `@media print`, plus `#fcDiagram .fc-cut`/`fc-stitched` in `fabric.html`). No navy fill under `print-color-adjust:exact`.
+- Should-fix 2 and 4: `html .ffa-seg button[aria-pressed=true]` and `html #ffaViewBar .ffa-viewbtn[aria-pressed=true]` (plus `:hover`) use `--tab-on-*`, so dark `.sec:hover` no longer wins on Shelf/List/Grid or List/Gallery.
+- Should-fix 3: Delete preset uses `class="sec"` (same as Use preset).
+- Nits 5-6: `.ffa-session .ffa-badge{align-self:center}`; gallery cards are left-aligned, a single-color project uses a 6-cell strip (not a full-bleed slab), and the 1280 grid is `repeat(auto-fill,minmax(220px,1fr))`.
+- Phone shots use `full_page=False`. Cache stays ci005-98; Stage F will bump to ci005-99.

@@ -64,7 +64,7 @@ details.others summary,details.tips summary{cursor:pointer;min-height:44px;displ
 #fcPresets li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
 #fcPresets button{min-height:44px}
 #fcPresetName{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:15px system-ui,sans-serif;background:var(--input-bg,#fff);color:var(--txt)}
-@media print{#fcDiagram{border-color:#000;break-inside:avoid}#fcDiagram .fc-cut,#fcDiagram .fc-stitched{-webkit-print-color-adjust:exact;print-color-adjust:exact}#fcPresets,#fcDiagNote{display:none!important}.fcres .big, #fcDesign, #fcDiagram{display:block!important}}
+@media print{#fcDiagram{border-color:#000;background:#fff;break-inside:avoid}#fcDiagram .fc-cut{fill:#fff;stroke:#000}#fcDiagram .fc-stitched{fill:#e6e6e6;stroke:#000}#fcDiagram .fc-cut,#fcDiagram .fc-stitched{-webkit-print-color-adjust:exact;print-color-adjust:exact}body,h1,h2,h3{color:#000;background:#fff}#fcPresets,#fcDiagNote{display:none!important}.fcres .big, #fcDesign, #fcDiagram{display:block!important}}
 @media (prefers-reduced-motion:reduce){#fcDiagram,#fcDiagram svg, #fcDiagram .fc-cut, #fcDiagram .fc-stitched{transition:none;animation:none}}
 
 .fc button{min-height:44px}.brand span{color:var(--lime)}
