@@ -349,6 +349,51 @@ with sync_playwright() as p:
         ok(f'{label}: no page errors', not g.errs, g.errs)
         c.close()
 
+
+    # live theme pick must not swap Pip's pose to starlight; stay on Threads so a tab change is not the cause
+    c, g = ctx(br, seed_all({AK: json.dumps({'v': 1, 'theme': 'system'})}), 1280, 900, color_scheme='light')
+    g.goto(B + '?nosw'); ready(g)
+    g.click('#tabThreads'); g.wait_for_timeout(300)
+    before = g.evaluate("""() => { const el=document.getElementById('pip'), img=document.getElementById('pipImg');
+      return {pose:el&&el.dataset.pose, art:img&&img.dataset.art, src:img&&(img.currentSrc||img.src||'')}; }""")
+    g.evaluate("""() => {
+      const inp=document.getElementById('ffTheme-moon');
+      if(!inp) return;
+      inp.checked=true;
+      inp.dispatchEvent(new Event('change',{bubbles:true}));
+    }""")
+    g.wait_for_timeout(400)
+    after = g.evaluate("""() => { const el=document.getElementById('pip'), img=document.getElementById('pipImg');
+      return {pose:el&&el.dataset.pose, art:img&&img.dataset.art, src:img&&(img.currentSrc||img.src||''),
+              theme:document.documentElement.getAttribute('data-atelier-theme'), scheme:document.documentElement.getAttribute('data-atelier-scheme')}; }""")
+    ok('live theme: Moonlit applied', after.get('theme')=='moon' and after.get('scheme')=='dark', after)
+    ok('live theme: Pip pose unchanged', after.get('pose')==before.get('pose') and after.get('art')==before.get('art'), (before, after))
+    ok('live theme: companion did not swap to starlight', 'starlight' not in (after.get('src') or ''), after.get('src'))
+    g.click('#tabConvert'); g.wait_for_timeout(300)
+    hero = g.evaluate("""() => {
+      const dk=[...document.querySelectorAll('.herogrid [data-atelier-darksrc], #pipSrcDark')];
+      return {media: dk.map(e=>e.media), n: dk.length, scheme: document.documentElement.getAttribute('data-atelier-scheme')};
+    }""")
+    ok('live theme: Find floss hero dark sources follow Moonlit (starlight)', hero['scheme']=='dark' and hero['n']>=1 and all(m=='all' for m in hero['media']), hero)
+    g.click('#tabSettings'); g.wait_for_timeout(150)
+    g.check('#ffTheme-morning'); g.wait_for_timeout(350)
+    g.click('#tabConvert'); g.wait_for_timeout(250)
+    hero2 = g.evaluate("""() => {
+      const dk=[...document.querySelectorAll('.herogrid [data-atelier-darksrc], #pipSrcDark')];
+      return {media: dk.map(e=>e.media), theme: document.documentElement.getAttribute('data-atelier-theme'), scheme: document.documentElement.getAttribute('data-atelier-scheme')};
+    }""")
+    ok('live theme: Find floss hero follows Morning (gardener, dark sources off)', hero2['theme']=='morning' and hero2['scheme']=='light' and all(m=='not all' for m in hero2['media']), hero2)
+    ok('live theme: no page errors', not g.errs, g.errs)
+    c.close()
+
+    # Morning on a dark OS keeps its hero flourish (theme-pair dark :root is scoped)
+    c, g = ctx(br, seed_all({AK: json.dumps({'v': 1, 'theme': 'morning'})}), 1280, 900, color_scheme='dark')
+    g.goto(B + '?nosw'); ready(g)
+    fl = g.evaluate("() => getComputedStyle(document.documentElement).getPropertyValue('--flourish-l').trim()")
+    ok('morning on dark OS: flourish is kept (not Forest none)', fl and fl not in ('none', '') and 'url(' in fl, fl)
+    ok('morning on dark OS: page is Morning linen', rgb(pbg_of(g)) == PBG['morning'], pbg_of(g))
+    c.close()
+
     # 12. Screenshots: every theme (plus System light/dark) at 1280 and 390
     for label, os_scheme, theme_val in cases:
         extra = {AK: json.dumps({'v': 1, 'theme': theme_val})}

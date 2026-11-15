@@ -29,7 +29,7 @@
 --font:var(--font-body);
 --bg:var(--canvas);--card:var(--surface);--txt:var(--ink);--mut:var(--ink-2);--lime:var(--sage-ink);--pink:var(--sage-ink);--blush:var(--sage-100);
 --shadow:var(--card-shadow);--on-accent:#ffffff;--paper:#ffffff;--disabled-bg:#efe9dd;--disabled-text:#676b64;--disabled-line:#c9bfae;--swatch-edge:#8f7d62;--fiber-hi:rgba(255,255,255,.38);--fiber-lo:rgba(0,0,0,.16);--demo-bg:#ece8f6;--demo-ink:#4a3d80;--hover-tint:#f5eee0}
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not([data-atelier-scheme]){
 --pbg:#0f1d1a;--bg-art:radial-gradient(ellipse at 70% -10%,rgba(240,170,70,.24),transparent 55%),radial-gradient(ellipse at 0% 100%,rgba(70,110,90,.32),transparent 60%);
 --text:#f3ead8;--text-strong:#fff4dc;--text-muted:#d3cab6;--brand-accent:#f2b357;
 --psurface:#182924;--surface-border:#3a4d43;--card-shadow:0 18px 40px #0008;
@@ -184,3 +184,6 @@ html:not([data-atelier-scheme]) .piph-header,html:not([data-atelier-scheme]) .pi
 html:not([data-atelier-scheme]) input[aria-invalid=true]{background:var(--att-bg)}
 html:not([data-atelier-scheme]) .skein-switch{background:var(--hair);border-color:var(--surface-border)}
 }
+
+html select:disabled,html input:disabled:not([type=checkbox]):not([type=radio]){background:var(--disabled-bg);color:var(--disabled-text);border-color:var(--disabled-line);opacity:1}
+html label:has(>input:disabled){color:var(--disabled-text)}

@@ -133,7 +133,7 @@ test('palette: no em dash in note', () => assert(!C.NOTE.includes('\u2014')));
 const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js', 'atelier-compare-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
 test('privacy: no network, analytics, eval or HTML injection in Atelier modules', () => { for (const [f, s] of mods) assert(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|goatcounter|innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function|import\s*\(/.test(s), f); });
 test('privacy: only the preferences module touches storage, and only via the passed-in object', () => { for (const [f, s] of mods) assert(!/localStorage|sessionStorage|indexedDB/.test(s), f); });
-test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-compare-core.js', 'atelier/atelier-studio.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-96/.test(sw)); assert(srcs.indexOf('atelier/atelier-compare-core.js') < srcs.indexOf('atelier/atelier-studio.js') && srcs.indexOf('atelier/atelier-studio.js') < srcs.indexOf('atelier/atelier-ui.js')); });
+test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-compare-core.js', 'atelier/atelier-studio.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-97/.test(sw)); assert(srcs.indexOf('atelier/atelier-compare-core.js') < srcs.indexOf('atelier/atelier-studio.js') && srcs.indexOf('atelier/atelier-studio.js') < srcs.indexOf('atelier/atelier-ui.js')); });
 test('copy: no em dash in any Atelier module string', () => { for (const [f, s] of mods) { const strs = s.match(/'[^'\n]*'|`[^`\n]*`/g) || []; assert(!strs.some(x => x.includes('\u2014')), f); } });
 
 // ---------- new: landing.js first-visit detection (FF39-24) in a sandbox ----------
@@ -307,5 +307,50 @@ test('prefs: projectsView defaults to list and only accepts list or gallery', ()
   assert.equal(P.normalize({}).data.projectsView, 'list');
 });
 
+
+test('compare: BLANC, WHITE and B5200 are never Exact to the same chart code', () => {
+  const charts = { sullivans: { BLANC: '45001', WHITE: '45001', B5200: '45002', '310': '45053' } };
+  const rows = {};
+  for (const c of CMP.WHITES) {
+    const m = CMP.matchesFor(c, 'sullivans', charts);
+    assert.ok(m.every(x => x.kind !== 'exact'), c + ' must not be Exact');
+    rows[c] = m.map(x => x.code);
+  }
+  assert.deepEqual(rows.BLANC, ['45001']);
+  assert.deepEqual(rows.WHITE, ['45001']);
+  // same Sullivans code, but neither is Exact, so they stay two colors
+  const exactByCode = {};
+  for (const c of CMP.WHITES) {
+    for (const m of CMP.matchesFor(c, 'sullivans', charts)) {
+      if (m.kind === 'exact') {
+        exactByCode[m.code] = exactByCode[m.code] || [];
+        exactByCode[m.code].push(c);
+      }
+    }
+  }
+  for (const [code, from] of Object.entries(exactByCode)) assert.equal(from.length, 1, 'exact ' + code + ' from ' + from);
+  const solid = CMP.matchesFor('310', 'sullivans', charts);
+  assert.equal(solid[0].kind, 'exact');
+});
+test('theme polish: pressed tabs and store ticks use --tab-on-bg, not a missing sage token', () => {
+  const css = fs.readFileSync(path.join(root, 'atelier/atelier.css'), 'utf8');
+  assert(!/--sage-700/.test(css));
+  assert(!/--ok-fg|--wait-fg|--warn-fg|--warn-bg/.test(css));
+  assert(css.includes('.ffsm-cb:checked{background:var(--tab-on-bg)'));
+  assert(css.includes('#thList .ffa-low{box-shadow:inset 4px 0 0 var(--wait-line)}'));
+  assert(css.includes('accent-color:var(--pri-bg)'));
+});
+test('theme polish: unscoped dark :root is limited to no scheme attribute', () => {
+  const css = fs.readFileSync(path.join(root, 'theme-pair.css'), 'utf8');
+  assert(css.includes(':root:not([data-atelier-scheme])'));
+  assert(!/@media \(prefers-color-scheme:dark\)\{:root\{/.test(css));
+  assert(css.includes('html select:disabled'));
+});
+
+test('kit heading: 1 uses skein, not skeins', () => {
+  const src = fs.readFileSync(path.join(root, 'projects.js'), 'utf8');
+  assert(src.includes("${req===1?'skein':'skeins'}"));
+  assert(!/Kit this project \(\$\{got\} of \$\{req\} skeins set aside\)/.test(src));
+});
 console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);
 process.exit(fail ? 1 : 0);

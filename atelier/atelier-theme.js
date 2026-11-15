@@ -14,7 +14,7 @@
     const dark = scheme === 'dark';
     const docs = typeof document !== 'undefined' ? document : null;
     if (!docs) return;
-    docs.querySelectorAll('[data-atelier-darksrc]').forEach(el => { el.media = dark ? 'all' : 'not all'; });
+    docs.querySelectorAll('[data-atelier-darksrc]:not(#pipSrcDark)').forEach(el => { el.media = dark ? 'all' : 'not all'; });
     if (root.FlossFoxPip && typeof root.FlossFoxPip.retheme === 'function') root.FlossFoxPip.retheme();
   }
   function apply(theme) {

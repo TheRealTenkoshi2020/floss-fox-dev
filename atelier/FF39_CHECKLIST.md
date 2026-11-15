@@ -115,3 +115,9 @@ and is never claimed from Samira's isolated reference tests. Nothing here is dro
 - Pixel's final tokens shipped as atelier/themes.css (verbatim). Cache bumped to flossfox-dev-v2.0a-ci005-95 because cached files changed; ci005-94 is used by support-links PR 19. Merge order: PR 17, PR 18, PR 19.
 - Gallery cards (color-strip fallback) and the comparison surface (FF39-09) shipped in the Stage D gallery + comparison commit. Cover photos remain Stage G. Cache is flossfox-dev-v2.0a-ci005-96 (ci005-95 was the themes commit; new compare/studio modules are in the SW cache list). Merge order is still PR 17, PR 18, PR 19.
 - Theme is stored only in `<prefix>.atelier.v1`. Backup files and in-browser snapshots still omit that key, the same way Resume and Seasonal Pip are omitted (decision 8). If Myke wants the atelier key in backups, that is a later explicit change.
+
+## Stage D theme polish (Pixel REVIEW-39-stageD.md, no blockers)
+- Should-fix 1-5 and nits 6-9 applied (tab-on tokens, live Pip pose, .sw swatch-edge, disabled controls, scoped dark :root flourish, radio accent, wait-line stripe, kit plural, 16px Pip column).
+- Comparison QA from the same review: badge tokens --ok/--wait/--att ink/bg/line; Sullivans whites are Estimated (BLANC/WHITE/B5200 are never Exact to the same code); every comparison swatch has a --swatch-edge.
+- Gallery and compare surfaces follow Pixel's new compare.html / gallery.html mockups (no Pip on those screens). Four new comparison strings are PH drafts (studio.use.radio, studio.recent.chip, studio.match.legend, studio.swatch.none). Add-to-threads/project stays unwired (FF39-08).
+- Cache bumped to flossfox-dev-v2.0a-ci005-97.

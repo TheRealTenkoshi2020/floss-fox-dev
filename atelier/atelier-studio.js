@@ -6,7 +6,11 @@
     'studio.whites.title': 'The whites are not the same',
     'studio.whites.body': 'These are separate DMC colors. On screen they look alike, so check the number.',
     'studio.match.none': 'No chart match',
-    'studio.dest.in': '{source} in {brand}'
+    'studio.dest.in': '{source} in {brand}',
+    'studio.use.radio': 'Use {brand} {code}',
+    'studio.recent.chip': 'DMC {code} · {brand}',
+    'studio.match.legend': 'Choose a match for DMC {code}',
+    'studio.swatch.none': 'No {brand} swatch available'
   };
   const $ = id => document.getElementById(id);
   const t = (k, v) => {
@@ -20,15 +24,8 @@
     const e = DMC && DMC[code];
     return e && typeof e.hex === 'string' && /^#[0-9a-fA-F]{6}$/.test(e.hex) ? e.hex : null;
   };
-  const swatch = (hex, label, extra) => {
-    const h = hex || 'transparent';
-    const edge = !hex || (() => {
-      if (!hex) return true;
-      const ch = i => { const v = parseInt(hex.slice(i, i + 2), 16) / 255; const n = v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); return n; };
-      const L = 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
-      return L > 0.8 || L < 0.02;
-    })();
-    return `<span class="ffa-floss ffa-cmp-floss${edge ? ' is-edge' : ''}${hex ? '' : ' is-empty'}" style="${hex ? '--c:' + hex : ''}" role="img" aria-label="${esc(label)}"></span>`;
+  const swatch = (hex, label) => {
+    return `<span class="ffa-floss ffa-cmp-floss${hex ? '' : ' is-empty'}" style="${hex ? '--c:' + hex : ''}" role="img" aria-label="${esc(label)}"></span>`;
   };
   const kindBadge = kind => {
     const key = kind === 'exact' ? 'studio.match.exact' : kind === 'close' ? 'studio.match.close' : 'studio.match.est';
@@ -76,15 +73,20 @@
       const title = t('studio.dest.in', { source: 'DMC ' + code, brand: destBrand }) || (`DMC ${code} in ${destBrand}`);
       const cols = [`<div class="ffa-cmpcol is-src">${swatch(srcHex, 'DMC ' + code + ' swatch, approximate')}<span class="ffa-ccode">DMC ${esc(code)}</span><span class="ffa-cname">${esc(name)}${name ? ' · ' : ''}${esc(srcLab)}</span>${dest === 'dmc' ? kindBadge('exact') : ''}</div>`];
       const shown = matches.filter(m => !m.source);
+      const canPick = dest !== 'dmc' && shown.length > 1;
       if (dest !== 'dmc' && !shown.length) {
         cols.push(`<div class="ffa-cmpcol is-empty"><span class="ffa-ccode">${esc(t('studio.match.none') || 'No chart match')}</span></div>`);
       } else {
         shown.forEach(m => {
-          const mHex = (m.brand === 'DMC') ? hexOf(DMC, m.code) : null; // we do not invent chart-brand RGB
-          cols.push(`<div class="ffa-cmpcol${m.selected ? ' is-sel' : ''}">${swatch(mHex, mHex ? (m.brand + ' ' + m.code + ' swatch, approximate') : ('No ' + m.brand + ' swatch available'))}<span class="ffa-ccode">${esc(m.brand)} ${esc(m.code)}</span>${kindBadge(m.kind)}<span class="ffa-cname">${esc(why(m.kind))}</span></div>`);
+          const noneLab = t('studio.swatch.none', { brand: m.brand }) || ('No ' + m.brand + ' swatch available');
+          const radio = canPick ? `<label class="ffa-choose"><input type="radio" name="ffa-m-${esc(code)}" data-code="${esc(code)}" value="${esc(m.code)}"${m.selected ? ' checked' : ''}> ${esc(t('studio.use.radio', { brand: m.brand, code: m.code }) || ('Use ' + m.brand + ' ' + m.code))}</label>` : '';
+          cols.push(`<div class="ffa-cmpcol${m.selected ? ' is-sel' : ''}">${swatch(null, noneLab)}<span class="ffa-ccode">${esc(m.brand)} ${esc(m.code)}</span>${kindBadge(m.kind)}<span class="ffa-cname">${esc(why(m.kind))}</span>${radio}</div>`);
         });
       }
-      return `<article class="ffa-cmp" data-code="${esc(code)}" aria-label="${esc(title)}"><div class="ffa-cmp-head"><h3 class="ffa-cmp-h">${esc(title)}</h3></div><div class="ffa-cmp-grid">${cols.join('')}</div></article>`;
+      const legend = canPick ? `<legend class="sr">${esc(t('studio.match.legend', { code }) || ('Choose a match for DMC ' + code))}</legend>` : '';
+      const wrapOpen = canPick ? `<fieldset class="ffa-cmp-fs">${legend}` : '';
+      const wrapClose = canPick ? `</fieldset>` : '';
+      return `<article class="ffa-cmp" data-code="${esc(code)}" aria-label="${esc(title)}"><div class="ffa-cmp-head"><h3 class="ffa-cmp-h">${esc(title)}</h3></div>${wrapOpen}<div class="ffa-cmp-grid">${cols.join('')}</div>${wrapClose}</article>`;
     }).join('');
     const seenWhite = items.some(it => Cmp.isWhite(it.code));
     const whites = Cmp.WHITES.map(code => {
@@ -92,7 +94,29 @@
       return `<div class="ffa-wcard">${swatch(hexOf(DMC, code), 'DMC ' + code + ' swatch, approximate')}<span class="ffa-ccode">DMC ${esc(code)}</span><span class="ffa-cname">${esc(entry && entry.name ? entry.name : '')}</span></div>`;
     }).join('');
     const whiteBlock = seenWhite ? `<section class="ffa-whites" aria-labelledby="ffWhitesH"><h3 id="ffWhitesH">${esc(t('studio.whites.title'))}</h3><p class="mut small">${esc(t('studio.whites.body'))}</p><div class="ffa-wgrid">${whites}</div></section>` : '';
-    host.innerHTML = `<div class="ffa-studio-head"><h2 id="ffStudioH">${esc(t('studio.btn.compare') || 'Compare chart matches')}</h2><p class="mut small" id="ffStudioCaveat">${esc(caveat)}</p><p class="mut small">${esc(screen)}</p></div>${cards}${whiteBlock}`;
+    const recent = recentBlock(DMC, dest);
+    host.innerHTML = `<div class="ffa-studio-head"><h2 id="ffStudioH">${esc(t('studio.title') || t('studio.btn.compare') || 'Compare chart matches')}</h2><p class="mut small">${esc(t('studio.sub'))}</p><p class="mut small" id="ffStudioCaveat">${esc(caveat)}</p><p class="mut small">${esc(screen)}</p></div>${cards}${whiteBlock}${recent}`;
+    host.querySelectorAll('.ffa-choose input').forEach(r => {
+      r.addEventListener('change', () => {
+        if (choice) choice[r.dataset.code] = r.value || undefined;
+        const sel = document.querySelector('.pick[data-code="' + CSS.escape(r.dataset.code) + '"]');
+        if (sel) { sel.value = r.value; sel.dispatchEvent(new Event('change')); }
+        paint(ctx);
+      });
+    });
+  }
+  function recentBlock(DMC, dest) {
+    const prefs = root.FlossFoxAtelier && typeof root.FlossFoxAtelier.prefs === 'function' ? root.FlossFoxAtelier.prefs() : null;
+    const rows = prefs && Array.isArray(prefs.recentConversions) ? prefs.recentConversions : [];
+    const brandN = b => b === 'sullivans' ? 'Sullivans' : b === 'anchor' ? 'Anchor' : 'DMC';
+    const items = rows.slice(0, 12).map(row => {
+      const hex = hexOf(DMC, row.code);
+      const chip = t('studio.recent.chip', { code: row.code, brand: brandN(row.to) }) || ('DMC ' + row.code + ' · ' + brandN(row.to));
+      const aria = t('studio.recent.item', { brand: 'DMC', code: row.code, brand2: brandN(row.to) }) || ('Convert DMC ' + row.code + ' to ' + brandN(row.to) + ' again');
+      return `<li><a href="#ffStudio" aria-label="${esc(aria)}">${swatch(hex, 'DMC ' + row.code + ' swatch, approximate')}${esc(chip)}</a></li>`;
+    }).join('');
+    const body = items ? `<ul class="ffa-recent">${items}</ul>` : `<p class="mut small">${esc(t('studio.recent.empty'))}</p>`;
+    return `<section class="ffa-recent-wrap" aria-labelledby="ffRecentH"><h3 id="ffRecentH">${esc(t('studio.recent.title'))}</h3><p class="mut small">${esc(t('studio.recent.hint'))}</p>${body}</section>`;
   }
 
   function paintProject(el, p, DMC, SULL) {

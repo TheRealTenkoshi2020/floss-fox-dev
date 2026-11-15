@@ -49,7 +49,9 @@
       const to = charts && charts.sullivans && charts.sullivans[c];
       if (to) {
         const ok = allowedMatch(c, String(to), 'sullivans');
-        if (ok) out.push({ brand: 'Sullivans', code: String(to), prov: 'official chart', kind: 'exact', allowed: true });
+        // The official Sullivans chart maps both BLANC and WHITE to 45001. Those three whites stay separate colors, so a shared listing is an estimate, never an exact match.
+        const disputed = isWhite(c);
+        if (ok) out.push({ brand: 'Sullivans', code: String(to), prov: disputed ? 'your choice (sources disagree)' : 'official chart', kind: disputed ? 'estimated' : 'exact', allowed: true });
       }
       return out;
     }

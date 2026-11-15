@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-96'; // 3.9 Atelier (ci005-94 is PR 19; ci005-95 was Stage D themes; this bump is gallery + compare)
+const CACHE = 'flossfox-dev-v2.0a-ci005-97'; // 3.9 Atelier (96 was gallery+compare; 97 is Stage D theme polish + comparison QA)
 const CORE = [
   "backup-core.js",
   "backup-ui.js",

@@ -122,7 +122,7 @@ const api={result,show,stateFor,STATES,ART,FUTURE,current:()=>cur,base:()=>base,
  errPose,
  screen:(k,t,pose)=>{if(!k){if(!screenK)return;screenK=null;if(cur==='screen')show(base,null,false);return}if(k!==screenK){secPose=null;secText=''}screenK=k;screenT=String(t||'');screenPose=pose||null;if(over!=='event')clearOver();if(over!=='event')show('screen')},screenKey:()=>screenK,
  isHidden:()=>fig.hidden,
- retheme:()=>{if(el.dataset.pose)paint(el.dataset.pose)},
+ retheme:()=>{if(el.dataset.pose){img.dataset.show='';paint(el.dataset.pose)}},
  // one-Pip (pip-follow.js): the active section sets pose (and optionally a line) on the single companion; events briefly take over.
  section:(pose,text)=>{secPose=pose||null;secText=String(text||'');if(!over&&(cur==='screen'||screenK))show(screenK?'screen':base,null,false);else if(!over&&!screenK&&pose){/* Find floss keeps its own state machine */}},
  event:(pose,ms,text)=>{if(fig.hidden||!pose)return false;if(STATES[base].pri>STATES.event.pri)return false;evPose=pose;evText=String(text||'');overlay('event',ms||4000);return true},

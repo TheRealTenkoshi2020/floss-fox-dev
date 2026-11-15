@@ -292,7 +292,12 @@ function paintProjects(listEl,projects){
     bar=el('div',{id:'ffaViewBar',class:'ffa-viewbar',role:'group','aria-label':'Project list layout'});
     const mk=(v,key)=>{const b=el('button',{type:'button',class:'sec ffa-viewbtn','data-view':v,'aria-pressed':'false'},t(key)||v);b.addEventListener('click',()=>{const r=savePref({projectsView:v});if(!r.ok)return;if(window.FlossFoxProjects&&typeof FlossFoxProjects.refreshList==='function')FlossFoxProjects.refreshList();else paintProjects(L,projects)});return b};
     bar.append(mk('list','journal.view.list'),mk('gallery','journal.view.gallery'));
-    const list=L;const before=list;card.insertBefore(bar,before);
+    const h2=card.querySelector('h2');
+    if(h2){
+      let row=$('ffaViewRow');
+      if(!row){row=el('div',{class:'ffa-viewrow',id:'ffaViewRow'});h2.replaceWith(row);row.append(h2,bar);}
+      else if(bar.parentNode!==row)row.append(bar);
+    }else card.insertBefore(bar,L);
   }
   const view=(P0()&&P0().projectsView==='gallery')?'gallery':'list';
   bar.querySelectorAll('[data-view]').forEach(b=>{const on=b.dataset.view===view;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('pri',on);b.classList.toggle('sec',!on)});
@@ -320,7 +325,7 @@ function paintProjects(listEl,projects){
       const ul=el('ul',{class:'ffa-strip'});
       (pack.swatches||[]).forEach(s=>{
         const liS=el('li');
-        const sp=el('span',{class:'ffa-floss ffa-chip'+(s.outline?' is-edge':''),role:'img','aria-label':s.label||('DMC '+s.code)});
+        const sp=el('span',{class:'ffa-floss ffa-chip',role:'img','aria-label':s.label||('DMC '+s.code)});
         if(s.rgb)sp.style.setProperty('--c',s.rgb);else sp.style.background='#ccc';
         liS.appendChild(sp);ul.appendChild(liS);
       });
@@ -328,6 +333,31 @@ function paintProjects(listEl,projects){
       if(pack.more)cover.appendChild(el('span',{class:'ffa-more'},'+'+pack.more));
     }
     li.insertBefore(cover,li.firstChild);
+    const STAT={planning:'Planning',ready:'Ready to stitch',progress:'In progress',done:'Completed'};
+    const status=STAT[p.status]||STAT.planning;
+    const date=(p.updated||'').slice(0,10);
+    if(!li.querySelector('.ffa-gmeta')){
+      const meta=el('p',{class:'ffa-gmeta'});
+      meta.append(el('b',null,status), document.createTextNode(' · '+(t('journal.card.meta',{status,date})||('Edited '+date)).replace(status+' · ','')));
+      const nameEl=li.querySelector('.pname');
+      if(nameEl&&nameEl.parentNode)nameEl.parentNode.insertBefore(meta,nameEl.nextSibling);
+      else li.appendChild(meta);
+    }
+    if(!li.querySelector('.ffa-gcodes')){
+      const codes=(p.items||[]).map(i=>i&&i.code).filter(Boolean);
+      const shown=codes.slice(0,8);
+      const line=shown.map(c=>/^(BLANC|WHITE|B5200|ECRU)$/.test(c)?c:'DMC '+c);
+      // Lead with DMC once when the first code is numeric, and keep BLANC/WHITE/B5200 as themselves
+      const text=codes.length?('DMC '+shown.map(c=>c).join(', ')): '';
+      if(text)li.appendChild(el('p',{class:'ffa-gcodes mut small'},text.replace(/DMC (BLANC|WHITE|B5200|ECRU)/g,'$1')));
+    }
+    if(p.leftOff&&!li.querySelector('.ffa-gnote')){
+      const note=el('div',{class:'ffa-gnote'});note.append(el('b',null,'Where I left off'),document.createTextNode(p.leftOff));
+      li.appendChild(note);
+    }
+    if(p.status==='done'&&!li.querySelector('.ffa-gdone')){
+      li.appendChild(el('p',{class:'ffa-gdone'},t('journal.finished.card')));
+    }
   });
 }
 

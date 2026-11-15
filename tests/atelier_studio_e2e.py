@@ -122,6 +122,17 @@ with sync_playwright() as p:
     g.select_option('#dest', 'sullivans'); g.wait_for_timeout(250)
     stxt = g.inner_text('#ffStudio')
     ok('studio: Sullivans official listings are labeled Exact chart match', 'Exact chart match' in stxt, stxt[:400])
+    blanc_s = g.evaluate("""() => { const art=[...document.querySelectorAll('#ffStudio .ffa-cmp')].find(a=>a.getAttribute('data-code')==='BLANC'); return art?art.innerText:''; }""")
+    white_s = g.evaluate("""() => { const art=[...document.querySelectorAll('#ffStudio .ffa-cmp')].find(a=>a.getAttribute('data-code')==='WHITE'); return art?art.innerText:''; }""")
+    b5200_s = g.evaluate("""() => { const art=[...document.querySelectorAll('#ffStudio .ffa-cmp')].find(a=>a.getAttribute('data-code')==='B5200'); return art?art.innerText:''; }""")
+    ten = g.evaluate("""() => { const art=[...document.querySelectorAll('#ffStudio .ffa-cmp')].find(a=>a.getAttribute('data-code')==='310'); return art?art.innerText:''; }""")
+    ok('studio: Sullivans never labels BLANC/WHITE/B5200 as Exact chart match',
+       'Exact chart match' not in blanc_s and 'Exact chart match' not in white_s and 'Exact chart match' not in b5200_s and 'Estimated match' in blanc_s and 'Estimated match' in white_s, (blanc_s, white_s, b5200_s))
+    ok('studio: a solid Sullivans listing (310) stays Exact chart match', 'Exact chart match' in ten, ten)
+    # both BLANC and WHITE may list 45001; neither is Exact, so they stay two colors
+    ok('studio: BLANC and WHITE are not Exact to the same Sullivans code',
+       not ('45001' in blanc_s and '45001' in white_s and 'Exact chart match' in blanc_s))
+
     g.select_option('#dest', 'anchor'); g.wait_for_timeout(250)
     atxt = g.inner_text('#ffStudio')
     ok('studio: Anchor has Close chart match and/or Estimated match labels',
