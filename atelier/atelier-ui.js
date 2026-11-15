@@ -183,14 +183,17 @@ function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.
  const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[]; // no seasonal art shipped yet
  const ss=el('p',{class:'hint ffa-small',id:'ffSeasonalState'},art.length?'':t('pref.seasonal.state.none'));
  sc.addEventListener('change',()=>{const want=sc.checked;st.textContent=t('common.saving');const r=savePref({seasonalPip:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-seasonal',{detail:{on:want}}))}else{sc.checked=!want;st.textContent=t('common.notSaved')}});
- box.append(el('h3',{id:'ffPrefH'},t('pref.title')),fs,lab,hint,sl,sh,ss,rb,st);box.setAttribute('aria-labelledby','ffPrefH');card.append(box);
+ const tl=el('label',{class:'ffa-check'});const tc=el('input',{type:'checkbox',id:'ffTimer','aria-describedby':'ffTimerHint',role:'switch'});tc.checked=!!P0().sessionTimer;tc.disabled=!pref.ok;
+ tl.append(tc,' ',t('pref.timer'));const th=el('p',{class:'hint',id:'ffTimerHint'},t('pref.timer.hint'));
+ tc.addEventListener('change',()=>{const want=tc.checked;st.textContent=t('common.saving');const r=savePref({sessionTimer:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-timer',{detail:{on:want}}));if(window.FlossFoxAtelier&&FlossFoxAtelier.paintSession){const pS=$('pSession'),id=P.openId&&P.openId();if(pS&&id){const pr=(P._store&&P._store().projects||[]).find(x=>x.id===id);FlossFoxAtelier.paintSession(pS,pr||{id})}} }else{tc.checked=!want;st.textContent=t('common.notSaved')}});
+ box.append(el('h3',{id:'ffPrefH'},t('pref.title')),fs,lab,hint,sl,sh,ss,tl,th,rb,st);box.setAttribute('aria-labelledby','ffPrefH');card.append(box);
  fs.addEventListener('change',e=>{const inp=e.target;if(!inp||inp.name!=='ffTheme')return;const want=inp.value,prev=P0().theme||'system';
   st.textContent=t('common.saving');const r=savePref({theme:want});applyTheme(want);
   if(r.ok)st.textContent=t('theme.saved');else{st.textContent=t('theme.notSaved')}});
  cb.addEventListener('change',()=>{const want=cb.checked;st.textContent=t('common.saving');const r=savePref({rememberPlace:want,lastTab:current()==='settings'?'settings':current(),lastProjectId:null});
   if(r.ok)st.textContent=t('common.saved');else{cb.checked=!want;st.textContent=t('common.notSaved')}});
  rb.addEventListener('click',async()=>{const C=window.FlossFoxConfirm;const yes=C&&C.ask?await C.ask({title:t('pref.reset.title'),body:t('pref.reset.body'),keep:t('pref.reset.no'),go:t('pref.reset.yes'),pose:'thinking'}):window.confirm(t('pref.reset.title'));if(!yes)return;
-  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();lowOnly=false;libApply();cb.checked=false;cb.disabled=!pref.ok;sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;applyTheme('system');st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'))}else st.textContent=t('common.notSaved')});
+  const r=LS?PR.reset(LS,PKEY):{ok:false};if(r.ok){loadPref();lowOnly=false;libApply();cb.checked=false;cb.disabled=!pref.ok;sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;const tmr=$('ffTimer');if(tmr){tmr.checked=!!P0().sessionTimer;tmr.disabled=!pref.ok}applyTheme('system');st.textContent=t('pref.reset.done');document.dispatchEvent(new CustomEvent('ff:atelier-prefs-reset'));document.dispatchEvent(new CustomEvent('ff:atelier-timer',{detail:{on:!!P0().sessionTimer}}))}else st.textContent=t('common.notSaved')});
 }
 // Records the last tab / open project ONLY while Resume where I was is on.
 function record(){const d=P0();if(!pref.ok||!d.rememberPlace)return;const v=current();if(v==='workbasket'&&!hasSaved())return;let pid=null;
@@ -358,9 +361,144 @@ function paintProjects(listEl,projects){
     if(p.status==='done'&&!li.querySelector('.ffa-gdone')){
       li.appendChild(el('p',{class:'ffa-gdone'},t('journal.finished.card')));
     }
+    if(Number.isInteger(p.progressPct) && !li.querySelector('.ffa-ring')){
+      const r=ringSvg(p.progressPct);r.classList.add('ffa-ring-sm');li.appendChild(r);
+    }
   });
 }
 
-window.FlossFoxAtelier=Object.freeze({version:'3.9-stageD',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),paintProjects:paintProjects,_dirty:()=>dirty});
+
+const RING_C=2*Math.PI*36;
+function svgEl(name,attrs,text){const n=document.createElementNS('http://www.w3.org/2000/svg',name);if(attrs)for(const k in attrs)n.setAttribute(k,attrs[k]);if(text!=null)n.textContent=text;return n}
+function ringSvg(pct){
+  const n=Number.isInteger(pct)?pct:0, dash=(n/100)*RING_C;
+  const aria=t('journal.progress.aria',{pct:n})||(n+'% done, your own estimate');
+  const lab=el('div',{class:'ffa-ring',role:'img','aria-label':aria});
+  const svg=svgEl('svg',{viewBox:'0 0 88 88','aria-hidden':'true'});
+  svg.append(
+    svgEl('circle',{class:'ffa-ring-trk',cx:'44',cy:'44',r:'36','stroke-width':'9',fill:'none'}),
+    svgEl('circle',{class:'ffa-ring-val',cx:'44',cy:'44',r:'36','stroke-width':'9',fill:'none','stroke-dasharray':dash+' '+RING_C,transform:'rotate(-90 44 44)'}),
+    svgEl('text',{x:'44',y:'51','text-anchor':'middle'},n+'%')
+  );
+  lab.append(svg,el('span',{class:'ffa-ring-cap','aria-hidden':'true'},t('journal.progress.ring')||'Your estimate'));
+  return lab;
+}
+function paintProgress(host,p){
+  if(!host||!p)return;
+  host.replaceChildren();
+  const wrap=el('section',{class:'ffa-progress',id:'ffaProgress'});
+  wrap.append(el('h3',null,t('journal.progress.btn')||'Set progress'));
+  const has=Number.isInteger(p.progressPct);
+  if(!has){wrap.append(el('p',{class:'hint'},t('journal.progress.empty')))}
+  else{
+    wrap.append(ringSvg(p.progressPct));
+    const num=el('p',{class:'ffa-prog-num'},t('journal.progress.caption',{pct:p.progressPct})||(p.progressPct+'% · your estimate'));
+    wrap.append(num);
+    if(p.progressPct===100&&p.status!=='done'){
+      const label=({planning:'Planning',ready:'Ready to stitch',progress:'In progress',done:'Completed'})[p.status||'planning']||'In progress';
+      wrap.append(el('p',{class:'hint',id:'ffaProgFull'},t('journal.progress.full',{status:label})));
+    }
+  }
+  const editor=el('div',{class:'ffa-prog-edit'});editor.hidden=true;
+  const lab=el('label',{for:'ffaPct'},t('journal.progress.label'));
+  const row=el('div',{class:'row'});
+  const inp=el('input',{id:'ffaPct',type:'number',inputmode:'numeric',min:'0',max:'100',step:'1'});
+  if(has)inp.value=String(p.progressPct);
+  inp.setAttribute('aria-describedby','ffaPctHelp ffaPctHint');
+  row.append(inp,el('span',{'aria-hidden':'true'},'%'));
+  editor.append(lab,row,el('p',{class:'hint',id:'ffaPctHelp'},t('journal.progress.help')),el('p',{class:'hint',id:'ffaPctHint'},t('journal.progress.hint')));
+  const acts=el('div',{class:'row'});
+  const saveB=el('button',{type:'button',class:'pri',id:'ffaPctSave'},t('journal.progress.save'));
+  const cancelB=el('button',{type:'button',class:'sec',id:'ffaPctCancel'},t('journal.progress.cancel'));
+  const clearB=el('button',{type:'button',class:'ghost',id:'ffaPctClear'},t('journal.progress.clear'));
+  const msg=el('p',{class:'hint',role:'status','aria-live':'polite',id:'ffaPctMsg'});
+  function closeEdit(){editor.hidden=true;if(setB)setB.hidden=false}
+  saveB.onclick=()=>{const raw=String(inp.value||'').trim();if(raw===''){msg.textContent=t('journal.progress.bad');return}
+    const n=Number(raw);if(!Number.isInteger(n)||n<0||n>100){msg.textContent=t('journal.progress.bad');return}
+    const r=P.setProgress?P.setProgress(p.id,n):{ok:false};if(!r.ok){msg.textContent=t('common.notSaved')||'Not saved.';return}
+    /* renderEditor will rebuild this; if not, paint again */
+  };
+  cancelB.onclick=()=>closeEdit();
+  clearB.onclick=()=>{const r=P.setProgress?P.setProgress(p.id,null):{ok:false};if(!r.ok)msg.textContent=t('common.notSaved')};
+  acts.append(saveB,cancelB,clearB);editor.append(acts,msg);
+  const setB=el('button',{type:'button',class:'sec',id:'ffaPctOpen'},has?t('journal.progress.edit'):t('journal.progress.btn'));
+  setB.onclick=()=>{editor.hidden=false;setB.hidden=true;inp.focus()};
+  wrap.append(setB,editor);
+  host.append(wrap);
+}
+// Stitch session timer: in-memory only. Never written to prefs, projects, threads or backups.
+let sess={mode:'idle',start:null,frozen:0},tickT=null,sessHost=null,sessProject=null;
+function fmtTime(ms){const s=Math.max(0,Math.floor(ms/1000)),m=Math.floor(s/60),h=Math.floor(m/60),mm=String(m%60).padStart(h?2:1,'0'),ss=String(s%60).padStart(2,'0');return h?h+':'+String(m%60).padStart(2,'0')+':'+ss: (m>=10||h?mm:String(m))+':'+ss}
+function fmtSitting(ms){const m=Math.max(0,Math.floor(ms/60000));if(m<1)return 'under 1 min';const h=Math.floor(m/60),r=m%60;if(!h)return m+' min';return r?h+' hr '+r+' min':h+' hr'}
+function sessElapsed(){if(sess.mode==='running'&&sess.start!=null)return Date.now()-sess.start;return sess.frozen||0}
+function sayTimer(ms){try{if(window.FlossFoxPip&&typeof FlossFoxPip.say==='function')FlossFoxPip.say(t('pip.timer.a',{time:fmtSitting(ms)}))}catch(e){}}
+function sessStopTick(){if(tickT){clearInterval(tickT);tickT=null}}
+function sessTick(){sessStopTick();if(sess.mode==='running')tickT=setInterval(()=>{paintSession(sessHost,sessProject,true)},250)}
+function paintSession(host,p,isTick){
+  sessHost=host||sessHost;sessProject=p||sessProject;
+  if(!sessHost)return;
+  const on=!!(P0()&&P0().sessionTimer);
+  if(!on){sessStopTick();sessHost.replaceChildren();sessHost.hidden=true;return}
+  sessHost.hidden=false;
+  const clock=fmtTime(sessElapsed());
+  if(isTick){
+    const elc=sessHost.querySelector('.ffa-clock');
+    if(elc)elc.textContent=clock; // clock face only; do not retouch aria-label every tick (announce Start/Pause/Resume/Stop only)
+    return;
+  }
+  sessHost.replaceChildren();
+  const card=el('section',{class:'ffa-session',id:'ffaSession'});
+  card.append(el('h3',null,t('session.title')||'Stitch session'));
+  if(sess.mode==='idle'||sess.mode==='stopped'){
+    if(sess.mode==='stopped'){
+      const sitting=fmtSitting(sessElapsed());
+      const sum=el('p',{class:'ffa-sess-sum',role:'status'},t('session.timer.summary',{time:sitting})||('This sitting: '+sitting+'. We don\'t save this time.'));
+      card.append(sum);
+      const again=el('button',{type:'button',class:'sec',id:'ffaTimerAgain'},t('session.timer.again'));
+      again.onclick=()=>{sess={mode:'idle',start:null,frozen:0};paintSession(sessHost,sessProject)};
+      card.append(again);
+    }else{
+      const clk=el('p',{class:'ffa-clock','aria-label':t('session.timer.aria',{time:'0:00'})},'0:00');
+      card.append(clk,el('p',{class:'hint'},t('session.timer.empty')));
+      const st=el('button',{type:'button',class:'pri',id:'ffaTimerStart'},t('session.timer.start'));
+      st.onclick=()=>{sess={mode:'running',start:Date.now(),frozen:0};paintSession(sessHost,sessProject);sessTick()};
+      card.append(st);
+    }
+  }else if(sess.mode==='running'){
+    const row=el('div',{class:'row'});
+    const clk=el('p',{class:'ffa-clock','aria-label':t('session.timer.aria',{time:clock})},clock);
+    row.append(clk,el('span',{class:'ffa-badge ok',id:'ffaTimerRun'},t('session.timer.running')));
+    card.append(row);
+    const acts=el('div',{class:'row'});
+    const pa=el('button',{type:'button',class:'sec',id:'ffaTimerPause'},t('session.timer.pause'));
+    const sp=el('button',{type:'button',class:'sec',id:'ffaTimerStop'},t('session.timer.stop'));
+    pa.onclick=()=>{sess={mode:'paused',start:null,frozen:sessElapsed()};sessStopTick();paintSession(sessHost,sessProject)};
+    sp.onclick=()=>{const elapsed=sessElapsed();sess={mode:'stopped',start:null,frozen:elapsed};sessStopTick();paintSession(sessHost,sessProject);sayTimer(elapsed)};
+    acts.append(pa,sp);card.append(acts,el('p',{class:'hint small'},t('session.timer.hint')));
+    sessTick();
+  }else if(sess.mode==='paused'){
+    const row=el('div',{class:'row'});
+    const clk=el('p',{class:'ffa-clock','aria-label':t('session.timer.aria',{time:clock})},clock);
+    row.append(clk,el('span',{class:'ffa-badge wait'},t('session.timer.paused',{time:clock})));
+    card.append(row);
+    const acts=el('div',{class:'row'});
+    const rs=el('button',{type:'button',class:'pri',id:'ffaTimerResume'},t('session.timer.resume'));
+    const sp=el('button',{type:'button',class:'sec',id:'ffaTimerStop'},t('session.timer.stop'));
+    rs.onclick=()=>{sess={mode:'running',start:Date.now()-sess.frozen,frozen:sess.frozen};paintSession(sessHost,sessProject);sessTick()};
+    sp.onclick=()=>{const elapsed=sess.frozen||0;sess={mode:'stopped',start:null,frozen:elapsed};paintSession(sessHost,sessProject);sayTimer(elapsed)};
+    acts.append(rs,sp);card.append(acts,el('p',{class:'hint small'},t('session.timer.hint')));
+  }
+  sessHost.append(card);
+}
+function celebrateDone(p){
+  const name=p&&p.name?p.name:'this project';
+  const msg=t('journal.finished.status',{name:name})||('✓ '+name+' is marked Completed.');
+  const slot=$('pCelebrate')||$('projStatus')||$('ffaPctMsg');
+  if($('pCelebrate'))$('pCelebrate').textContent=msg;
+  else if($('projStatus'))$('projStatus').textContent=msg;
+  try{if(window.FlossFoxPip&&typeof FlossFoxPip.say==='function')FlossFoxPip.say(t('pip.finish.a',{name:name}))}catch(e){}
+}
+
+window.FlossFoxAtelier=Object.freeze({version:'3.9-stageE',draftCopy:true,prefKey:PKEY,prefs:()=>pref.ok?{...pref.data}:null,resumeResult:()=>resumeResult,renderWorkbasket:()=>renderWB(),openSearch:()=>openSearch(),closeSearch:()=>closeSearch(true),paintProjects:paintProjects,paintProgress:paintProgress,paintSession:paintSession,celebrateDone:celebrateDone,_dirty:()=>dirty,_session:()=>({mode:sess.mode,elapsed:sessElapsed()})});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

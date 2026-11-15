@@ -133,7 +133,7 @@ test('palette: no em dash in note', () => assert(!C.NOTE.includes('\u2014')));
 const mods = ['atelier-search-core.js', 'atelier-preferences-core.js', 'atelier-store-visit-core.js', 'atelier-palette-core.js', 'atelier-compare-core.js'].map(f => [f, fs.readFileSync(path.join(root, 'atelier', f), 'utf8')]);
 test('privacy: no network, analytics, eval or HTML injection in Atelier modules', () => { for (const [f, s] of mods) assert(!/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|goatcounter|innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function|import\s*\(/.test(s), f); });
 test('privacy: only the preferences module touches storage, and only via the passed-in object', () => { for (const [f, s] of mods) assert(!/localStorage|sessionStorage|indexedDB/.test(s), f); });
-test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-compare-core.js', 'atelier/atelier-studio.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-97/.test(sw)); assert(srcs.indexOf('atelier/atelier-compare-core.js') < srcs.indexOf('atelier/atelier-studio.js') && srcs.indexOf('atelier/atelier-studio.js') < srcs.indexOf('atelier/atelier-ui.js')); });
+test('wiring: Atelier files load after the existing scripts and are all in the sw.js cache list', () => { const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8'); const srcs = html.match(/<script[^>]*src="[^"]*"/g).map(s => s.match(/src="([^"]*)"/)[1]); const a = srcs.indexOf('atelier/atelier-ui.js'); assert(a > srcs.indexOf('tab-hint.js') && a > srcs.indexOf('projects.js') && a > srcs.indexOf('threads.js')); for (const f of ['atelier/atelier.css', 'atelier/atelier-copy.js', 'atelier/atelier-preferences-core.js', 'atelier/atelier-search-core.js', 'atelier/atelier-palette-core.js', 'atelier/atelier-store-visit-core.js', 'atelier/atelier-theme.js', 'atelier/atelier-compare-core.js', 'atelier/atelier-studio.js', 'atelier/atelier-ui.js', 'atelier/themes.css']) { assert(sw.includes('"' + f + '"'), f); assert(html.includes(f), f); } assert(/flossfox-dev-v2\.0a-ci005-98/.test(sw)); assert(srcs.indexOf('atelier/atelier-compare-core.js') < srcs.indexOf('atelier/atelier-studio.js') && srcs.indexOf('atelier/atelier-studio.js') < srcs.indexOf('atelier/atelier-ui.js')); });
 test('copy: no em dash in any Atelier module string', () => { for (const [f, s] of mods) { const strs = s.match(/'[^'\n]*'|`[^`\n]*`/g) || []; assert(!strs.some(x => x.includes('\u2014')), f); } });
 
 // ---------- new: landing.js first-visit detection (FF39-24) in a sandbox ----------
@@ -346,11 +346,38 @@ test('theme polish: unscoped dark :root is limited to no scheme attribute', () =
   assert(!/@media \(prefers-color-scheme:dark\)\{:root\{/.test(css));
   assert(css.includes('html select:disabled'));
 });
-
 test('kit heading: 1 uses skein, not skeins', () => {
   const src = fs.readFileSync(path.join(root, 'projects.js'), 'utf8');
   assert(src.includes("${req===1?'skein':'skeins'}"));
   assert(!/Kit this project \(\$\{got\} of \$\{req\} skeins set aside\)/.test(src));
+});
+test('prefs: session timer is OFF by default and is a boolean pref only', () => {
+  assert.equal(P.DEFAULT.sessionTimer, false);
+  assert.equal(P.normalize({}).data.sessionTimer, false);
+  assert.equal(P.normalize({ sessionTimer: true }).data.sessionTimer, true);
+  assert.equal(P.normalize({ sessionTimer: 'on' }).data.sessionTimer, false);
+});
+test('progressPct: normProject keeps 0-100 integers and drops invalid values', () => {
+  const src = fs.readFileSync(path.join(root, 'projects.js'), 'utf8');
+  assert(src.includes('Number.isInteger(p.progressPct)&&p.progressPct>=0&&p.progressPct<=100?{progressPct:p.progressPct}:{}'));
+  assert(src.includes('if(!Number.isInteger(pct)||pct<0||pct>100)return{ok:false,reason:"bad"}'));
+  assert(src.includes('p.progressPct=pct') && src.includes('delete p.progressPct'));
+  assert(src.includes("statusUnchanged:p.status===before"));
+});
+test('session timer: elapsed lives only in memory and is not a pref key', () => {
+  const ui = fs.readFileSync(path.join(root, 'atelier/atelier-ui.js'), 'utf8');
+  const pref = fs.readFileSync(path.join(root, 'atelier/atelier-preferences-core.js'), 'utf8');
+  assert(ui.includes('// Stitch session timer: in-memory only. Never written to prefs, projects, threads or backups.'));
+  assert(ui.includes('start:Date.now()'));
+  assert(ui.includes('function fmtSitting'));
+  assert(ui.includes('under 1 min'));
+  assert(ui.includes('do not retouch aria-label every tick'));
+  assert(!/PREF_KEYS[^\n]*sessionTimer/.test(pref));
+  assert(!pref.includes('sessionElapsed'));
+});
+test('progress: 100% copy is hidden once the project is Completed', () => {
+  const ui = fs.readFileSync(path.join(root, 'atelier/atelier-ui.js'), 'utf8');
+  assert(ui.includes("if(p.progressPct===100&&p.status!=='done')"));
 });
 console.log(`\natelier_unit: ${pass} passed, ${fail} failed (simulated, Node only)`);
 process.exit(fail ? 1 : 0);

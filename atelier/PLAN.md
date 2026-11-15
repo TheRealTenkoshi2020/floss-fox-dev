@@ -66,7 +66,7 @@ D. Visual: themes DONE on this branch (tests + regression in PR 18): System / Mo
    first visit). Pixel's final tokens shipped (Moonlit is DARK). Pip art + lantern halo follow the chosen theme; ~28 theme-pair
    rules now key off data-atelier-scheme. Stage D gallery cards (color-strip fallback) and FF39-09 comparison have shipped. Theme polish from REVIEW-39-stageD.md (no blockers) is in this pass: tab-on tokens, live Pip pose, swatch-edge, disabled controls, scoped dark :root flourish, comparison badge tokens, Sullivans whites estimated, cache ci005-97. Still open: cover photos (Stage G), add-to-threads/project on the studio (FF39-08),
    remaining micro-interactions. Gate (themes): contrast.js all themes, 390/1280, reduced motion, no flash — done in atelier_themes_e2e.py.
-E. Fabric diagram from compute() only + named presets + cut slip (FF39-20); Stitch Session (FF39-16; timer OFF by default, never saved or backed up, wall-clock while the page is open, resets on close); progress
+E. (shipped on feat/atelier-3.9, cache ci005-98) Fabric diagram from compute() only + named presets + cut slip (FF39-20); Stitch Session (FF39-16; timer OFF by default, never saved or backed up, wall-clock while the page is open, resets on close); progress
    clarity (FF39-14, manual % ring per Pixel mockups: number as text, no ring when unset, 100% never auto-completes; celebration once per real transition).
 F. Pip events at verified points only (import, covers, receipt verified, return with note, finished), respecting level/cooldown and
    siteAnnounces; seasonal art REQUIRED (Myke): build only the switch with graceful fallback; season-to-art mapping held for Myke's OK on SEASONAL-PLAN.md; to standard Pip when art is missing; toggle visibility pending Myke.

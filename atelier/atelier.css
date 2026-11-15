@@ -200,3 +200,25 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 .ffa-recent{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .ffa-recent a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text-strong)}
 .ffa-recent .ffa-floss{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--swatch-edge);background:var(--c,#ccc);flex:none}
+
+/* Stage E: progress ring + stitch session timer */
+.ffa-progress,.ffa-session{margin:14px 0;padding:14px;border:1px solid var(--line,var(--surface-border));border-radius:16px;background:var(--psurface)}
+.ffa-progress h3,.ffa-session h3{margin:0 0 8px;font-size:1.1rem;color:var(--text-strong)}
+.ffa-ring{display:inline-flex;flex-direction:column;align-items:center;gap:4px;width:88px}
+.ffa-ring svg{width:88px;height:88px;display:block}
+.ffa-ring-trk{stroke:var(--line,var(--surface-border))}
+.ffa-ring-val{stroke:var(--lime,#b4532a);stroke-linecap:round}
+.ffa-ring text{font-size:16px;font-weight:800;fill:var(--text-strong,#3b2f28)}
+.ffa-ring-cap{font-size:.75rem;color:var(--text-muted)}
+.ffa-ring-sm{width:64px;margin-left:auto}
+.ffa-ring-sm svg{width:64px;height:64px}
+.ffa-prog-num{font-weight:700;margin:6px 0}
+.ffa-prog-edit input[type=number]{width:6rem;min-height:44px;font-size:1rem}
+.ffa-clock{font-size:2rem;font-weight:800;font-variant-numeric:tabular-nums;margin:0;color:var(--text-strong)}
+.ffa-badge{display:inline-block;font-size:.8rem;font-weight:800;border-radius:999px;padding:2px 8px;border:1px solid var(--line)}
+.ffa-badge.ok{background:var(--ok-bg,#e7f3e4);color:var(--ok-ink,#215c2a)}
+.ffa-badge.wait{background:var(--wait-bg,#f7eed8);color:var(--wait-ink,#6a4b10)}
+#ffTimer{min-width:20px;min-height:20px}
+@media (prefers-reduced-motion:reduce){
+  .ffa-ring-val,.ffa-ring svg,.ffa-clock,.ffa-session,.ffa-progress{transition:none;animation:none}
+}
