@@ -50,3 +50,10 @@ nav.tabs .ffux-nav-more:not([open]) > .ffux-nav-list{display:none!important}
 }
 /* The app's generic summary marker would add a second arrow next to these menus. */
 nav.tabs .ffux-nav-summary::before,#ffLanding .ffux-landing-tools>summary::before{content:none!important;display:none!important}
+/* ci005-105: at 360px with Workbasket shown, "More: Shopping" was a few px too wide and nudged the page sideways. */
+@media(max-width:410px){
+  nav.tabs.ffux-tabs>button,nav.tabs.ffux-tabs .ffux-nav-summary{font-size:.7rem!important;overflow-wrap:anywhere}
+  nav.tabs.ffux-tabs .ffux-nav-summary{padding:0 2px!important;font-size:.64rem!important}
+  nav.tabs.ffux-tabs .ffux-nav-summary::after{content:none!important}
+  nav.tabs.ffux-tabs{overflow-x:clip!important}
+}
