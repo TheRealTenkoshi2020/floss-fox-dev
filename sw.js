@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-92';
+const CACHE = 'flossfox-dev-v2.0a-ci005-100'; // 3.9 integration (PR 17 review + Stages A-G); bumped to 101 after PR 19 and seasonal art
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -79,6 +79,7 @@ const CORE = [
   "flow-pass.js",
   "flow-pass.css",
   "tab-hint.js",
+  "atelier/atelier.css","atelier/atelier-copy.js","atelier/atelier-preferences-core.js","atelier/atelier-search-core.js","atelier/atelier-palette-core.js","atelier/atelier-store-visit-core.js","atelier/atelier-seasonal-core.js","atelier/atelier-theme.js","atelier/atelier-seasonal-ui.js","atelier/atelier-compare-core.js","atelier/atelier-studio.js","atelier/atelier-pip.js","atelier/atelier-media-core.js","atelier/atelier-media.js","atelier/atelier-ui.js","atelier/themes.css",
   "flow-strings.js",
   "assets/icons/icon-192.png",
   "assets/icons/apple-touch-icon.png",

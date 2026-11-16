@@ -1,0 +1,151 @@
+# Floss Fox 3.9 "Stitching Atelier": FF39 scope checklist
+
+Branch `feat/atelier-3.9` (from dev main 1115742). Production `floss-fox` main 6aa04f1 (3.8) is untouched.
+Status words: not started / in progress / delivered / blocked-external / needs Myke decision.
+"Delivered" means integrated on this branch with passing unit + E2E tests (simulated browser), Pixel sign-off where visual,
+and is never claimed from Samira's isolated reference tests. Nothing here is dropped; descoping needs Myke's words.
+
+| ID | Feature | Pri | Stage | Owner | Status | What exists in dev today | Tests (planned / done) |
+|---|---|---|---|---|---|---|---|
+| FF39-01 | Workbasket / Your Stitching Corner | P0 | B | Mouse (Pixel mockup) | in progress (Stage B UI built + tested; provisional styling, awaiting Pixel sign-off) | Workbasket tab (hidden for fresh visitors), newest active project card, palette strip, leftOff, plan stats, quick links | atelier_stageb_e2e.py s1-2b, s7-9 (B, done) |
+| FF39-02 | Universal search | P0 | A core, B UI | Mouse (Pixel mockup) | in progress (Stage B UI built + tested; awaiting Pixel sign-off) | Search panel: Ctrl/Cmd+K, combobox/listbox, colors / My threads / projects, BLANC/WHITE/B5200 distinct + note, refresh on ff:data-saved, in memory only | atelier_unit.cjs search block (A); atelier_stageb_e2e.py s5 (B, done) |
+| FF39-03 | Micro-interactions, layout steadiness | P1 | D | Pixel design, Mouse | in progress (reduced-motion + scheme-keyed theme-pair rules; full micro-interaction pass still open) | theme-pair.css dark rules key off data-atelier-scheme; lantern halo and landing halo honor reduced motion | atelier_themes_e2e.py (D, halo + reduced motion) |
+| FF39-04 | Appearance choices (System / Morning Linen / Forest Twilight / Moonlit Threads) | P1 | A pref, D UI | Pixel tokens, Mouse | in progress (Stage D UI built + tested; awaiting Pixel sign-off) | Display settings radios; boot script sets data-atelier-theme/scheme before stylesheets; Pixel themes.css overlays; System maps light to Morning Linen and dark to Forest Twilight; manual pick beats the OS; Moonlit is DARK (starlight art); Reset restores System; theme lives in the atelier pref key only (not in backup files, same as Resume / Seasonal Pip) | prefs tests (A, done); atelier_themes_e2e.py + contrast.js (D, done) |
+| FF39-05 | Floss swatches + palette strips | P1 | A core, D UI | Pixel design, Mouse | in progress (palette core + gallery color-strip fallback; cover photos still Stage G) | ffa-floss uses --swatch-edge so BLANC/WHITE stay visible; gallery cards use Palette.strip() when there is no cover | palette tests (A); atelier_themes_e2e.py swatch checks (D); atelier_studio_e2e.py gallery |
+| FF39-06 | Saved location + preferences, reset | P0/P1 | A core, B UI | Mouse | in progress (Stage B: opt-in Resume + Reset settings built + tested) | Settings card: Resume where I was (OFF by default), Reset settings (removes only the pref key, never projects/threads); precedence safety > URL hash > onboarding > resume; deleted project falls back to Projects list | prefs tests (A); atelier_stageb_e2e.py s3-4 (B, done) |
+| FF39-07 | Accessibility + performance budget | P0 | every stage, H audit | Mouse, Pixel | in progress (search perf bound in unit test) | contrast.js, 44px work in flow-pass | per-stage e2e + H audit |
+| FF39-08 | Recent conversions + explicit Add actions | P0/P1 | A core, C/D UI | Mouse | done (Stage G) | converter UI; threads add; projects add | prefs tests; atelier_studio_e2e; atelier_compare_actions_e2e |
+| FF39-09 | Rich comparison surface | P1 | D | Pixel design, Mouse | done (FF39-09 surface + FF39-08 add actions on Find floss) | exact / close / estimated from resolve() provenance; BLANC/WHITE/B5200 never aliases; viewing the surface still writes nothing; project chart-match list stays read-only | atelier_studio_e2e.py + atelier_compare_actions_e2e.py + compare unit tests |
+| FF39-10 | Quick quantities (+/-, Undo, verified save) | P0 | B / C | Mouse | in progress (verified save, Undo, rollback done in B; C: rollback now re-bases the journal so a rolled-back change never lingers) | threads.js stepper | atelier_stageb_e2e.py s6; atelier_stagec_e2e.py skein Undo shot. Pending state: saves are synchronous, so Saving… is instant; no spinner needed |
+| FF39-11 | Collection views, sorting, low-stock filter | P1 | C (Pixel shelf look in D) | Mouse | in progress (Stage C built + tested: List/Grid/Shelf, sort by DMC number/amount/color family/storage/recent, Running low filter + threshold 0-20; saved only to the preference key) | atelier-ui.js library tools over threads.js rows (display only) | atelier_stagec_e2e.py s5 |
+| FF39-12 | Low-stock suggestions (explicit Add / Not now) | P1 | C | Mouse | in progress (Stage C built + tested: up to 3 suggestions, Add to shopping list sets the restock flag with a verified save, Not now hides for this visit and writes nothing) | `restock` flag | atelier_stagec_e2e.py s5 |
+| FF39-13 | Gallery cards, palette colors, optional cover photo | P1/P2 | D gallery, G media | Mouse, Pixel | done (Stage G): optional cover photos in IndexedDB, one backup file includes them | List/Gallery toggle. Palette-strip fallback when there is no photo. Add/change/remove in the project editor. | atelier_studio_e2e.py (D), atelier_media_unit.cjs + atelier_media_e2e.py (G) |
+| FF39-14 | Progress clarity, manual % ring, completion once | P1 | E | Mouse, Pixel | built + tested (optional progressPct on the project, included in backups; mockups: progress.html) | number shown as text; no ring when unset; 100% never auto-completes; celebration once per real transition to Completed; old projects without a % are unchanged | atelier_stagee_e2e.py |
+| FF39-15 | Continue where I left off | P0 | B | Mouse | in progress (Stage B: Continue project opens the project and focuses the Where I left off note) | Workbasket shows leftOff or a prompt; Add a note button | atelier_stageb_e2e.py s2 (B, done) |
+| FF39-16 | Stitch Session focus mode | P1/P2 | E timer, F focus panel | Mouse, Pixel layout | built + tested. PRODUCT_SPEC / QA_ACCEPTANCE_MATRIX describe a distraction-reduced session (name, last note, planned colors, storage location, readiness blockers, tool links) with session.exit "Back to the full project", so the focus panel was built in Stage F rather than dropped. Timer stays optional, OFF by default, in-memory only, never saved or backed up, and now lives inside the focus panel. | in-memory focus + start timestamp; keeps counting while hidden or after exiting to the full project; a reload returns to the full editor and resets the clock; does not touch stitch counts or inventory | atelier_stagee_e2e.py, atelier_pip_e2e.py |
+| FF39-17 | In-store checklist (one checkbox per line) | P0 | C | Mouse | in progress (Stage C built + tested on Store mode: one 44px checkbox per line, Bought group with "Not in My threads yet", Home with your floss? card, Checklist / By store with each color once and "Also at", verified Mark bought with rollback) | Store mode in projects.js | atelier_stagec_e2e.py s1, s1b; p3_store_kit 103/0 unchanged |
+| FF39-18 | Printable / shareable list | P0 | C | Mouse | in progress (Stage C: Share list = Web Share, else copy, else text to copy by hand; Print list prints only the store list; brand, code and skeins only, sections for Ready / Estimated / Check first) | Print + Copy in Shop | atelier_unit share tests; atelier_stagec_e2e.py s1 |
+| FF39-19 | Bought vs owned reconciliation | P0 | C | Mouse | in progress (Stage C built + tested: confirmed check-in adds full skeins to My threads for DMC projects, increment or create, both writes verified, rollback of both on failure, one Undo, no double count for colors planned from My threads; Mark bought never touches My threads; non-DMC and demo projects stay project-only) | Mark bought, check-in, Add from projects | atelier_stagec_e2e.py s2-s4 |
+| FF39-20 | Fabric diagram + presets + cut slip | P1 | E | Mouse, Pixel layout | built + tested (diagram from compute() only; named presets on the fabric key; print/copy cutting slip) | fabric/calc.js compute() + diagramBoxes(); fabric/ui.js named presets and slip | fabric_unit.js, fabric_e2e.py, atelier_fabric_e2e.py |
+| FF39-21 | Contextual Pip reactions | P0/P1 | F | Pixel lines, Mouse events | built + tested (import, collection covers / covers.est, verified receipt, return with a leftOff note, finished). pip.covers is collection coverage, not cover photos; the Stage G cover-photo hook (FlossFoxAtelierPip.coverPhoto) is live after a verified add/change/remove (no invented pip.cover bubble). | FlossFoxPip.react + atelier-pip.js; Pixel starred/required copy.json lines only; level, cooldown, siteAnnounces; one companion | atelier_pip_e2e.py |
+| FF39-22 | Seasonal optional adornments | P2 | core + Settings toggle (C), F wiring | Pixel art (Myke generates), Mouse | wired: `atelier-seasonal-core.js` + `atelier-seasonal-ui.js` loaded; ON by default, Northern hemisphere, visible in Settings, all 6 variants (moments over seasons, device local date). Art not made: available stays []; missing or failed images fall back to standard gardener/starlight Pip, no broken image, event poses unchanged. Off/Quiet respected. Seasonal files are not in the SW CORE list. | `seasonalPip` pref (ON by default) | atelier_unit.cjs seasonal block; atelier_pip_e2e.py (mocked clock at each season/moment edge) |
+| FF39-23 | UX copy + visual consistency | P1 | D-F | Pixel, Mouse | not started | Fraunces/Nunito self-hosted, no em dash rule | copy scans each stage |
+| FF39-24 | Trust and continuity | P0 | A-H | Mouse | in progress (first-visit fix done; Stage B tab visits byte-identical, prefs never in backups) | all 3.8 safety systems | atelier_first_visit_e2e.py + atelier_unit landing/resume blocks; atelier_stageb_e2e.py byte-identical checks; full regression each stage |
+| FF39-25 | Leave a review button | P0 | external | Myke (form URL) | blocked-external | draft PR 17 (review.js, REVIEW_FORM_URL empty, hidden) | review_button_e2e.py (in PR 17) |
+
+## Copy status (dev only, all DRAFT until Myke approves at owner review)
+- String source for wiring: Pixel's /workspace/pip-art/atelier39/copy/copy.json (320 strings after Pixel's Stage C pass, flagged draft). Stage C polish wired the new keys.
+- Relayed as Myke's choice for dev: dashboard name "Workbasket"; Pixel's starred Pip line per event; receipt copy: the "in your threads"
+  line only on the confirmed "I received it" step, "Mark bought" uses the project-only line. Shown again at owner review.
+- Still pending Myke: two privacy lines, "Compare chart matches", seasonal accessories toggle visibility, pose swap, cover-photo warning variant.
+- Applied in Stage A: store-visit core uses shop.group.other, shop.boughtNote, share.header/line/none/footer (no em dash, no color names).
+
+## Decisions recorded (Stage B)
+- (6) Low stock: "Add to shopping list" sets the existing per-thread `restock` flag; Shop gets a "Restock for My threads" section.
+  Explicit Add / Not now, never automatic. Build in Stage C.
+- (7) Per FF39-19: a confirmed "I received it" adds full skeins to My threads (increments an existing count, creates the color if missing),
+  verified save + Undo. Never on "Mark bought". Build in Stage C.
+- (8) Theme and other preferences (`<prefix>.atelier.v1`) stay OUT of backups and snapshots as disposable preference state. Documented here;
+  Reset settings removes only that key.
+- FF39-13 (Myke): "Make one backup file that includes the photos". Stage G plan: cover photos in IndexedDB (downscaled, EXIF stripped,
+  size-capped); Download backup becomes one file carrying the photo bytes with a versioned manifest, checksums and size limits; it must still
+  import every older JSON backup; older app versions importing a new backup must not break (same JSON structure, optional media section that
+  old importers ignore, verified by test); restore does readback verification with rollback for media; automatic copies exclude media (documented).
+- FF39-22 (Myke): seasonal Pip art is required in 3.9. Seasonal switch with graceful fallback to standard Pip if art is missing; Pixel supplies
+  transparent seasonal poses. Stage F.
+- Moonlit Threads becomes a DARK theme. Current Moonlit token values are NOT shipped or locked; Pixel will send updated tokens and mockups.
+  Morning Linen and Forest Twilight are unchanged. Pip art and the lantern halo must use the dark variants under Moonlit (Stage D).
+  UPDATE: Pixel's final Moonlit tokens (DARK: night blue, silver, amethyst) are now in tokens/themes.css, TOKENS.md, contrast.md;
+  Moonlit uses Pip's starlight/dark art. Use these for Stage D.
+- Pixel design deliverables (dev only) landed: tokens at /workspace/pip-art/atelier39/tokens/ (themes.css, TOKENS.md, contrast.md: existing token
+  names plus 9 new: --disabled-bg/-text/-line, --swatch-edge, --fiber-hi/-lo, --demo-bg/-ink, --hover-tint; System = light to Morning Linen,
+  dark to Forest Twilight; a manual pick overrides). Mockups in /workspace/pip-art/atelier39/mockups/ (42 shots, NOTES.md). Copy in
+  copy/COPY.md wins over mockup wording.
+- Stage D note: about 28 rules in theme-pair.css switch only on prefers-color-scheme with fixed colors; TOKENS.md maps their replacements.
+  Pip light/dark art (pip.js around line 72, landing image) and the lantern halo must follow the chosen theme, not only the OS setting.
+- Not drawn by Pixel: loading, save-failure and invalid-input states, 360px and 200% zoom. Covered in tests with token-based styling.
+
+## Stage B notes for Myke (flagged, dev only)
+- Resume where I was is OFF by default. To make it useful, a returning visitor who turned it ON skips the welcome landing on a fresh open
+  (landing.js `resumeOn()`); new visitors and anyone with it OFF see the landing exactly as before. Needs Myke's OK at owner review.
+- Workbasket is a nav tab (per Pixel's mockups) shown only to visitors with saved projects or threads; Find floss stays the default view.
+- Stage B styling is provisional (atelier/atelier.css, scoped to .ffa-*, #ffSearch*, #workbasketView) using existing tokens with fallbacks for
+  Pixel's new tokens; easy to restyle when Pixel signs off.
+- copy.json has no heading string for the Settings preferences card; uses pref.resume / pref.reset strings only. Ask Pixel.
+- Pixel's copy.json updated during Stage B (now 302 strings); atelier-copy.js regenerated; changed strings: session.timer.hint, theme.moon.hint (now Dark).
+
+## Decisions recorded (steering after Stage B tests)
+- FF39-16 timer (CORRECTION, per PRODUCT_SPEC "never records time by default" and Pixel's copy): not saved, not in backups, counts wall-clock
+  elapsed from a start timestamp while the page is open (keeps counting if the tab is hidden), resets when the page closes, no rewards,
+  never touches stitch counts or inventory, OFF by default. Mockups: mockups/timer.html, contact-timer.png.
+- FF39-14: progress ring mockups landed (mockups/progress.html, contact-progress.png, copy in COPY.md). Number always shown as text,
+  aria "35% done, your own estimate", no ring when unset, 100% does not auto-complete.
+- FF39-13: the cover-photo line in COPY.md ships only once backups include photos AND restore reads them back. Restore must keep all projects
+  even if one photo fails, and report which photo failed.
+- FF39-22: build only the switch with fallback to standard Pip; hold season-to-art mapping until Myke approves Pixel's SEASONAL-PLAN.md.
+
+## FF39-22 seasonal mapping (approved, dev only, relayed via Pixel)
+- 6 seasonal Greeting Pip variants replace ONLY resting art (greeting, greeting-alt, neutral; landing, Find floss hero, Pip bar greeting).
+  Event poses, errors, restore, onboarding, icons and Pip Off/Quiet never change.
+- Spring Mar 1-May 31, Summer Jun 1-Aug 31, Autumn Sep 1-Nov 30, Winter Dec 1-Feb 28/29, New Year Dec 31-Jan 2, World Embroidery Day
+  Jul 29-31. New Year and Embroidery Day win over the season. Device's local date.
+- Respect the seasonal toggle (default off), theme light/dark variants if Pixel provides them, and reduced motion (no animation added).
+- Images lazy-load only when seasonal is on, not in sw.js CORE precache; missing or failed image shows standard Pip, never a blank.
+- Core supports an optional Southern hemisphere flip (Pixel's plan); default Northern; whether to expose it is pending Myke.
+
+## Stage C record (dev only)
+- Seasonal Pip: ON by default (Myke decided, relayed by Pixel; reverses the interim OFF note). Northern hemisphere, toggle visible in
+  Settings (Display settings card), falls back to standard Pip until the art exists. copy.json `pref.seasonal.hint` still says "Off unless
+  you turn it on"; the app uses a placeholder hint saying it's on. Pixel to update the string.
+- Settings card heading uses Pixel's `pref.title` "Display settings" (replaces the placeholder "Your preferences").
+- Search: BLANC and B5200 now rank right after WHITE (and each white after the matched one), each marked "A different color from DMC
+  {code}" (Pixel string). Pip's greeting text is hidden while search is open; at 880px+ the panel sits beside the Pip column.
+- Pixel Stage B review (REVIEW-39-stageB.md): S1-S5 and N1-N4 applied.
+- Check-in (decision 7): applies to the amount-confirmed check-in only ("I received this thread" / "I received it" + amount + Save).
+  Shown before saving: "Saving also adds these full skeins to My threads." (placeholder, needs Pixel). Pip uses `pip.receipt.a` only when
+  My threads really changed; project-only receipts keep the existing line. Non-DMC destinations and the demo project stay project-only
+  (My threads stores DMC codes). The older "Undo check-in" in Done still clears only the project receipt and now says My threads wasn't changed.
+- Placeholders needing Pixel copy: Restock section strings (title, sub, Remove, removed, none), "Checklist" / "By store" toggle labels,
+  "Home with your floss?", "Take the list with you", "Not in My threads yet", check-in My threads hint,
+  seasonal ON hint.
+- Notes: the Shop "Shop my list" mode (renderShop) has no entry point on dev main; its form is wired to the same check-in anyway.
+  The backup tip's first-shown flag can be set by a save that was then rolled back (display only, no data).
+
+## Stage D notes (themes)
+- Pixel's final tokens shipped as atelier/themes.css (verbatim). Cache bumped to flossfox-dev-v2.0a-ci005-95 because cached files changed; ci005-94 is used by support-links PR 19. Merge order: PR 17, PR 18, PR 19.
+- Gallery cards (color-strip fallback) and the comparison surface (FF39-09) shipped in the Stage D gallery + comparison commit. Cover photos remain Stage G. Cache is flossfox-dev-v2.0a-ci005-96 (ci005-95 was the themes commit; new compare/studio modules are in the SW cache list). Merge order is still PR 17, PR 18, PR 19.
+- Theme is stored only in `<prefix>.atelier.v1`. Backup files and in-browser snapshots still omit that key, the same way Resume and Seasonal Pip are omitted (decision 8). If Myke wants the atelier key in backups, that is a later explicit change.
+
+## Stage D theme polish (Pixel REVIEW-39-stageD.md, no blockers)
+- Should-fix 1-5 and nits 6-9 applied (tab-on tokens, live Pip pose, .sw swatch-edge, disabled controls, scoped dark :root flourish, radio accent, wait-line stripe, kit plural, 16px Pip column).
+- Comparison QA from the same review: badge tokens --ok/--wait/--att ink/bg/line; Sullivans whites are Estimated (BLANC/WHITE/B5200 are never Exact to the same code); every comparison swatch has a --swatch-edge.
+- Gallery and compare surfaces follow Pixel's new compare.html / gallery.html mockups (no Pip on those screens). Four new comparison strings are PH drafts (studio.use.radio, studio.recent.chip, studio.match.legend, studio.swatch.none). Add-to-threads/project stays unwired (FF39-08).
+- Cache bumped to flossfox-dev-v2.0a-ci005-97.
+
+## Stage E notes
+- Cache bumped to flossfox-dev-v2.0a-ci005-98 (ci005-97 was Stage D theme polish). Merge order is still PR 17, PR 18, PR 19.
+- FF39-20: fabric diagram from compute() only, named presets on the fabric key, print/copy cutting slip.
+- FF39-16: timer OFF by default in the atelier preference key; elapsed time is never saved or backed up; wall-clock from an in-memory start timestamp; keeps counting when the tab is hidden; resets on close; no rewards; never touches stitch counts or inventory.
+- FF39-14: optional progressPct on the project, included in backups; number shown as text; no ring when unset; 100% never auto-completes; celebration once per real transition to Completed; old projects without a % are unchanged.
+- Cover photos (FF39-13) and add-to-threads/project (FF39-08) shipped in Stage G. Pixel visual sign-off and seasonal art approval stay open.
+## Stage E polish (Pixel REVIEW-39-stageE.md, no blockers)
+- Should-fix 1: print uses a white sheet, black outlines and black text (Morning/light tokens in `themes.css` `@media print`, plus `#fcDiagram .fc-cut`/`fc-stitched` in `fabric.html`). No navy fill under `print-color-adjust:exact`.
+- Should-fix 2 and 4: `html .ffa-seg button[aria-pressed=true]` and `html #ffaViewBar .ffa-viewbtn[aria-pressed=true]` (plus `:hover`) use `--tab-on-*`, so dark `.sec:hover` no longer wins on Shelf/List/Grid or List/Gallery.
+- Should-fix 3: Delete preset uses `class="sec"` (same as Use preset).
+- Nits 5-6: `.ffa-session .ffa-badge{align-self:center}`; gallery cards are left-aligned, a single-color project uses a 6-cell strip (not a full-bleed slab), and the 1280 grid is `repeat(auto-fill,minmax(220px,1fr))`.
+- Phone shots use `full_page=False`. Shipped in 4af0b2e at cache ci005-98.
+
+## Stage F notes
+- Cache bumped to flossfox-dev-v2.0a-ci005-99 (ci005-98 was Stage E + Stage E polish 4af0b2e). Merge order is still PR 17, PR 18, PR 19. Dev branch only; no main merge, no deploy.
+- FF39-16 focus mode: PRODUCT_SPEC lines on Stitch Session (and QA "Session focus and browser restart") ask for a reduced panel with "Back to the full project". Built in this stage. Timer is unchanged in policy (never saved) and now appears only after entering the session, when the Settings switch is on.
+- FF39-21: reactions fire only at verified points via FlossFoxPip.react. "covers" means the collection covers the pattern (pip.covers.a / pip.covers.est), not cover photos. A cover-photo hook is exported as coverPhoto() and always returns false until Stage G. celebrateDone now uses react(pip.finish.a) (the old FlossFoxPip.say path was a no-op). Confirmed receipts stay on the existing check-in path, with Pixel pip.receipt.project / pip.receipt.part companions and important-level visibility. Import uses pip.import.a only when Pattern check has no flags (flagged imports keep pipA.pcheck).
+- FF39-22: seasonal core is loaded. No art exists; standard Pip is shown. Tests mock the local clock at each season and moment edge.
+
+## Stage F polish (Pixel REVIEW-39-stageF.md, no blockers)
+- Should-fix 1: `ART` in `pip.js` now maps `'pattern-reader':'pattern-reader'`. Import uses the pattern-reader art, not the greeting fallback. e2e checks `data-pose` and the image URL.
+- Should-fix 2: `.pipA-bubble .pipA-text{-webkit-line-clamp:unset;display:block}` so approved lines are not cut mid-sentence. Bubble actions use `go.className='pipA-act sec'`.
+- Should-fix 3: Focus-mode swatches set `style="--c:<hex>"` from the same catalog lookup as Workbasket. BLANC, WHITE and B5200 keep the swatch edge.
+- Should-fix 4: Opening a stitch session scrolls `#ffaFocus` into view and focuses `#ffaFocusTitle` (`tabindex=-1`). Exiting focuses `#ffaSessionStart`.
+- Should-fix 5: `theme-pair.css` scopes the step color to `.hero .num`. `.fcres .num{background:none;color:inherit}` on screen and in print, so cutting-slip numbers have no theme-colored bar.
+- Nit 6: the hoop-ready line uses "has enough or has been checked in" when the total is 1.
+- Shot hygiene: leftover bubbles are closed before a named shot. `stageF-pip-return-390` is the return reaction (taken before focus opens). `stageF-pip-import-1280` is a real import with pattern-reader art. Theme shots show the return reaction, not the landing greeting. Cache stays ci005-99.
