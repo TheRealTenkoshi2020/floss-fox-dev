@@ -180,7 +180,7 @@ function mountSettings(){const sv=$('settingsView');if(!sv)return;const card=sv.
  const rb=el('button',{type:'button',class:'sec',id:'ffPrefReset'},t('pref.reset'));
  const sl=el('label',{class:'ffa-check'});const sc=el('input',{type:'checkbox',id:'ffSeasonal','aria-describedby':'ffSeasonalHint ffSeasonalState'});sc.checked=!!P0().seasonalPip;sc.disabled=!pref.ok;
  sl.append(sc,' ',t('pref.seasonal'));const sh=el('p',{class:'hint',id:'ffSeasonalHint'},t('pref.seasonal.hint'));
- const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[]; // no seasonal art shipped yet
+ const art=(window.FlossFoxSeasonalArt&&Array.isArray(FlossFoxSeasonalArt.available))?FlossFoxSeasonalArt.available:[];
  const ss=el('p',{class:'hint ffa-small',id:'ffSeasonalState'},art.length?'':t('pref.seasonal.state.none'));
  sc.addEventListener('change',()=>{const want=sc.checked;st.textContent=t('common.saving');const r=savePref({seasonalPip:want});if(r.ok){st.textContent=t('common.saved');document.dispatchEvent(new CustomEvent('ff:atelier-seasonal',{detail:{on:want}}))}else{sc.checked=!want;st.textContent=t('common.notSaved')}});
  const tl=el('label',{class:'ffa-check'});const tc=el('input',{type:'checkbox',id:'ffTimer','aria-describedby':'ffTimerHint',role:'switch'});tc.checked=!!P0().sessionTimer;tc.disabled=!pref.ok;

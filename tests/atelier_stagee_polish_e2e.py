@@ -271,7 +271,7 @@ with sync_playwright() as p:
     c.close()
 
     # ---- D2: live theme switch changes Pip art (Morning after Moonlit) ----
-    c, g = ctx(br, seed_all({AK: json.dumps({'v':1,'theme':'moon'})}))
+    c, g = ctx(br, seed_all({AK: json.dumps({'v':1,'theme':'moon','seasonalPip':False})}))
     g.goto(B + '?nosw'); ready(g)
     g.click('#tabConvert'); g.wait_for_timeout(200)
     before = g.evaluate("() => ({src:pipImg&&pipImg.src, show:pipImg&&pipImg.dataset.show, media:pipSrcDark&&pipSrcDark.media, theme:document.documentElement.getAttribute('data-atelier-theme')})")
