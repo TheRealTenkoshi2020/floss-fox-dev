@@ -112,11 +112,11 @@ with sync_playwright() as p:
     c, g = ctx(br, seed_all({LVK: 'important'}))
     g.goto(B + '?nosw'); ready(g)
     ok('seasonal: core and UI are loaded', g.evaluate("()=>!!(window.FlossFoxSeasonal&&FlossFoxAtelierSeasonal&&Array.isArray(FlossFoxSeasonalArt.available))"))
-    ok('seasonal: six draft keys are marked available', g.evaluate("()=>FlossFoxSeasonalArt.available.slice().sort().join(',')") == 'autumn,embroidery-day,newyear,spring,summer,winter')
+    ok('seasonal: no art is marked available yet', g.evaluate("()=>FlossFoxSeasonalArt.available.length") == 0)
     ok('seasonal: Settings switch is on by default', g.evaluate("()=>{const a=JSON.parse(localStorage.getItem(%r)||'{}');return a.seasonalPip!==false}" % AK))
     g.click('#tabSettings'); g.wait_for_timeout(200)
     ok('seasonal: toggle is visible in Settings and checked', g.locator('#ffSeasonal').count()==1 and g.evaluate("()=>document.getElementById('ffSeasonal').checked") is True, g.locator('#ffSeasonal').count())
-    ok('seasonal: missing-art hint is hidden when art is available', 'No seasonal art yet' not in g.inner_text('#settingsView'))
+    ok('seasonal: missing-art hint is shown', 'No seasonal art yet' in g.inner_text('#settingsView') or 'standard Pip' in g.inner_text('#settingsView').lower() or 'looks the same' in g.inner_text('#settingsView'))
     for (y,m,d,h), key, label in EDGES:
         picked = g.evaluate(
             "([y,m,d,h]) => { FlossFoxAtelierSeasonal.setNow(()=>new Date(y,m,d,h,0,0)); const now=FlossFoxAtelierSeasonal.now(); return FlossFoxSeasonal.pick(now,{hemisphere:'north'}) }"
@@ -128,7 +128,7 @@ with sync_playwright() as p:
     ok('seasonal: moments take priority (already asserted on Jul 29-31)', True)
     # available=[] leaves established hero art (gardener / starlight) on Find floss
     g.click('#tabConvert'); g.wait_for_timeout(200)
-    g.evaluate("() => { FlossFoxSeasonalArt.available = []; FlossFoxAtelierSeasonal.setNow(()=>new Date(2026,11,31,12,0,0)); FlossFoxAtelierSeasonal.refresh(); }")
+    g.evaluate("() => { FlossFoxAtelierSeasonal.setNow(()=>new Date(2026,11,31,12,0,0)); FlossFoxAtelierSeasonal.refresh(); }")
     g.wait_for_timeout(200)
     src = hero_src(g)
     ok('seasonal: with no art, hero stays gardener or starlight', 'gardener' in (src['src'] or '') or 'starlight' in (src['src'] or ''), src)
@@ -138,8 +138,7 @@ with sync_playwright() as p:
     # missing/failed art: mark a key available but point at a 404
     g.evaluate("""() => {
       FlossFoxSeasonalArt.available = ['newyear'];
-      FlossFoxSeasonalArt.srcFor = (key,w,ext) => 'assets/pip/pip-greeting-missing-'+key+'-'+w+'.'+ext;
-      FlossFoxAtelierSeasonal.base = (key) => 'greeting-missing-'+key;
+      FlossFoxSeasonalArt.srcFor = (key,w,ext) => 'assets/pip/pip-greeting-'+key+'-'+w+'.'+ext;
       FlossFoxAtelierSeasonal.setNow(()=>new Date(2026,11,31,12,0,0));
       FlossFoxAtelierSeasonal.refresh();
     }""")
@@ -325,7 +324,7 @@ with sync_playwright() as p:
     c, g = ctx(br, seed_all({LVK: 'important', AK: json.dumps({'v':1,'theme':'system','seasonalPip':True,'projectsView':'gallery'})}), w=390, h=860, touch=True)
     g.goto(B + '?nosw'); ready(g)
     src = hero_src(g)
-    ok('390: autumn Pip is shown in mid-November', src['w'] and src['w']>0 and ('greeting-autumn' in (src['src'] or '') or (src.get('show')=='seasonal:autumn')), src)
+    ok('390: standard Pip (no seasonal art) is intact', src['w'] and src['w']>0 and ('gardener' in (src['src'] or '') or 'starlight' in (src['src'] or '')), src)
     g.click('#tabProjects'); g.wait_for_timeout(150)
     clear_bubbles(g)
     g.evaluate("() => { FlossFoxPip._capsReset(); FlossFoxProjects.openProject('p1') }")

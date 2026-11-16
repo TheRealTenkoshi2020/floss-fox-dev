@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-101'; // 3.9 Stage H: PR 17+18+19 + draft seasonal Pip art (not in CORE)
+const CACHE = 'flossfox-dev-v2.0a-ci005-102'; // 3.9: seasonal greeting assets unshipped; standard Pip fallback
 const CORE = [
   "backup-core.js",
   "backup-ui.js",

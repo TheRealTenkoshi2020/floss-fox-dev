@@ -1,13 +1,14 @@
-/* 3.9 Seasonal Pip wiring (FF39-22). Draft seasonal greeting art is included on
-   the test site for review. If a key is missing or the file fails, images fall
-   back to standard Pip (no broken image). Off/Quiet and a turned-off Settings
-   switch also keep standard Pip. Event poses are never swapped. Dates come from
-   the device's local clock (or FlossFoxAtelierSeasonal.setNow in tests). */
+/* 3.9 Seasonal Pip wiring (FF39-22). Art is not shipped yet: available stays
+   empty so choose() never requests files, and the established gardener/starlight
+   look is unchanged. If a key is later marked available and the file is missing
+   or fails, images fall back to standard Pip (no broken image). Off/Quiet and a
+   turned-off Settings switch also keep standard Pip. Event poses are never swapped.
+   Dates come from the device's local clock (or FlossFoxAtelierSeasonal.setNow in tests). */
 (function(root){
   'use strict';
   if(!root.FlossFoxSeasonalArt){
     root.FlossFoxSeasonalArt={
-      available:['spring','summer','autumn','winter','newyear','embroidery-day'],
+      available:[],
       srcFor:function(key,w,ext){return 'assets/pip/pip-greeting-'+key+'-'+w+'.'+ext}
     };
   }
