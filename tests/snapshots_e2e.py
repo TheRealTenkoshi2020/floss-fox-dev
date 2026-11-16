@@ -91,7 +91,7 @@ with sync_playwright() as p:
     # Feature-detect: no navigator.storage, and persist() rejecting
     for mode in ('none', 'throw'):
         c, g = ctx_page(br, mode)
-        ok(f'PERSIST-3 [{mode}] app loads without errors and still snapshots', len(snaps(g)) == 1 and g.locator('#tabSettings').is_visible())
+        ok(f'PERSIST-3 [{mode}] app loads without errors and still snapshots', len(snaps(g)) == 1 and (g.locator('#tabSettings').is_visible() or g.locator('#ffuxNavMore #tabSettings').count() == 1 and g.locator('#ffuxNavSummary').is_visible()))  # guided UX: Settings sits under More tools
         c.close()
     # Empty data: no snapshot, no persist request
     c = br.new_context(service_workers='block'); g = c.new_page(); g.on('pageerror', lambda e: errs.append(str(e)))
