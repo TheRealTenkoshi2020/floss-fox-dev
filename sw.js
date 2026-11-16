@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-104'; // 3.9 guided UX: precache guided-ux.js/.css
+const CACHE = 'flossfox-dev-v2.0a-ci005-105'; // 3.9: long names wrap (flow-pass.css), narrow More tools label (guided-ux.css)
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
