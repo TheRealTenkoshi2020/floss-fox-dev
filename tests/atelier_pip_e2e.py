@@ -218,7 +218,9 @@ with sync_playwright() as p:
 
     # Covers: restore p1 to progress? it's done now. Use p3 / or a fresh page. Reset p1 via seed is easier in a new context later.
     # Cover-photo hook is inert
-    ok('covers photo hook is inert until Stage G', g.evaluate("() => FlossFoxAtelierPip.coverPhoto({id:'x'})") is False)
+    ok('cover-photo hook stays quiet without a verified kind', g.evaluate("() => FlossFoxAtelierPip.coverPhoto({id:'x'})") is False)
+    ok('cover-photo hook returns true on a verified add', g.evaluate("() => FlossFoxAtelierPip.coverPhoto({id:'x'}, 'add')") is True)
+    ok('cover-photo hook invents no pip.cover bubble', g.evaluate("() => { FlossFoxAtelierPip.coverPhoto({id:'x'}, 'add'); const b=document.querySelector('.pipA-bubble .pipA-text'); return !b || !/cover photo/i.test(b.textContent||''); }") is True)
     ok('reactions: no page errors', not g.errs, g.errs)
     c.close()
 

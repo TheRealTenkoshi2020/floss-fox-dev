@@ -316,12 +316,11 @@ function paintProjects(listEl,projects){
     if(!btn)return;
     const li=btn.closest('li');if(!li||li.classList.contains('storeline')||li.classList.contains('empty'))return;
     li.classList.add('ffa-gcard');
-    if(li.querySelector('.ffa-cover'))return;
-    const cover=el('div',{class:'ffa-cover'});
-    const photo=typeof p.cover==='string'&&/^data:image\//.test(p.cover)?p.cover:(p.cover&&typeof p.cover==='object'&&typeof p.cover.src==='string'?p.cover.src:null);
-    if(photo){
-      const img=el('img',{src:photo,alt:''});cover.appendChild(img);
-    }else{
+    let cover=li.querySelector('.ffa-cover');
+    if(!cover){cover=el('div',{class:'ffa-cover'});li.insertBefore(cover,li.firstChild)}
+    if(window.FlossFoxAtelierMedia&&FlossFoxAtelierMedia.fillCover){
+      FlossFoxAtelierMedia.fillCover(cover,p);
+    }else if(!cover.childElementCount){
       cover.setAttribute('role','img');
       cover.setAttribute('aria-label',t('journal.cover.fallback.aria',{name:p.name})||('Color strip for '+p.name));
       const pack=Pal&&Pal.strip?Pal.strip(p.items||[],src,6):{swatches:[],more:0,total:0};
@@ -335,7 +334,6 @@ function paintProjects(listEl,projects){
       cover.appendChild(ul);
       if(pack.more)cover.appendChild(el('span',{class:'ffa-more'},'+'+pack.more));
     }
-    li.insertBefore(cover,li.firstChild);
     const STAT={planning:'Planning',ready:'Ready to stitch',progress:'In progress',done:'Completed'};
     const status=STAT[p.status]||STAT.planning;
     const date=(p.updated||'').slice(0,10);

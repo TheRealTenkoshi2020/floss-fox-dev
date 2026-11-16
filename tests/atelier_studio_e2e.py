@@ -113,8 +113,8 @@ with sync_playwright() as p:
     ok('studio: compare surface appears after Add my colors', g.locator('#ffStudio').is_visible(), g.locator('#ffStudio').count())
     txt = g.inner_text('#ffStudio')
     ok('studio: caveat copy is present', 'published conversion charts' in txt or 'Compare real thread' in txt, txt[:240])
-    ok('studio: no Add to My threads / Add to project on this read-only surface',
-       'Add to My threads' not in txt and 'Add to project' not in txt, txt[0:300])
+    ok('studio: Add to My threads and Add to project are on each comparison card',
+       'Add to My threads' in txt and 'Add to project' in txt and g.locator('#ffStudio [data-add-threads]').count() >= 1, txt[0:300])
     before = dump_inv(g)
     # DMC dest: exact on the source
     ok('studio: DMC source is an exact chart match', g.locator('#ffStudio .ffa-kind-exact').count() >= 1)

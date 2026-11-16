@@ -55,7 +55,7 @@ function normProject(p){if(!p||typeof p!=='object'||typeof p.id!=='string'||!p.i
  items.forEach(it=>dec[it.code]=normDecision(it.code,p.decisions&&p.decisions[it.code]));
  const purchased={};if(p.purchased&&typeof p.purchased==='object')for(const k of Object.keys(p.purchased))if(p.purchased[k]===true&&k.length<40)purchased[k]=true;
  return{id:p.id,name:str(p.name,100).trim()||'Untitled project',notes:str(p.notes,2000),...(typeof p.leftOff==='string'&&p.leftOff.trim()?{leftOff:p.leftOff.slice(0,500)}:{}),buyBrand:BRAND[p.buyBrand]?p.buyBrand:'dmc',
-  items,decisions:dec,purchased,status:PSTAT.some(x=>x[0]===p.status)?p.status:'planning',...(Number.isInteger(p.progressPct)&&p.progressPct>=0&&p.progressPct<=100?{progressPct:p.progressPct}:{}),...(p.skeinEstimator!==undefined?{skeinEstimator:SK.normalize(p.skeinEstimator)}:{}),...(p.demo===true?{demo:true}:{}),...(()=>{/* optional, additive (dev pattern trust): only present when a pattern check left something to fix or undo */const T=window.FlossFoxPatternTrust,pc=p.pcheck&&typeof p.pcheck==='object'?(T?T.normPcheck(p.pcheck):JSON.parse(JSON.stringify(p.pcheck))):undefined;return pc?{pcheck:pc}:{}})(),created:str(p.created,40)||nowISO(),updated:str(p.updated,40)||nowISO()}}
+  items,decisions:dec,purchased,status:PSTAT.some(x=>x[0]===p.status)?p.status:'planning',...(Number.isInteger(p.progressPct)&&p.progressPct>=0&&p.progressPct<=100?{progressPct:p.progressPct}:{}),...(p.skeinEstimator!==undefined?{skeinEstimator:SK.normalize(p.skeinEstimator)}:{}),...(p.demo===true?{demo:true}:{}),...(()=>{/* optional, additive (dev pattern trust): only present when a pattern check left something to fix or undo */const T=window.FlossFoxPatternTrust,pc=p.pcheck&&typeof p.pcheck==='object'?(T?T.normPcheck(p.pcheck):JSON.parse(JSON.stringify(p.pcheck))):undefined;return pc?{pcheck:pc}:{}})(),created:str(p.created,40)||nowISO(),updated:str(p.updated,40)||nowISO(),...(typeof p.coverId==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(p.coverId)?{coverId:p.coverId}:{})}}
 function migrate(d){ // returns {data, skipped} or null if not Floss Fox data
  if(!d||typeof d!=='object'||!Array.isArray(d.projects))return null;
  const ver=d.schema===undefined?1:d.schema;if(typeof ver!=='number'||ver>SCHEMA)return{tooNew:true};
@@ -82,6 +82,40 @@ const proj=id=>store.projects.find(p=>p.id===id);
 let fillUndo=null;
 function touch(p){p.updated=nowISO();save()}
 function edited(p){if(typeof undoBy!=='undefined')delete undoBy[p.id]}
+function setCoverId(id,coverId){const p=proj(id);if(!p)return{ok:false,reason:'missing'};if(!canSave)return{ok:false,reason:'not-saved'};
+ const before=('coverId'in p)?p.coverId:null;
+ if(coverId){if(typeof coverId!=='string'||!/^[A-Za-z0-9_-]{1,80}$/.test(coverId))return{ok:false,reason:'invalid'};p.coverId=coverId}else delete p.coverId;
+ p.updated=nowISO();
+ if(!save()){if(before)p.coverId=before;else delete p.coverId;return{ok:false,reason:'not-saved'}}
+ try{const got=(JSON.parse(lsGet(KEY)||'null')||{projects:[]}).projects.find(x=>x&&x.id===id);const ok=coverId?!!(got&&got.coverId===coverId):!!(got&&!got.coverId);
+  if(!ok){if(before)p.coverId=before;else delete p.coverId;return{ok:false,reason:'not-saved'}}
+ }catch(e){if(before)p.coverId=before;else delete p.coverId;return{ok:false,reason:'not-saved'}}
+ return{ok:true}}
+function addColor(id,code,qty){const p=proj(id);if(!p||p.demo)return{ok:false,reason:'missing'};if(!canSave)return{ok:false,reason:'not-saved'};
+ const c=String(code||'');if(!DMC[c])return{ok:false,reason:'invalid'};
+ if(p.items.some(x=>x.code===c))return{ok:true,duplicate:true,code:c,id};
+ const q=Number.isInteger(qty)&&qty>0?Math.min(qty,999):1;
+ const item={code:c,qty:q,stated:true,assumed:0,src:['DMC '+c],stitchCount:null};
+ const prevDec=p.decisions[c],prevUpdated=p.updated;
+ p.items.push(item);p.decisions[c]=normDecision(c,{});p.updated=nowISO();
+ const revert=()=>{p.items=p.items.filter(x=>x!==item);if(prevDec)p.decisions[c]=prevDec;else delete p.decisions[c];p.updated=prevUpdated};
+ if(!save()){revert();return{ok:false,reason:'not-saved'}}
+ try{const got=(JSON.parse(lsGet(KEY)||'null')||{projects:[]}).projects.find(x=>x&&x.id===id);
+  if(!got||!Array.isArray(got.items)||!got.items.some(x=>x.code===c)){revert();return{ok:false,reason:'not-saved'}}
+ }catch(e){revert();return{ok:false,reason:'not-saved'}}
+ edited(p);if(openId===id)renderEditor();renderList();return{ok:true,code:c,id,qty:q}}
+function undoAddColor(id,code,qty){const p=proj(id);if(!p)return{ok:false,reason:'missing'};if(!canSave)return{ok:false,reason:'not-saved'};
+ const c=String(code||'');const i=p.items.findIndex(x=>x.code===c);if(i<0)return{ok:true,unchanged:true};
+ const kept=p.items[i];
+ if(Number.isInteger(qty)&&kept.qty!==qty)return{ok:false,reason:'changed'};
+ const keptDec=p.decisions[c],prevUpdated=p.updated,idx=i;
+ p.items.splice(idx,1);delete p.decisions[c];p.updated=nowISO();
+ const revert=()=>{p.items.splice(idx,0,kept);if(keptDec)p.decisions[c]=keptDec;p.updated=prevUpdated};
+ if(!save()){revert();return{ok:false,reason:'not-saved'}}
+ try{const got=(JSON.parse(lsGet(KEY)||'null')||{projects:[]}).projects.find(x=>x&&x.id===id);
+  if(got&&got.items&&got.items.some(x=>x.code===c)){revert();return{ok:false,reason:'not-saved'}}
+ }catch(e){revert();return{ok:false,reason:'not-saved'}}
+ if(openId===id)renderEditor();renderList();return{ok:true,code:c,id}}
 
 // ---- Plan: derived only (never stored) ----
 function plainWhy(it,r){const f=fam(it.code),c=lab(it.code);if(f!=='solid')return`This is a ${f} thread, so there's no automatic brand swap. Buy the original DMC ${c} (set Brand to buy to DMC).`;
@@ -228,10 +262,14 @@ function renderList(){const L=$('projList');$('projCount').textContent=store.pro
 
 async function delProject(id){const p=proj(id);if(!p)return;
  const ok=await FlossFoxConfirm.ask({pose:'worried',title:`Delete "${p.name}"?`,
-  body:"Are you sure? This removes the project from this browser, and it can't be undone unless you have a backup."+(kitCount(id)?` Its ${plural(kitCount(id),'set-aside skein')} go${kitCount(id)===1?'es':''} back to your free threads.`:''),go:'Delete'});
+  body:"Are you sure? This removes the project from this browser, and it can't be undone unless you have a backup."+(kitCount(id)?` Its ${plural(kitCount(id),'set-aside skein')} go${kitCount(id)===1?'es':''} back to your free threads.`:'')+(p.coverId?' '+(ACp('journal.delete.photo',{},undefined,'This also removes its cover photo from this browser.')):''),go:'Delete'});
  if(!ok)return;
+ const coverToDrop=p.coverId||null;
  {const S=ALS();if(S&&S.writable())S.read().allocations.filter(r=>r.projectId===id).forEach(r=>S.update({projectId:id,code:r.code,qty:0},{projects:store.projects,collection:COL()}))}
- store.projects=store.projects.filter(x=>x.id!==id);save();if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
+ store.projects=store.projects.filter(x=>x.id!==id);const saved=save();if(!saved){/* keep the in-memory removal from being the only copy: reload list from what failed? store already mutated. If save failed the previous persist still has the project; put it back. */
+  if(!store.projects.find(x=>x.id===id))store.projects.push(p);pstatus(ACp('common.notSaved',{},undefined,'Not saved: your browser blocked the save. Download a backup to keep your work.'));return}
+ if(coverToDrop&&window.FlossFoxAtelierMedia&&FlossFoxAtelierMedia.delByProject)try{FlossFoxAtelierMedia.delByProject(id)}catch(e){}
+ if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
 var kitFresh=false;
 function openProject(id,m){kitFresh=true;{const pc=$('planCard');if(pc&&!pc.hidden){pc.hidden=true;pc.innerHTML=''}}if(openId!==id){expanded.clear();touched.clear();haveShown=false;filt='all';query='';shopPanel=null;if(typeof openSec==='object')for(const k in openSec)delete openSec[k]}openId=id;mode=m||'edit';{const pp=proj(id);if(pp)autoCmp(pp)}renderEditor();$('projEdit').hidden=false;$('projListCard').hidden=true;window.scrollTo(0,0);pstatus(`Back in the hoop: “${proj(id).name}”.`);
  {const pp=proj(id);if(pp&&pp.status!=='done'&&typeof pp.leftOff==='string'&&pp.leftOff.trim()&&window.FlossFoxAtelierPip&&FlossFoxAtelierPip.returned)try{FlossFoxAtelierPip.returned(pp,$('projEdit')||$('pip'))}catch(e){}}}
@@ -463,6 +501,7 @@ function renderEditor(){if(mode==='shop')return renderShop();const y=window.scro
  E.innerHTML=`<div class="noprint"><div class="ptitle"><button type="button" class="ghost" id="pClose">← All projects</button><button type="button" class="pri" id="pShop"><span aria-hidden="true">🛒</span> Shop my list</button></div><p class="ffsaved" id="pSaved">${canSave?esc(FX(FS('savedBadge'),{time:new Date(p.updated).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})})):''}</p>
  <h2 class="ptname" id="pTitle">${esc(p.name)}</h2><nav class="pflow" id="pFlow" aria-label="Project steps"></nav><div class="ffbanner" id="pAuto" role="status" hidden></div></div><div id="pSum"></div><div id="pReady" class="noprint"></div><div id="pTrust" class="noprint"></div>
  <div class="fld noprint pleftoff"><label for="pLeftOff">Where I left off <small class="mut">(optional)</small></label><textarea id="pLeftOff" maxlength="500" rows="2" style="width:100%;min-height:56px;font-family:var(--font)" placeholder="e.g. Finished page 2; next is the border." aria-describedby="pLeftOffHint">${esc(p.leftOff||'')}</textarea><p class="hint" id="pLeftOffHint">A quick reminder for next time. Saved on this device when you leave the box.</p></div>
+ <div id="pCover" class="ffa-cover-host noprint"></div>
  <div class="noprint"><details class="pmore" id="pDetails"${secOpen('pDetails',!String(p.name||'').trim()||(document.activeElement&&!!document.activeElement.closest&&!!document.activeElement.closest('#pDetails')))}><summary>Project details</summary><div class="fldrow" style="margin-top:var(--s3)"><div class="fld" style="flex:2 1 220px"><label for="pName">Project name</label><input type="text" id="pName" maxlength="100" value="${esc(p.name)}" style="width:100%"></div>
  <div class="fld" style="flex:1 1 160px"><label for="pStatus">Status</label><select id="pStatus" style="width:100%">${PSTAT.map(([k,l])=>`<option value="${k}"${(p.status||'planning')===k?' selected':''}>${l}</option>`).join('')}</select></div>
  <div class="fld" style="flex:1 1 180px"><label for="pDest">Brand to buy</label><select id="pDest" style="width:100%">${['dmc','sullivans','anchor'].map(k=>`<option value="${k}"${p.buyBrand===k?' selected':''}>${k==='dmc'?'DMC (same as pattern)':BRAND[k]}</option>`).join('')}</select></div></div>
@@ -479,7 +518,7 @@ function renderEditor(){if(mode==='shop')return renderShop();const y=window.scro
  <details class="pmore" id="pAddBox"><summary>Add more colors</summary><label for="pAdd" class="flbl">Paste colors to add (same format as on Find My Floss)</label><textarea id="pAdd" rows="2" style="width:100%;min-height:72px" placeholder="e.g. 3865 x2, 762"></textarea>
  <div class="row"><button type="button" class="sec" id="pAddBtn">Add to project</button></div><div id="pAddErr"></div></details><div class="ffnext"><button type="button" class="pri" id="pNext" data-ffgo="shop">${esc(FS('next').ready)} →</button></div></section>
  <div class="plan" id="pPlan"></div>`;
- bindEditor(p);renderAuto(p);renderKit(p);E.querySelectorAll('[data-ffgo]').forEach(b=>b.onclick=()=>{if(b.dataset.ffgo==='ready'){const r=$('pReady');if(r){r.scrollIntoView({block:'start'});const sm=r.querySelector('summary');if(sm)sm.focus({preventScroll:true})}return}showView('shop')});window.FlossFoxSkeinsUI.bind(E,p,x=>{edited(x);touch(x)},message=>{renderEditor();renderList();pstatus(message);const se=$('pSkein');if(se)se.open=true;const b=$('seSave');if(b)b.focus({preventScroll:true})});renderCmp(p);if(window.FlossFoxAtelierStudio){try{FlossFoxAtelierStudio.paintProject($('pChartCmp'),p,typeof DMC==='object'?DMC:null,typeof SULL==='object'?SULL:null)}catch(e){}}if(window.FlossFoxAtelier){try{if(FlossFoxAtelier.paintProgress)FlossFoxAtelier.paintProgress($('pProgress'),p);if(FlossFoxAtelier.paintSession)FlossFoxAtelier.paintSession($('pSession'),p)}catch(e){}}renderPlan(p,P);if(window.FlossFoxPatternTrustUI)try{FlossFoxPatternTrustUI.mountProject($('pTrust'),p,(msg,fid)=>{touch(p);renderEditor();renderList();pstatus(msg);const f=document.getElementById(fid);if(f){if(f.tabIndex<0)f.tabIndex=-1;f.focus()}})}catch(e){}mountShop(p);applyFilter(P);window.scrollTo(0,y);if(focusId){const f=document.getElementById(focusId);if(f)f.focus({preventScroll:true})}}
+ bindEditor(p);renderAuto(p);renderKit(p);E.querySelectorAll('[data-ffgo]').forEach(b=>b.onclick=()=>{if(b.dataset.ffgo==='ready'){const r=$('pReady');if(r){r.scrollIntoView({block:'start'});const sm=r.querySelector('summary');if(sm)sm.focus({preventScroll:true})}return}showView('shop')});window.FlossFoxSkeinsUI.bind(E,p,x=>{edited(x);touch(x)},message=>{renderEditor();renderList();pstatus(message);const se=$('pSkein');if(se)se.open=true;const b=$('seSave');if(b)b.focus({preventScroll:true})});renderCmp(p);if(window.FlossFoxAtelierStudio){try{FlossFoxAtelierStudio.paintProject($('pChartCmp'),p,typeof DMC==='object'?DMC:null,typeof SULL==='object'?SULL:null)}catch(e){}}if(window.FlossFoxAtelier){try{if(FlossFoxAtelier.paintProgress)FlossFoxAtelier.paintProgress($('pProgress'),p);if(FlossFoxAtelier.paintSession)FlossFoxAtelier.paintSession($('pSession'),p)}catch(e){}}if(window.FlossFoxAtelierMedia&&FlossFoxAtelierMedia.mountEditor)try{FlossFoxAtelierMedia.mountEditor(p)}catch(e){}renderPlan(p,P);if(window.FlossFoxPatternTrustUI)try{FlossFoxPatternTrustUI.mountProject($('pTrust'),p,(msg,fid)=>{touch(p);renderEditor();renderList();pstatus(msg);const f=document.getElementById(fid);if(f){if(f.tabIndex<0)f.tabIndex=-1;f.focus()}})}catch(e){}mountShop(p);applyFilter(P);window.scrollTo(0,y);if(focusId){const f=document.getElementById(focusId);if(f)f.focus({preventScroll:true})}}
 function applyFilter(P){const cards=[...document.querySelectorAll('#pCards .tcard')],q=query.trim().toLowerCase();let n=0;const map={};P.threads.forEach(t=>map[t.it.code]=t);
  const tuckable=filt==='all'&&!q?cards.filter(c=>c.classList.contains('cmp')&&map[c.dataset.code]&&map[c.dataset.code].state==='have'):[],tuck=tuckable.length>=3&&!haveShown&&!document.documentElement.classList.contains('ffall');
  cards.forEach(c=>{const t=map[c.dataset.code],show=inFilter(t,filt)&&(!q||c.dataset.search.includes(q))&&!(tuck&&tuckable.includes(c));c.hidden=!show;if(show)n++});
@@ -627,8 +666,27 @@ const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const TUI=()=>window.FlossFoxThreadsUI;
 function fullBackup(){const T=TUI(),prefs={};for(const k in PREF_KEYS){const v=lsGet(PREF_KEYS[k]);if(v!==null)prefs[k]=v}
  return{app:'floss-fox',kind:'full-backup',version:BK_VERSION,schema:SCHEMA,exported:nowISO(),projects:store.projects.filter(p=>!p.demo),threads:T?T.exportData():{schema:1,threads:{}},prefs,...((S=>S&&S.writable()?{allocations:S.read()}:{})(ALS())),...((J=>{/* optional, additive (dev event journal phase 1); older backups have none */try{const e=J?J.exportEvents():[];return e.length?{journal:e}:{}}catch(x){return{}}})(window.FlossFoxJournal))}}
-function backup(){const d=fullBackup(),nt=Object.keys(d.threads.threads).length;download(JSON.stringify(d,null,2),'floss-fox-backup-'+nowISO().slice(0,10)+'.json','application/json');
- pstatus(`Backup downloaded with ${plural(d.projects.length,'project')} and ${plural(nt,'thread color')}. Keep the file somewhere safe, the way you'd keep a favorite pattern.`)}
+let lastMediaMissing=[];
+async function fullBackupWithMedia(){lastMediaMissing=[];const d=fullBackup(),M=window.FlossFoxAtelierMedia,C=window.FlossFoxAtelierMediaCore;
+ if(!M||!C||!M.exportCovers)return d;
+ try{const packed=await M.exportCovers(d.projects);
+  const covers=Array.isArray(packed)?packed:(packed&&packed.covers)||[];
+  lastMediaMissing=(!Array.isArray(packed)&&packed&&Array.isArray(packed.missing))?packed.missing.slice():(C.missingCovers?C.missingCovers(d.projects,covers):[]);
+  const r=await C.attach(d,covers);return r&&r.backup?r.backup:d}catch(e){return d}}
+function mediaMissing(){return lastMediaMissing.slice()}
+function backupPhotoNote(d,missing){const miss=missing||lastMediaMissing,n=d&&d.media&&Number.isInteger(d.media.count)?d.media.count:0;
+ let out='';
+ if(n){const line=ACp('backup.photos.count',{n},n,'');if(line)out+=' '+line}
+ if(miss&&miss.length){const names=miss.map(m=>m.name||'cover').filter(Boolean);const named=names.length?(' ('+names.slice(0,8).join(', ')+(names.length>8?'…':'')+')'):'';
+  out+=' '+(miss.length===1?"1 cover photo couldn't be added to this backup"+named+". You can still download your projects and threads without it.":miss.length+" cover photos couldn't be added to this backup"+named+". You can still download your projects and threads without them.")}
+ return out}
+async function confirmIncompleteBackup(missing){const body=(backupPhotoNote({media:{count:0}},missing)||'').trim();
+ if(window.FlossFoxConfirm&&FlossFoxConfirm.ask)return FlossFoxConfirm.ask({pose:'thinking',title:"This backup can't include every cover photo",body:body,go:'Download anyway',keep:'Cancel'});
+ return Promise.resolve(window.confirm(body+'\n\nDownload anyway?'))}
+async function backup(){const d=await fullBackupWithMedia(),missing=mediaMissing();
+ if(missing.length){const ok=await confirmIncompleteBackup(missing);if(!ok){pstatus('Backup was not saved. Your data is unchanged.');return}}
+ const nt=Object.keys(d.threads.threads).length;download(JSON.stringify(d,null,2),'floss-fox-backup-'+nowISO().slice(0,10)+'.json','application/json');
+ pstatus(`Backup downloaded with ${plural(d.projects.length,'project')} and ${plural(nt,'thread color')}.`+backupPhotoNote(d,missing)+` Keep the file somewhere safe, the way you'd keep a favorite pattern.`)}
 const PREF_OK={backup:v=>!!(window.FlossFoxBackupCore&&FlossFoxBackupCore.validPrefsString(v)),pip:v=>v==='shown'||v==='hidden',hints:v=>v==='on'||v==='off',tips:v=>{try{const a=JSON.parse(v);return Array.isArray(a)&&a.every(x=>typeof x==='string')}catch(e){return false}},fabric:v=>{try{const o=JSON.parse(v);return!!o&&typeof o==='object'&&!Array.isArray(o)}catch(e){return false}}};
 // returns {projects, threads|null, prefs, skipped, full} or {err}
 function checkBackup(d){if(!d||typeof d!=='object'||d.app!=='floss-fox')return{err:'bad'};
@@ -647,9 +705,13 @@ function undoImportRow(){const el=$('undoImport');if(!el)return;let s=null;try{s
   try{for(const k in s.keys){if(s.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s.keys[k])}localStorage.removeItem(PREKEY)}catch(e){pstatus('Undo failed: your browser blocked the save. Nothing else was changed.');return}
   location.hash='#projects';location.reload()}}
 const RPIP=p=>`<picture><source type="image/webp" srcset="assets/pip/pip-${p}-160.webp"><img class="rpip" data-pose="${p}" src="assets/pip/pip-${p}-160.png" width="160" height="240" alt=""></picture>`;
-function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBox').open=true;if(file.size>5e6){R.hidden=false;R.innerHTML='<b class="warn">That file is too large to be a Floss Fox backup. Nothing was changed.</b>';return}
+function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBox').open=true;const cap=(window.FlossFoxAtelierMediaCore&&FlossFoxAtelierMediaCore.MAX_FILE)||5e6;
+ if(file.size>cap){R.hidden=false;R.innerHTML='<b class="warn">That file is too large to be a Floss Fox backup. Nothing was changed.</b>';return}
  R.hidden=false;R.innerHTML=RPIP('magnifier')+'<p>Let me check this backup…</p>'; // shown only while the file is really being read and checked
- file.text().then(t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}const c=checkBackup(d);
+ file.text().then(async t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}
+  const sized=window.FlossFoxAtelierMediaCore&&FlossFoxAtelierMediaCore.fileCap(file,d);if(sized&&!sized.ok){pendingRestore=null;R.hidden=false;R.innerHTML='<b class="warn">That file is too large to be a Floss Fox backup. Nothing was changed.</b>';pstatus('Restore failed. Nothing was changed.');return}
+  const c=checkBackup(d);let mediaCheck={ok:true,present:false,items:[]};
+  try{if(window.FlossFoxAtelierMediaCore)mediaCheck=await FlossFoxAtelierMediaCore.check(d)}catch(e){mediaCheck={ok:false,present:!!(d&&d.media),items:[],reason:'error'}}
   if(c.err){pendingRestore=null;R.hidden=false;R.innerHTML=RPIP('puzzled')+`<b class="warn">${c.err==='new'?'This backup was made by a newer version of Floss Fox and can\'t be restored here. Nothing was changed.':'This file isn\'t a valid Floss Fox backup (it may be damaged or from another app). Nothing was changed.'}</b>`;pstatus('Restore failed. Nothing was changed.');return}
   pendingRestore=c.projects;const clash=pendingRestore.filter(p=>proj(p.id)).length,T=TUI(),mine=T?T.data().threads:{};
   const nt=c.threads?Object.keys(c.threads).length:0,tclash=c.threads?Object.keys(c.threads).filter(k=>mine[k]).length:0,np=Object.keys(c.prefs).length;
@@ -659,9 +721,9 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
   <p class="hint">A copy of your current data is kept first, so you can undo the import.</p>
   <div class="row"><button type="button" class="pri" id="rGo">Restore</button><button type="button" class="sec" id="rCancel">Cancel</button></div>`;
   $('rCancel').onclick=()=>{pendingRestore=null;R.hidden=true;pstatus('Restore canceled.')};
-  $('rGo').onclick=()=>{const im=(document.querySelector('input[name=imode]:checked')||{}).value||'merge';
+  $('rGo').onclick=async ()=>{const im=(document.querySelector('input[name=imode]:checked')||{}).value||'merge';
    if(im==='replace'&&!confirm(`Replace your data with this backup? Your ${plural(store.projects.filter(p=>!p.demo).length,'project')}${c.full?` and ${Object.keys(mine).length} thread color${Object.keys(mine).length===1?'':'s'}`:''} will be replaced by the backup's ${plural(pendingRestore.length,'project')}${c.full?` and ${plural(nt,'color')}`:''}. You can undo this afterwards.`))return;
-   const modeEl0=document.querySelector('input[name=rmode]:checked'),cmode=modeEl0?modeEl0.value:'replace',copyMap={},S=ALS();
+   const modeEl0=document.querySelector('input[name=rmode]:checked'),cmode=modeEl0?modeEl0.value:'replace',copyMap={},skipIds=[],S=ALS();
    if(im==='merge'&&cmode==='copy')pendingRestore.forEach(x=>{if(proj(x.id))copyMap[x.id]=newId()});
    let alNext=null;if(S&&AL()&&window.FlossFoxAllocationBackup){const cur=S.read(),pr=FlossFoxAllocationBackup.prepare({current:cur,incoming:c.allocations,mode:im,collisionMode:cmode,incomingProjectIds:pendingRestore.map(x=>x.id),existingProjectIds:store.projects.filter(x=>!x.demo).map(x=>x.id),copyIdMap:copyMap});
     if(!pr.ok){pstatus('We stopped the restore because the set-aside threads in this backup don\'t fit. Nothing was changed.');return}
@@ -673,7 +735,7 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
    let tok=true,saved=false,thrown=false;try{ // an unexpected error anywhere below is treated as a failed save (put back), never as success
    if(im==='replace'){store.projects=store.projects.filter(p=>p.demo).concat(pendingRestore);rep=pendingRestore.length}
    else{const modeEl=document.querySelector('input[name=rmode]:checked'),mode=modeEl?modeEl.value:'replace';
-    pendingRestore.forEach(p=>{const i=store.projects.findIndex(x=>x.id===p.id);if(i<0){store.projects.push(p);add++}else if(mode==='replace'){store.projects[i]=p;rep++}else if(mode==='skip')skip++;else{store.projects.push({...p,id:copyMap[p.id]||newId(),name:(p.name+' (restored copy)').slice(0,100)});cp++}})}
+    pendingRestore.forEach(p=>{const i=store.projects.findIndex(x=>x.id===p.id);if(i<0){store.projects.push(p);add++}else if(mode==='replace'){store.projects[i]=p;rep++}else if(mode==='skip'){skip++;skipIds.push(p.id)}else{const np={...p,id:copyMap[p.id]||newId(),name:(p.name+' (restored copy)').slice(0,100)};if(np.coverId)delete np.coverId;store.projects.push(np);cp++}})}
    if(c.full&&T){if(im==='replace'){tok=T.replaceAll({threads:c.threads});ta=nt}else{const merged=Object.assign({},c.threads,mine);ta=Object.keys(c.threads).filter(k=>!mine[k]).length;tok=T.replaceAll({threads:merged})}
     if(im==='replace')for(const k in c.prefs){try{localStorage.setItem(PREF_KEYS[k],c.prefs[k])}catch(e){}}}
    let aok=true;if(alNext){const r=S.replace(alNext);aok=r.ok;if(!aok){let s0=null;try{s0=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}try{if(s0&&s0.keys)for(const k in s0.keys){if(s0.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s0.keys[k])}}catch(e){}pstatus('The restore failed while saving set-aside threads, so everything was put back how it was.');setTimeout(()=>{location.hash='#projects';location.reload()},1500);return}}
@@ -689,8 +751,14 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
     // reload so the screen matches storage; at once when the message survives the reload, otherwise after it can be read
     setTimeout(()=>{location.hash='#projects';location.reload()},carried?0:6000);return}
    if(JN)JN.rebase(jIn);renderList();if(openId&&proj(openId))renderEditor();undoImportRow();if(window.FlossFoxBackupUI)FlossFoxBackupUI.refresh();
+   let photoLine='';
+   try{if(window.FlossFoxAtelierMedia){if(mediaCheck&&mediaCheck.present&&mediaCheck.ok){const demoIds=store.projects.filter(x=>x.demo).map(x=>x.id);
+     const mr=await FlossFoxAtelierMedia.importForRestore(mediaCheck.items,{mode:im,copyMap,skipIds,demoIds});
+     if(mr&&Array.isArray(mr.ok)){for(const row of mr.ok){const pr=proj(row.projectId);if(pr&&pr.coverId!==row.id)setCoverId(row.projectId,row.id)}}
+     photoLine=FlossFoxAtelierMedia.restoreLines(mr)}
+    else if(mediaCheck&&mediaCheck.present&&!mediaCheck.ok){const n=(d.media&&Array.isArray(d.media.items)&&d.media.items.length)?d.media.items.length:1;photoLine=ACp('backup.photos.restoreFail',{n},n,"Cover photos in this file couldn't be restored. Your projects were restored without them.")}}}catch(e){const n=(d.media&&Array.isArray(d.media.items)&&d.media.items.length)?d.media.items.length:1;photoLine=ACp('backup.photos.restoreFail',{n},n,"Cover photos in this file couldn't be restored. Your projects were restored without them.")}
    const dm=RV.importMessage({mode:im,full:c.full,add,rep,skip,cp,ta,projects:store.projects.filter(p=>!p.demo).length,colors:T?Object.keys(T.data().threads||{}).length:0});
-   R.hidden=false;R.textContent='';const dp=document.createElement('p');dp.id='restoreDone';dp.setAttribute('role','status');dp.textContent=dm;R.append(dp);pstatus('Restore checked and saved.');if(window.FlossFoxPip)FlossFoxPip.saved($('projStatus'))}})
+   R.hidden=false;R.textContent='';const dp=document.createElement('p');dp.id='restoreDone';dp.setAttribute('role','status');dp.textContent=dm;R.append(dp);if(photoLine){const pp=document.createElement('p');pp.id='restorePhotos';pp.setAttribute('role','status');pp.textContent=photoLine;R.append(pp)}pstatus('Restore checked and saved.');if(window.FlossFoxPip)FlossFoxPip.saved($('projStatus'))}})
   .catch(()=>{R.hidden=false;R.innerHTML='<b class="warn">Couldn\'t read that file. Nothing was changed.</b>'})}
 
 // ---- Wiring ----
@@ -717,7 +785,7 @@ $('saveProj').onclick=()=>{if(saving)return;if(!state.items.length){$('copymsg')
  $('newProjName').value='';renderList();
  $('openSaved').onclick=()=>{showView('projects');openProject(p.id)};if(ok&&window.FlossFoxPip){/* Pip A: the save bubble replaces the small saved wink; the wink still runs when the bubble doesn't show */if(store.projects.length===1&&FlossFoxPip.firstProject)pipFirstPending=true; /* new-15: first-project moment waits for the Projects view (never on Shopping) */if(!(FlossFoxPip.react&&FlossFoxPip.react('pipA.save.ok',{},$('copymsg'),{siteAnnounces:true})))FlossFoxPip.saved($('copymsg'))}};
 load();renderList();
-window.FlossFoxProjects={refreshList:renderList,setProgress:(id,pct)=>{const p=proj(id);if(!p)return{ok:false,reason:"missing"};const before=p.status;if(pct===null||pct===undefined||pct===""){if("progressPct"in p)delete p.progressPct}else{if(!Number.isInteger(pct)||pct<0||pct>100)return{ok:false,reason:"bad"};p.progressPct=pct}touch(p);if(openId===id)renderEditor();renderList();return{ok:true,status:p.status,progressPct:p.progressPct,statusUnchanged:p.status===before}},_caut:CAUT,checkIn:(id,key,n)=>{const p=proj(id);if(!p)return{ok:false};const r=checkIn(p,key,n);if(openId===id){renderEditor();renderList()}return r},undoCheckIn:()=>{const r=undoCheckIn();if(openId){renderEditor();renderList()}return r},openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,rawSnapshot:snapshot,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
+window.FlossFoxProjects={refreshList:renderList,setCoverId,addColor,undoAddColor,fullBackupWithMedia,backupPhotoNote,mediaMissing,setProgress:(id,pct)=>{const p=proj(id);if(!p)return{ok:false,reason:"missing"};const before=p.status;if(pct===null||pct===undefined||pct===""){if("progressPct"in p)delete p.progressPct}else{if(!Number.isInteger(pct)||pct<0||pct>100)return{ok:false,reason:"bad"};p.progressPct=pct}touch(p);if(openId===id)renderEditor();renderList();return{ok:true,status:p.status,progressPct:p.progressPct,statusUnchanged:p.status===before}},_caut:CAUT,checkIn:(id,key,n)=>{const p=proj(id);if(!p)return{ok:false};const r=checkIn(p,key,n);if(openId===id){renderEditor();renderList()}return r},undoCheckIn:()=>{const r=undoCheckIn();if(openId){renderEditor();renderList()}return r},openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,rawSnapshot:snapshot,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
  replaceAll:data=>{store={schema:SCHEMA,projects:data.projects};canSave=true;storeMsg('');openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false;const ok=save();renderList();return ok},
  removeDemo:()=>{const n=store.projects.filter(x=>x.demo).length;store.projects=store.projects.filter(x=>!x.demo);if(openId&&!proj(openId)){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}save();renderList();return n},showView,open:id=>{showView('projects');openProject(id)},missingCount:id=>{const p=proj(id);return p?p.items.filter(i=>i.qty===null).length:0},
  fillMissing:id=>{const p=proj(id);if(!p)return 0;const c=p.items.filter(i=>i.qty===null);c.forEach(i=>{i.qty=1;i.stated=false;i.assumed=1});if(c.length){fillUndo={id,codes:c.map(i=>i.code)};touch(p);if(openId===id)renderEditor()}return c.length},

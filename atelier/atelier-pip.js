@@ -1,6 +1,6 @@
 /* 3.9 Atelier Pip reactions (FF39-21). Verified points only, Pixel copy.json
    lines (starred .a / required companions), single companion via FlossFoxPip.react.
-   Cover-photo hooks stay inert until Stage G (FF39-13); pip.covers is collection coverage. */
+   Cover-photo hook is live in Stage G (FF39-13) with no invented pip.cover bubble; pip.covers is collection coverage. */
 (function(root){
   'use strict';
   const CP=()=>root.FlossFoxAtelierCopy;
@@ -47,7 +47,13 @@
       if(root.FlossFoxAtelier&&FlossFoxAtelier.exitSession)FlossFoxAtelier.exitSession();
     }}});
   }
-  // Stage G (FF39-13) cover-photo hook: intentionally inert. Do not fire Pip here.
-  function coverPhoto(){return false}
+  // Stage G (FF39-13) cover-photo hook: live after a verified add/change/remove.
+  // No invented Pip bubble (Pixel has no pip.cover.* line). Returns true only with a kind.
+  function coverPhoto(p,kind){
+    if(!p||!p.id)return false;
+    if(kind!=='add'&&kind!=='change'&&kind!=='remove')return false;
+    try{document.dispatchEvent(new CustomEvent('ff:cover-photo',{detail:{id:p.id,kind:kind}}))}catch(e){}
+    return true;
+  }
   root.FlossFoxAtelierPip={imported:imported,covers:covers,returned:returned,finished:finished,timerStopped:timerStopped,coverPhoto:coverPhoto,trim:ellip};
 })(window);

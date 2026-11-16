@@ -243,3 +243,22 @@ body.ffa-searching .pipc .pipbubble,body.ffa-searching .pipc .ffpipline,body.ffa
 @media (prefers-reduced-motion:reduce){
   .ffa-focus,.ffa-focus-head,#ffaFocus{transition:none;animation:none}
 }
+
+/* Stage G cover-photo editor (FF39-13). Gallery cards already have .ffa-cover. */
+.ffa-cover-edit{margin:12px 0}
+.ffa-cover-edit .ffa-cover-preview{margin:8px 0}
+.ffa-cover-edit .ffa-cover{max-width:320px}
+.ffa-cover-edit .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+
+.ffa-cmp-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.ffa-cmp-actions button{min-height:44px;min-width:44px}
+.ffa-cmp-actions [data-add-msg]{flex:1 1 100%;margin:0}
+.ffa-add-dlg{border:1px solid var(--line,var(--surface-border));border-radius:16px;padding:16px;max-width:min(420px,92vw);background:var(--psurface,var(--bg,#fff));color:var(--text)}
+.ffa-add-dlg::backdrop{background:rgba(0,0,0,.35)}
+.ffa-add-form{display:flex;flex-direction:column;gap:10px}
+.ffa-add-form h2{margin:0;font-size:1.1rem}
+.ffa-add-form .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ffa-add-form input,.ffa-add-form select{min-height:44px;max-width:100%}
+@media (prefers-reduced-motion:reduce){
+  .ffa-add-dlg{transition:none;animation:none}
+}
