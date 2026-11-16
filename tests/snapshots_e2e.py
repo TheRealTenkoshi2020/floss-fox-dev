@@ -56,6 +56,7 @@ with sync_playwright() as p:
     g.click('#tabSettings'); g.wait_for_selector('#snapBox button[data-snap]')
     box = g.inner_text('#snapBox')
     ok('COPY-1 Pixel heading, body and footer shown exactly', 'Automatic copies on this device' in box and "We keep up to 3 recent copies of your projects and thread collection in this browser. We save one when you open the app after changes, and before an import or restore. These copies are deleted if you clear this site's data, so keep saving backup files too." in box and 'Your browser may clear Floss Fox data if space runs low. A backup file you save keeps a copy outside the browser.' in box)
+    ok('COPY-1 automatic copies exclude cover photos, downloaded backup includes them', "Automatic copies on this device don't include cover photos. A downloaded backup file does." in box)
     al = g.get_attribute('#snapBox button[data-snap="0"]', 'aria-label') or ''
     ok('COPY-2 Restore button aria-label is "Restore the copy from {date}"', al.startswith('Restore the copy from ') and len(al) > 22, al)
     import re as _re

@@ -34,7 +34,7 @@ with sync_playwright() as p:
             g.evaluate(SET, 0); g.wait_for_timeout(300)
             g.focus('#tabSettings'); g.wait_for_timeout(400); s = g.evaluate(ST)
             ok(t + 'keyboard focus on last tab scrolls it into view and updates hint', s['l'] and g.evaluate("(()=>{const b=document.getElementById('tabSettings').getBoundingClientRect();return b.right<=innerWidth+1&&b.left>=0})()"), s)
-            lab = g.evaluate("[...document.querySelectorAll('nav.tabs > button')].every(b=>{const r=b.getBoundingClientRect();return r.width>40&&r.height>=44})")
+            lab = g.evaluate("[...document.querySelectorAll('nav.tabs > button')].filter(b=>!b.hidden).every(b=>{const r=b.getBoundingClientRect();return r.width>40&&r.height>=44})")
             ok(t + 'tabs still full size', lab)
             if w == 344: ok(t + 'reduced motion: no hint transition', g.evaluate("getComputedStyle(document.querySelector('nav.tabs'),'::after').transitionDuration") in ('0s', ''))
         ok(t + 'hints are not elements (nothing new in tab order or a11y tree)', g.evaluate("document.querySelectorAll('nav.tabs .tabhint, nav.tabs > :not(button):not(a)').length") == 0)
