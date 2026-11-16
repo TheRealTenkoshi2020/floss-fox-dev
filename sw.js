@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-103'; // 3.9: drop cached seasonal greeting art; standard Pip fallback
+const CACHE = 'flossfox-dev-v2.0a-ci005-104'; // 3.9 guided UX: precache guided-ux.js/.css
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -20,6 +20,7 @@ const CORE = [
   "pip-hybrid/pattern-trust-ui.js",
   "analytics.js",
   "landing.js",
+  "guided-ux.js","guided-ux.css",
   "landing.css",
   "support/links.js","support/links.css",
   "pip-hybrid/pattern-ui.js",
