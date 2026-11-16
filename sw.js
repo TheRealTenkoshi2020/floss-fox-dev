@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-102'; // 3.9: seasonal greeting assets unshipped; standard Pip fallback
+const CACHE = 'flossfox-dev-v2.0a-ci005-103'; // 3.9: drop cached seasonal greeting art; standard Pip fallback
 const CORE = [
   "backup-core.js",
   "backup-ui.js",

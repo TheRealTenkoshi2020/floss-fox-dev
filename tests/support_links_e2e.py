@@ -205,7 +205,7 @@ with sync_playwright() as p:
     g.goto(B + '#settings'); g.wait_for_load_state('networkidle')
     g.wait_for_function("navigator.serviceWorker.ready.then(()=>true)", timeout=20000); g.reload(); g.wait_for_load_state('networkidle')
     ok('SW-1 service worker controls the page', g.evaluate('!!navigator.serviceWorker.controller'))
-    ok('SW-2 cache is ci005-102 and holds support files', g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/ci005-102/.test(x));if(!k)return false;const c=await caches.open(k);return !!(await c.match('support/links.js'))&&!!(await c.match('support/links.css'))})"))
+    ok('SW-2 cache is ci005-103 and holds support files', g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/ci005-103/.test(x));if(!k)return false;const c=await caches.open(k);return !!(await c.match('support/links.js'))&&!!(await c.match('support/links.css'))})"))
     c.set_offline(True)
     g.reload(); g.wait_for_load_state('load'); g.wait_for_timeout(600)
     g.evaluate("document.getElementById('tabSettings').click()"); g.wait_for_timeout(200)
