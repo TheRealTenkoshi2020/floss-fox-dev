@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-100'; // 3.9 integration (PR 17 review + Stages A-G); bumped to 101 after PR 19 and seasonal art
+const CACHE = 'flossfox-dev-v2.0a-ci005-100'; // 3.9 integration of PR 17+18+19; ci005-101 follows with seasonal art
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -21,6 +21,7 @@ const CORE = [
   "analytics.js",
   "landing.js",
   "landing.css",
+  "support/links.js","support/links.css",
   "pip-hybrid/pattern-ui.js",
   "pip-hybrid/pattern-pdf.js",
   "pip-hybrid/pattern-core.js",
