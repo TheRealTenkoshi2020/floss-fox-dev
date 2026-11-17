@@ -57,3 +57,6 @@ nav.tabs .ffux-nav-summary::before,#ffLanding .ffux-landing-tools>summary::befor
   nav.tabs.ffux-tabs .ffux-nav-summary::after{content:none!important}
   nav.tabs.ffux-tabs{overflow-x:clip!important}
 }
+/* 3.9 V4: optional Pip's Den link for returning visitors, quieter than Continue */
+#ffLanding .ffux-den-link{box-sizing:border-box;display:block;width:100%;min-height:44px;padding:8px 12px;background:transparent;border:0;color:var(--brand-accent,var(--sage-ink,#46624a));text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer;overflow-wrap:anywhere;text-align:center}
+#ffLanding .ffux-den-link:focus-visible{outline:3px solid var(--focus,#2f6fb5);outline-offset:2px}

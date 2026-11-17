@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-105'; // 3.9: long names wrap (flow-pass.css), narrow More tools label (guided-ux.css)
+const CACHE = 'flossfox-dev-v2.0a-ci005-106'; // 3.9: Smart Stash + Threadwood (V4 package); OCR vendor files are lazy, never precached
 const CORE = [
   "backup-core.js",
   "backup-ui.js",
@@ -70,6 +70,26 @@ const CORE = [
   "shop/skein-preview-catalog.js",
   "shop/skein-preview-ui.js",
   "threads.js",
+  "dev-build-config.js",
+  "smart-stash/vendor/jszip.min.js",
+  "smart-stash/core.js",
+  "smart-stash/xlsx.js",
+  "smart-stash/transaction.js",
+  "smart-stash/recognition.js",
+  "smart-stash/barcode-registry.js",
+  "smart-stash/ean-reader.js",
+  "smart-stash/photo-engine.js",
+  "smart-stash/premium-bridge.js",
+  "smart-stash/scanner.js",
+  "smart-stash/inventory-tools.js",
+  "smart-stash/ui.js",
+  "smart-stash/inventory-ui.js",
+  "smart-stash/style.css",
+  "threadwood/core.js",
+  "threadwood/store.js",
+  "threadwood/content.js",
+  "threadwood/ui.js",
+  "threadwood/style.css",
   "bulk-paste-review.js",
   "bulk-review.js",
   "project-requirements.js",

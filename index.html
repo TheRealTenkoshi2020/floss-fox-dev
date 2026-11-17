@@ -337,6 +337,8 @@ img[src*="assets/pip/"]{object-fit:contain}body.pip-hidden-all .orgpip,body.pip-
 .ffkit-row>span:nth-child(2){flex:1 1 auto;min-width:0}.ffkit-acts{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:flex-end}
 .ffkit-acts{flex:0 0 auto}.ffkit-acts button{min-height:40px;white-space:nowrap}.ffsm-code,.ffsm-q{white-space:nowrap}.ffsm-row button{flex:0 0 auto}
 </style>
+<link rel="stylesheet" href="smart-stash/style.css">
+<link rel="stylesheet" href="threadwood/style.css">
 </head><body><main id="ffLanding" class="land" tabindex="-1" aria-labelledby="ffLandSay"><div class="lpip"><div class="lhalo" aria-hidden="true"></div><picture><source data-atelier-darksrc media="(prefers-color-scheme: dark)" type="image/webp" srcset="assets/pip/pip-starlight-320.webp"><source data-atelier-darksrc media="(prefers-color-scheme: dark)" srcset="assets/pip/pip-starlight-320.png"><source type="image/webp" srcset="assets/pip/pip-gardener-320.webp"><img src="assets/pip/pip-gardener-320.png" width="170" height="170" alt="" decoding="async"></picture><script>!function(){var d=document.documentElement.getAttribute("data-atelier-scheme")==="dark";document.querySelectorAll("#ffLanding [data-atelier-darksrc]").forEach(function(s){s.media=d?"all":"not all"})}()</script></div>
 <h1 class="say" id="ffLandSay">Hi! I'm Pip. What are we stitching up today?</h1>
 <nav class="choices" aria-label="Choose where to go">
@@ -569,4 +571,23 @@ window.FF_EST={badge:'<span class="ffest" data-est="1"><span aria-hidden="true">
 <script src="pip-hybrid/pattern-core.js"></script>
 <script src="pip-hybrid/pattern-pdf.js"></script>
 <script src="pip-hybrid/pattern-check.js"></script><script src="pip-hybrid/pattern-chart.js"></script><script src="pip-hybrid/pattern-trust-ui.js"></script><script src="pip-hybrid/pattern-ui.js"></script><script src="flow-p3.js"></script><script src="flow-pass.js"></script><script src="tab-hint.js"></script><script src="atelier/atelier-copy.js"></script><script src="atelier/atelier-preferences-core.js"></script><script src="atelier/atelier-search-core.js"></script><script src="atelier/atelier-palette-core.js"></script>
-<script src="atelier/atelier-store-visit-core.js"></script><script src="atelier/atelier-seasonal-core.js"></script><script src="atelier/atelier-theme.js"></script><script src="atelier/atelier-seasonal-ui.js"></script><script src="atelier/atelier-compare-core.js"></script><script src="atelier/atelier-studio.js"></script><script src="atelier/atelier-pip.js"></script><script src="atelier/atelier-media-core.js"></script><script src="atelier/atelier-media.js"></script><script src="atelier/atelier-ui.js"></script><script src="guided-ux.js"></script><script>/* 1.6: deep links from the fabric page nav; keep jump links clear of the (possibly wrapped) sticky nav */(function(){const n=document.querySelector("nav.tabs");if(n&&window.ResizeObserver)new ResizeObserver(()=>document.documentElement.style.setProperty("--navh",n.offsetHeight+"px")).observe(n);const m={"#workbasket":"tabWorkbasket","#convert":"tabConvert","#projects":"tabProjects","#shop":"tabShop","#threads":"tabThreads","#help":"tabHelp","#settings":"tabSettings"}[location.hash];if(m)addEventListener("load",()=>{const b=document.getElementById(m);if(b)b.click()})})();</script><script>if("serviceWorker"in navigator&&/[?&]nosw\b/.test(location.search)){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(self.caches)caches.keys().then(ks=>ks.forEach(k=>/^flossfox/.test(k)&&caches.delete(k))).catch(()=>{})}else if("serviceWorker"in navigator&&!/[?&]nosw\b/.test(location.search))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script></body></html>
+<script src="atelier/atelier-store-visit-core.js"></script><script src="atelier/atelier-seasonal-core.js"></script><script src="atelier/atelier-theme.js"></script><script src="atelier/atelier-seasonal-ui.js"></script><script src="atelier/atelier-compare-core.js"></script><script src="atelier/atelier-studio.js"></script><script src="atelier/atelier-pip.js"></script><script src="atelier/atelier-media-core.js"></script><script src="atelier/atelier-media.js"></script><script src="atelier/atelier-ui.js"></script>
+<script src="dev-build-config.js"></script>
+<script src="smart-stash/vendor/jszip.min.js"></script>
+<script src="smart-stash/core.js"></script>
+<script src="smart-stash/xlsx.js"></script>
+<script src="smart-stash/transaction.js"></script>
+<script src="smart-stash/recognition.js"></script>
+<script src="smart-stash/barcode-registry.js"></script>
+<script src="smart-stash/ean-reader.js"></script>
+<script src="smart-stash/photo-engine.js"></script>
+<script src="smart-stash/premium-bridge.js"></script>
+<script src="smart-stash/scanner.js"></script>
+<script src="smart-stash/inventory-tools.js"></script>
+<script src="smart-stash/ui.js"></script>
+<script src="smart-stash/inventory-ui.js"></script>
+<script src="threadwood/core.js"></script>
+<script src="threadwood/store.js"></script>
+<script src="threadwood/content.js"></script>
+<script src="threadwood/ui.js"></script>
+<script src="guided-ux.js"></script><script>/* 1.6: deep links from the fabric page nav; keep jump links clear of the (possibly wrapped) sticky nav */(function(){const n=document.querySelector("nav.tabs");if(n&&window.ResizeObserver)new ResizeObserver(()=>document.documentElement.style.setProperty("--navh",n.offsetHeight+"px")).observe(n);const m={"#workbasket":"tabWorkbasket","#convert":"tabConvert","#projects":"tabProjects","#shop":"tabShop","#threads":"tabThreads","#help":"tabHelp","#settings":"tabSettings"}[location.hash];if(m)addEventListener("load",()=>{const b=document.getElementById(m);if(b)b.click()})})();</script><script>if("serviceWorker"in navigator&&/[?&]nosw\b/.test(location.search)){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(self.caches)caches.keys().then(ks=>ks.forEach(k=>/^flossfox/.test(k)&&caches.delete(k))).catch(()=>{})}else if("serviceWorker"in navigator&&!/[?&]nosw\b/.test(location.search))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script></body></html>
