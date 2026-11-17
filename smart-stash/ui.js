@@ -152,6 +152,6 @@ function saveNow(){if(!draft)return;const d=draft,p=C.plan(T.data().threads,d.da
  panel.append(btn('Undo this import',()=>{const out=X.undo(localStorage,T,undoToken);if(out.ok){undoToken=null;panel.hidden=true;say('Import undone. Your previous collection was restored.')}else say(out.error)},'sec'));
  say(`${r.changed} collection change${r.changed===1?'':'s'} saved. Remember to back up your collection.`);
 }
-const original=quick;card.insertBefore(box,original);
+const original=quick;original.after(box); // 3.9 dev: manual Add stays on the first phone screen; Smart Stash follows it
 root.FlossFoxSmartStashUI={openImport:showImport,openCatalog:showCatalog};
 })(typeof window!=='undefined'?window:globalThis);
