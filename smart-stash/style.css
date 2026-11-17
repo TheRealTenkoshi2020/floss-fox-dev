@@ -1,7 +1,7 @@
 /* Smart Stash — follows FlossFox surface tokens; mobile-first and keyboard-accessible. */
 .ffss{border:1.5px solid var(--line,#d9d3c8);background:var(--surface-2,#f9f5ec);border-radius:16px;padding:clamp(12px,3vw,20px);margin:0 0 16px;color:var(--ink,#2e342e)}
 .ffss h3{font-size:1.18rem;line-height:1.35;margin:3px 0 6px}.ffss h4{font-size:1.03rem;margin:0 0 9px}
-.ffss .ffss-kicker{font-size:.74rem;font-weight:800;letter-spacing:.08em;margin:0;color:var(--ink-2,#555)}
+.ffss .ffss-kicker{font-size:.76rem;font-weight:800;letter-spacing:.08em;margin:0;color:var(--ink-2,#555)}
 .ffss-intro,.ffss-hint{color:var(--ink-2,#555);font-size:.9rem;line-height:1.45;margin:6px 0 12px}
 .ffss-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
 .ffss-choice{display:flex;flex-direction:column;gap:5px;text-align:left;background:var(--surface,#fff);color:var(--ink,#333);border:1.5px solid var(--line,#ddd);border-radius:12px;min-height:78px;min-width:0;padding:12px;cursor:pointer;white-space:normal}
@@ -19,7 +19,7 @@
 .ffss-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:390px;overflow:auto;overscroll-behavior:contain;margin:12px 0}
 .ffss-color{display:flex;flex-wrap:wrap;align-items:center;gap:5px;border-radius:9px;padding:8px;min-height:44px;border:1px solid var(--line,#bbb);background:var(--surface,#fff);color:var(--ink,#333);text-align:left;min-width:0;white-space:normal}
 .ffss-color.is-selected{border:2px solid var(--ok-ink,#307141);background:var(--surface-2,#eef6ee)}
-.ffss-color b{font-size:.87rem}.ffss-color small{flex:1 0 100%;font-size:.73rem;color:var(--ink-2,#555);overflow-wrap:anywhere}
+.ffss-color b{font-size:.87rem}.ffss-color small{flex:1 0 100%;font-size:.76rem;color:var(--ink-2,#555);overflow-wrap:anywhere}
 .ffss-swatch{width:20px;height:20px;flex:none;border-radius:5px;border:1px solid rgba(40,40,40,.25);background:#ddd}
 .ffss-selected{font-weight:700;font-size:.9rem;margin:8px 0}.ffss-tablewrap{max-width:100%;overflow-x:auto;overflow-y:auto;max-height:380px;border:1px solid var(--line,#ddd);border-radius:9px}
 .ffss-table{width:100%;border-collapse:collapse;font-size:.85rem}.ffss-table th,.ffss-table td{padding:8px;border-bottom:1px solid var(--line,#eee);vertical-align:middle;text-align:left;white-space:normal;overflow-wrap:anywhere}
@@ -38,4 +38,4 @@
 .ffss-audit>div{border:1px solid var(--line,#ddd);border-radius:9px;padding:.55rem;display:flex;flex-direction:column;gap:.15rem;background:var(--surface-2,#f7f4ef)}
 .ffss-audit b{font-size:1.2rem}.ffss-audit span{font-size:.85rem}
 
-.ffss-scan-hint{display:block;margin-top:3px;font-size:.73rem;color:var(--ink-2,#555);overflow-wrap:anywhere}
+.ffss-scan-hint{display:block;margin-top:3px;font-size:.76rem;color:var(--ink-2,#555);overflow-wrap:anywhere}

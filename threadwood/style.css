@@ -8,7 +8,7 @@
 .threadwood :where(button,summary,input,textarea,select):focus-visible{outline:3px solid #ba884d;outline-offset:3px}
 .tw-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:clamp(16px,3vw,32px);background:var(--surface-2,#f2eee4);border:1px solid var(--line,#dad3c4);border-radius:20px}
 .tw-hero h1{font-family:Georgia,serif;letter-spacing:-.025em;font-size:clamp(1.6rem,4vw,2.5rem);line-height:1.13;margin:.2rem 0 .7rem;overflow-wrap:anywhere}
-.tw-eyebrow{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--sage-ink,#486e53);margin:0 0 .4rem}
+.tw-eyebrow{font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--sage-ink,#486e53);margin:0 0 .4rem}
 .tw-lead{font-size:clamp(.95rem,2vw,1.12rem);line-height:1.5;margin:.1rem 0 1rem;max-width:38rem}
 .tw-pip img{display:block;width:clamp(76px,14vw,150px);height:auto;object-fit:contain}
 .tw-actions,.tw-choices{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.5rem 0}
