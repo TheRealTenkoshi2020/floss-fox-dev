@@ -73,7 +73,7 @@
   function fileCap(file, parsed) {
     const size = file && typeof file.size === 'number' ? file.size : 0;
     if (size > MAX_FILE) return { ok: false, reason: 'too-large' };
-    const hasMedia = !!(parsed && parsed.media && object(parsed.media));
+    const hasMedia = !!(parsed && ((parsed.media && object(parsed.media)) || (parsed.threadwood && object(parsed.threadwood))));
     if (!hasMedia && size > MAX_FILE_JSON) return { ok: false, reason: 'too-large' };
     return { ok: true };
   }

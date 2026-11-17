@@ -9,8 +9,9 @@
   if(!doc)return;
   const $=id=>doc.getElementById(id);
   const made=(tag,cls)=>{const e=doc.createElement(tag);if(cls)e.className=cls;return e};
-  const TAB_NAMES={tabShop:'Shopping',tabFabric:'Fabric',tabHelp:'Help',tabSettings:'Settings'};
-  const SECONDARY=Object.keys(TAB_NAMES);
+  const TAB_NAMES={tabShop:'Shopping',tabFabric:'Fabric',tabHelp:'Help',tabSettings:'Settings',tabThreadwood:"Pip's Den"};
+  const SECONDARY=['tabShop','tabFabric','tabHelp','tabSettings'];
+  const OPTIONAL=['tabThreadwood']; // added by threadwood/ui.js when present; never required
   const state={landing:false,navigation:false};
 
   function activeProject(){
@@ -82,6 +83,11 @@
         }catch(_){const tab=$('tabProjects');if(tab){doc.documentElement.classList.remove('ff-landing');tab.click();}}
       });
       choices.insertBefore(resume,hint);
+      if(root.FlossFoxThreadwood&&typeof root.FlossFoxThreadwood.show==='function'){
+        const den=made('button','ffux-den-link');den.id='ffuxDenLink';den.type='button';den.textContent="Or spend a moment with Pip in Pip's Den";
+        den.addEventListener('click',()=>{doc.documentElement.classList.remove('ff-landing');try{root.FlossFoxThreadwood.show();}catch(_){}});
+        choices.insertBefore(den,hint);
+      }
     }
     landing.classList.add('ffux-landing');
     state.landing=true;
@@ -100,6 +106,7 @@
     menu.append(summary,list);
     nav.append(menu);
     for(const tab of tabs)list.append(tab); // Move controls, never replace them or their handlers.
+    OPTIONAL.forEach(id=>{const t=$(id);if(t&&nav.contains(t)){list.append(t);tabs.push(t);}});
     const sync=()=>{
       let selected=null;
       for(const tab of tabs){
