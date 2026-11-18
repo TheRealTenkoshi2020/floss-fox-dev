@@ -81,6 +81,14 @@ function save(){if(!canSave){pstatus('Not saved: browser storage is unavailable 
 const proj=id=>store.projects.find(p=>p.id===id);
 let fillUndo=null;
 function touch(p){p.updated=nowISO();save()}
+// New journal/share actions must not overwrite edits saved by another tab.
+function isCurrent(){try{const raw=localStorage.getItem(KEY);if(raw===null)return store.projects.length===0;if(raw===JSON.stringify(store))return true;const m=migrate(JSON.parse(raw));return!!m&&!m.tooNew&&!m.skipped&&JSON.stringify(m.data)===JSON.stringify(store)}catch(e){return false}}
+function setProgress(id,pct){const p=proj(id);if(!p)return{ok:false,reason:'missing'};
+ if(pct!==null&&pct!==undefined&&pct!==''&&(!Number.isInteger(pct)||pct<0||pct>100))return{ok:false,reason:'bad'};
+ if(!canSave||!isCurrent())return{ok:false,reason:'not-saved'};
+ const before={...p},raw=lsGet(KEY);if(pct===null||pct===undefined||pct==='')delete p.progressPct;else p.progressPct=pct;p.updated=nowISO();
+ if(!savedP()){Object.keys(p).forEach(k=>delete p[k]);Object.assign(p,before);try{if(raw===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,raw)}catch(e){}return{ok:false,reason:'not-saved'}}
+ if(openId===id)renderEditor();renderList();return{ok:true,status:p.status,progressPct:p.progressPct,statusUnchanged:p.status===before.status}}
 function edited(p){if(typeof undoBy!=='undefined')delete undoBy[p.id]}
 function setCoverId(id,coverId){const p=proj(id);if(!p)return{ok:false,reason:'missing'};if(!canSave)return{ok:false,reason:'not-saved'};
  const before=('coverId'in p)?p.coverId:null;
@@ -261,13 +269,20 @@ function renderList(){const L=$('projList');$('projCount').textContent=store.pro
  const ea=$('emptyAdd');if(ea)ea.onclick=()=>{showView('convert');$('inp').focus()};const ei=$('emptyImport');if(ei)ei.onclick=()=>window.FFImportOpen&&window.FFImportOpen();if(window.FlossFoxAtelier&&typeof FlossFoxAtelier.paintProjects==='function')FlossFoxAtelier.paintProjects(L,store.projects)}
 
 async function delProject(id){const p=proj(id);if(!p)return;
+ const AS=window.FlossFoxAuditSessions,sessionState=AS&&AS.read();
+ if(sessionState&&!sessionState.ok){pstatus('The stitching journal could not be read. Nothing was deleted.');return}
+ const sessionCount=sessionState?sessionState.data.sessions.filter(s=>s.projectId===id).length:0;
  const ok=await FlossFoxConfirm.ask({pose:'worried',title:`Delete "${p.name}"?`,
-  body:"Are you sure? This removes the project from this browser, and it can't be undone unless you have a backup."+(kitCount(id)?` Its ${plural(kitCount(id),'set-aside skein')} go${kitCount(id)===1?'es':''} back to your free threads.`:'')+(p.coverId?' '+(ACp('journal.delete.photo',{},undefined,'This also removes its cover photo from this browser.')):''),go:'Delete'});
+  body:"Are you sure? This removes the project from this browser, and it can't be undone unless you have a backup."+(sessionCount?` This also removes its ${sessionCount} stitching session${sessionCount===1?'':'s'}.`:'')+(kitCount(id)?` Its ${plural(kitCount(id),'set-aside skein')} go${kitCount(id)===1?'es':''} back to your free threads.`:'')+(p.coverId?' '+(ACp('journal.delete.photo',{},undefined,'This also removes its cover photo from this browser.')):''),go:'Delete'});
  if(!ok)return;
+ if(!canSave||!isCurrent()){pstatus('Your project could not be safely deleted. Reload before trying again.');return}
+ const preDelete=snapshot(),projectOrder=store.projects.slice();
+ if(sessionCount){if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('delete',{force:true});const current=AS.read();if(!current.ok||!AS.save({schema:1,sessions:current.data.sessions.filter(s=>s.projectId!==id)}).ok){pstatus('The stitching journal could not be saved. Nothing was deleted.');return}}
  const coverToDrop=p.coverId||null;
  {const S=ALS();if(S&&S.writable())S.read().allocations.filter(r=>r.projectId===id).forEach(r=>S.update({projectId:id,code:r.code,qty:0},{projects:store.projects,collection:COL()}))}
- store.projects=store.projects.filter(x=>x.id!==id);const saved=save();if(!saved){/* keep the in-memory removal from being the only copy: reload list from what failed? store already mutated. If save failed the previous persist still has the project; put it back. */
-  if(!store.projects.find(x=>x.id===id))store.projects.push(p);pstatus(ACp('common.notSaved',{},undefined,'Not saved: your browser blocked the save. Download a backup to keep your work.'));return}
+ store.projects=store.projects.filter(x=>x.id!==id);const saved=savedP();if(!saved){
+  store.projects=projectOrder;const RV=window.FlossFoxRestoreVerify,back=RV&&RV.writeKeys(preDelete.keys,(k,v)=>localStorage.setItem(k,v),k=>localStorage.removeItem(k))&&RV.verifyKeys(preDelete.keys,lsGet).ok;
+  pstatus(back?'The deletion could not be saved. Your project and journal were restored.':'The deletion could not be verified. Reload and check your backup before making more changes.');return}
  if(coverToDrop&&window.FlossFoxAtelierMedia&&FlossFoxAtelierMedia.delByProject)try{FlossFoxAtelierMedia.delByProject(id)}catch(e){}
  if(openId===id){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}ensureShop();renderList();pstatus(`Deleted "${p.name}".`)}
 var kitFresh=false;
@@ -664,8 +679,12 @@ const PFX=KEY.replace(/\.v1$/,''),PREKEY=PFX+'.preimport.v1',BK_VERSION=2; // P3
 const PREF_KEYS={pip:PFX+'.pip.v1',hints:PFX+'.hints.v1',tips:PFX+'.tips.v1',fabric:PFX+'.fabric.v1',backup:PFX+'.backup-prefs.v1'};
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const TUI=()=>window.FlossFoxThreadsUI;
+function sessionBackup(){const data=window.FlossFoxAuditSessions.exportForBackup(),ids=new Set(store.projects.filter(p=>!p.demo).map(p=>p.id));
+ // Older project-only restores preserve the journal. Retain unmatched history in
+ // full backups as archived records, never attach it to an unrelated project.
+ return{schema:1,sessions:data.sessions.map(s=>ids.has(s.projectId)?s:{...s,archived:true})}}
 function fullBackup(){const T=TUI(),prefs={};for(const k in PREF_KEYS){const v=lsGet(PREF_KEYS[k]);if(v!==null)prefs[k]=v}
- return{app:'floss-fox',kind:'full-backup',version:BK_VERSION,schema:SCHEMA,exported:nowISO(),projects:store.projects.filter(p=>!p.demo),threads:T?T.exportData():{schema:1,threads:{}},prefs,...((S=>S&&S.writable()?{allocations:S.read()}:{})(ALS())),...((J=>{/* optional, additive (dev event journal phase 1); older backups have none */try{const e=J?J.exportEvents():[];return e.length?{journal:e}:{}}catch(x){return{}}})(window.FlossFoxJournal)),...((W=>{/* optional, additive (3.9 dev Threadwood memories); older backups have none and older builds ignore it */try{const t=W&&W.backupPart?W.backupPart():null;return t?{threadwood:t}:{}}catch(x){return{}}})(window.FlossFoxThreadwood))}}
+ return{app:'floss-fox',kind:'full-backup',version:BK_VERSION,schema:SCHEMA,exported:nowISO(),projects:store.projects.filter(p=>!p.demo),threads:T?T.exportData():{schema:1,threads:{}},prefs,...((S=>S&&S.writable()?{allocations:S.read()}:{})(ALS())),...((J=>{/* optional, additive (dev event journal phase 1); older backups have none */try{const e=J?J.exportEvents():[];return e.length?{journal:e}:{}}catch(x){return{}}})(window.FlossFoxJournal)),...(window.FlossFoxAuditSessions?{stitchSessions:sessionBackup()}:{}),...((W=>{/* optional, additive (3.9 dev Threadwood memories); older backups have none and older builds ignore it */try{const t=W&&W.backupPart?W.backupPart():null;return t?{threadwood:t}:{}}catch(x){return{}}})(window.FlossFoxThreadwood))}}
 let lastMediaMissing=[];
 async function fullBackupWithMedia(){lastMediaMissing=[];const d=fullBackup(),M=window.FlossFoxAtelierMedia,C=window.FlossFoxAtelierMediaCore;
  if(!M||!C||!M.exportCovers)return d;
@@ -683,7 +702,7 @@ function backupPhotoNote(d,missing){const miss=missing||lastMediaMissing,n=d&&d.
 async function confirmIncompleteBackup(missing){const body=(backupPhotoNote({media:{count:0}},missing)||'').trim();
  if(window.FlossFoxConfirm&&FlossFoxConfirm.ask)return FlossFoxConfirm.ask({pose:'thinking',title:"This backup can't include every cover photo",body:body,go:'Download anyway',keep:'Cancel'});
  return Promise.resolve(window.confirm(body+'\n\nDownload anyway?'))}
-async function backup(){const d=await fullBackupWithMedia(),missing=mediaMissing();
+async function backup(){let d;try{d=await fullBackupWithMedia()}catch(e){pstatus('The backup could not be prepared because stitching sessions could not be read. Your data was left unchanged.');return}const missing=mediaMissing();
  if(missing.length){const ok=await confirmIncompleteBackup(missing);if(!ok){pstatus('Backup was not saved. Your data is unchanged.');return}}
  const nt=Object.keys(d.threads.threads).length;download(JSON.stringify(d,null,2),'floss-fox-backup-'+nowISO().slice(0,10)+'.json','application/json');
  pstatus(`Backup downloaded with ${plural(d.projects.length,'project')} and ${plural(nt,'thread color')}.`+backupPhotoNote(d,missing)+` Keep the file somewhere safe, the way you'd keep a favorite pattern.`)}
@@ -697,21 +716,24 @@ function checkBackup(d){if(!d||typeof d!=='object'||d.app!=='floss-fox')return{e
   if(d.prefs&&typeof d.prefs==='object')for(const k in PREF_KEYS)if(typeof d.prefs[k]==='string'&&PREF_OK[k](d.prefs[k]))prefs[k]=d.prefs[k]}
  let allocations=null;if(full&&d.allocations!==undefined){if(!AL())return{err:'bad'};const v=AL().validate(d.allocations);if(!v.ok)return{err:v.reason==='future-schema'?'new':'bad'};const ids=new Set(m.data.projects.map(x=>x.id));if(v.data.allocations.some(r=>!ids.has(r.projectId)))return{err:'bad'};allocations=v.data}
  return{projects:m.data.projects,threads,prefs,skipped:m.skipped+tsk,full,allocations,journal:Array.isArray(d.journal)?d.journal:null}}
-function snapshot(){const keys=[KEY,ALKEY,TUI()?TUI().KEY:PFX+'.threads.v1',...Object.values(PREF_KEYS)],o={};keys.forEach(k=>{o[k]=lsGet(k)});return{at:nowISO(),keys:o}}
+function snapshot(){const keys=[KEY,ALKEY,TUI()?TUI().KEY:PFX+'.threads.v1',PFX+'.stitch-sessions.v1',...Object.values(PREF_KEYS)],o={};keys.forEach(k=>{o[k]=lsGet(k)});return{at:nowISO(),keys:o}}
 function undoImportRow(){const el=$('undoImport');if(!el)return;let s=null;try{s=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}
  if(!s||!s.keys){el.hidden=true;el.innerHTML='';return}el.hidden=false;
  el.innerHTML=`<span class="hint">Your data from before the last import (${esc(new Date(s.at).toLocaleString())}) is kept in this browser.</span> <button type="button" class="sec small" id="undoImportBtn">Undo last import</button>`;
  $('undoImportBtn').onclick=()=>{if(!confirm('Undo the last import? Your projects, thread collection and preferences go back to exactly how they were before it. Anything changed since the import is lost.'))return;if(window.FlossFoxSnapshots)FlossFoxSnapshots.take('undo',{force:true});
-  try{for(const k in s.keys){if(s.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s.keys[k])}localStorage.removeItem(PREKEY)}catch(e){pstatus('Undo failed: your browser blocked the save. Nothing else was changed.');return}
-  location.hash='#projects';location.reload()}}
+  const RV=window.FlossFoxRestoreVerify,prev={};try{for(const k in s.keys)prev[k]=localStorage.getItem(k)}catch(e){pstatus('Undo could not read your data. Nothing was changed.');return}
+  const written=RV&&RV.writeKeys(s.keys,(k,v)=>localStorage.setItem(k,v),k=>localStorage.removeItem(k))&&RV.verifyKeys(s.keys,lsGet).ok;
+  if(!written){const back=RV&&RV.writeKeys(prev,(k,v)=>localStorage.setItem(k,v),k=>localStorage.removeItem(k))&&RV.verifyKeys(prev,lsGet).ok;canSave=false;pstatus(back?'Undo could not be saved. Your data was put back; reload before trying again.':'Undo could not be verified. Reload and check your backup before making more changes.');return}
+  try{localStorage.removeItem(PREKEY)}catch(e){}location.hash='#projects';location.reload()}}
 const RPIP=p=>`<picture><source type="image/webp" srcset="assets/pip/pip-${p}-160.webp"><img class="rpip" data-pose="${p}" src="assets/pip/pip-${p}-160.png" width="160" height="240" alt=""></picture>`;
 function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBox').open=true;const cap=(window.FlossFoxAtelierMediaCore&&FlossFoxAtelierMediaCore.MAX_FILE)||5e6;
  if(file.size>cap){R.hidden=false;R.innerHTML='<b class="warn">That file is too large to be a Floss Fox backup. Nothing was changed.</b>';return}
  R.hidden=false;R.innerHTML=RPIP('magnifier')+'<p>Let me check this backup…</p>'; // shown only while the file is really being read and checked
  file.text().then(async t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}
   const sized=window.FlossFoxAtelierMediaCore&&FlossFoxAtelierMediaCore.fileCap(file,d);if(sized&&!sized.ok){pendingRestore=null;R.hidden=false;R.innerHTML='<b class="warn">That file is too large to be a Floss Fox backup. Nothing was changed.</b>';pstatus('Restore failed. Nothing was changed.');return}
-  const c=checkBackup(d);let mediaCheck={ok:true,present:false,items:[]};
+  if(d&&d.stitchSessions!==undefined){try{window.FlossFoxAuditSessionsCore.validate(d.stitchSessions)}catch(e){R.hidden=false;R.textContent='This backup has invalid stitching sessions. Nothing was changed.';pstatus('Restore failed. Nothing was changed.');return}}const c=checkBackup(d);let mediaCheck={ok:true,present:false,items:[]};
   try{if(window.FlossFoxAtelierMediaCore)mediaCheck=await FlossFoxAtelierMediaCore.check(d)}catch(e){mediaCheck={ok:false,present:!!(d&&d.media),items:[],reason:'error'}}
+  if(!c.err&&d.stitchSessions!==undefined){try{const ids=new Set(c.projects.map(p=>p.id));if(d.stitchSessions.sessions.some(s=>!s.archived&&!ids.has(s.projectId)))throw Error('orphan')}catch(e){pendingRestore=null;R.hidden=false;R.textContent='A stitching session does not match a project in this backup. Nothing was changed.';return}}
   if(c.err){pendingRestore=null;R.hidden=false;R.innerHTML=RPIP('puzzled')+`<b class="warn">${c.err==='new'?'This backup was made by a newer version of Floss Fox and can\'t be restored here. Nothing was changed.':'This file isn\'t a valid Floss Fox backup (it may be damaged or from another app). Nothing was changed.'}</b>`;pstatus('Restore failed. Nothing was changed.');return}
   pendingRestore=c.projects;const clash=pendingRestore.filter(p=>proj(p.id)).length,T=TUI(),mine=T?T.data().threads:{};
   const nt=c.threads?Object.keys(c.threads).length:0,tclash=c.threads?Object.keys(c.threads).filter(k=>mine[k]).length:0,np=Object.keys(c.prefs).length;
@@ -724,7 +746,11 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
   $('rGo').onclick=async ()=>{const im=(document.querySelector('input[name=imode]:checked')||{}).value||'merge';
    if(im==='replace'&&!confirm(`Replace your data with this backup? Your ${plural(store.projects.filter(p=>!p.demo).length,'project')}${c.full?` and ${Object.keys(mine).length} thread color${Object.keys(mine).length===1?'':'s'}`:''} will be replaced by the backup's ${plural(pendingRestore.length,'project')}${c.full?` and ${plural(nt,'color')}`:''}. You can undo this afterwards.`))return;
    const modeEl0=document.querySelector('input[name=rmode]:checked'),cmode=modeEl0?modeEl0.value:'replace',copyMap={},skipIds=[],S=ALS();
-   if(im==='merge'&&cmode==='copy')pendingRestore.forEach(x=>{if(proj(x.id))copyMap[x.id]=newId()});
+   if(!isCurrent()){pstatus('Another tab changed your projects. Reload before restoring. Nothing was changed.');return}
+   if(im==='merge'&&cmode==='copy')pendingRestore.forEach(x=>{if(proj(x.id))Object.defineProperty(copyMap,x.id,{value:newId(),enumerable:true})});
+   if(im==='merge'&&cmode==='skip')pendingRestore.forEach(x=>{if(proj(x.id))skipIds.push(x.id)});
+   let stitchNext=null,stitchBefore=null;
+   if(d.stitchSessions!==undefined){try{const AS=window.FlossFoxAuditSessions;if(!AS)throw Error('Session storage is unavailable.');stitchBefore=localStorage.getItem(AS.KEY);stitchNext=window.FlossFoxAuditSessionsCore.prepareRestore(AS.exportForBackup(),d.stitchSessions,{mode:im,copyMap,skipIds,replaceIds:im==='merge'&&cmode==='replace'?pendingRestore.filter(x=>proj(x.id)).map(x=>x.id):[],projectIds:pendingRestore.map(x=>x.id)})}catch(e){pstatus('Restore stopped: '+e.message+' Nothing was changed.');return}}
    let alNext=null;if(S&&AL()&&window.FlossFoxAllocationBackup){const cur=S.read(),pr=FlossFoxAllocationBackup.prepare({current:cur,incoming:c.allocations,mode:im,collisionMode:cmode,incomingProjectIds:pendingRestore.map(x=>x.id),existingProjectIds:store.projects.filter(x=>!x.demo).map(x=>x.id),copyIdMap:copyMap});
     if(!pr.ok){pstatus('We stopped the restore because the set-aside threads in this backup don\'t fit. Nothing was changed.');return}
     if(JSON.stringify(pr.data)!==JSON.stringify(cur)){if(!S.writable()){pstatus('We stopped the restore because your set-aside list is read-only here. Nothing was changed.');return}alNext=pr.data}}
@@ -732,17 +758,17 @@ function restoreFile(file){const R=$('restorePanel');if(!file)return;$('backupBo
    try{localStorage.setItem(PREKEY,JSON.stringify(snapshot()))}catch(e){if(!confirm('A safety copy of your current data couldn\'t be saved in this browser (storage full or blocked), so this import can\'t be undone. Import anyway?'))return}
    const pre=snapshot(); // in-memory copy of every affected key, taken right before the first write
    let add=0,rep=0,skip=0,cp=0,ta=0;const JN=window.FlossFoxJournal,jIn=c.journal;if(JN)JN.hold(); // an import is a re-base, not a run of history events
-   let tok=true,saved=false,thrown=false;try{ // an unexpected error anywhere below is treated as a failed save (put back), never as success
+   let tok=true,saved=false,thrown=false,stitchOK=true;try{ // an unexpected error anywhere below is treated as a failed save (put back), never as success
    if(im==='replace'){store.projects=store.projects.filter(p=>p.demo).concat(pendingRestore);rep=pendingRestore.length}
    else{const modeEl=document.querySelector('input[name=rmode]:checked'),mode=modeEl?modeEl.value:'replace';
     pendingRestore.forEach(p=>{const i=store.projects.findIndex(x=>x.id===p.id);if(i<0){store.projects.push(p);add++}else if(mode==='replace'){store.projects[i]=p;rep++}else if(mode==='skip'){skip++;skipIds.push(p.id)}else{const np={...p,id:copyMap[p.id]||newId(),name:(p.name+' (restored copy)').slice(0,100)};if(np.coverId)delete np.coverId;store.projects.push(np);cp++}})}
    if(c.full&&T){if(im==='replace'){tok=T.replaceAll({threads:c.threads});ta=nt}else{const merged=Object.assign({},c.threads,mine);ta=Object.keys(c.threads).filter(k=>!mine[k]).length;tok=T.replaceAll({threads:merged})}
     if(im==='replace')for(const k in c.prefs){try{localStorage.setItem(PREF_KEYS[k],c.prefs[k])}catch(e){}}}
    let aok=true;if(alNext){const r=S.replace(alNext);aok=r.ok;if(!aok){let s0=null;try{s0=JSON.parse(lsGet(PREKEY)||'null')}catch(e){}try{if(s0&&s0.keys)for(const k in s0.keys){if(s0.keys[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s0.keys[k])}}catch(e){}pstatus('The restore failed while saving set-aside threads, so everything was put back how it was.');setTimeout(()=>{location.hash='#projects';location.reload()},1500);return}}
-   saved=save()}catch(e){thrown=true}
-   pendingRestore=null;const sok=!thrown&&saved&&tok,RV=window.FlossFoxRestoreVerify,exp={};
+   saved=save();if(saved&&stitchNext){if(localStorage.getItem(FlossFoxAuditSessions.KEY)!==stitchBefore)throw Error('Session data changed during restore');const r=FlossFoxAuditSessions.save(stitchNext,stitchBefore);stitchOK=r.ok}}catch(e){thrown=true}
+   pendingRestore=null;const sok=!thrown&&saved&&tok&&stitchOK,RV=window.FlossFoxRestoreVerify,exp={};
    // Read back exactly what was meant to be saved; only a verified save is reported as done.
-   try{exp[KEY]=JSON.stringify(store);if(c.full&&T)exp[T.KEY]=JSON.stringify(T.data());if(im==='replace'&&c.full)for(const k in c.prefs)exp[PREF_KEYS[k]]=c.prefs[k]}catch(e){}
+   try{exp[KEY]=JSON.stringify(store);if(d.stitchSessions!==undefined&&window.FlossFoxAuditSessions)exp[FlossFoxAuditSessions.KEY]=JSON.stringify(stitchNext);if(c.full&&T)exp[T.KEY]=JSON.stringify(T.data());if(im==='replace'&&c.full)for(const k in c.prefs)exp[PREF_KEYS[k]]=c.prefs[k]}catch(e){}
    const ver=sok&&RV?RV.verifyKeys(exp,lsGet):{ok:false};
    if(!ver.ok){const back=!!RV&&RV.writeKeys(pre.keys,(k,v)=>localStorage.setItem(k,v),k=>localStorage.removeItem(k))&&RV.verifyKeys(pre.keys,lsGet).ok;
     const fm=RV?RV.failMessage(back):'The restore could not be checked. Before changing anything, use Undo last import, or import your backup again.';
@@ -786,10 +812,10 @@ $('saveProj').onclick=()=>{if(saving)return;if(!state.items.length){$('copymsg')
  $('newProjName').value='';renderList();
  $('openSaved').onclick=()=>{showView('projects');openProject(p.id)};if(ok&&window.FlossFoxPip){/* Pip A: the save bubble replaces the small saved wink; the wink still runs when the bubble doesn't show */if(store.projects.length===1&&FlossFoxPip.firstProject)pipFirstPending=true; /* new-15: first-project moment waits for the Projects view (never on Shopping) */if(!(FlossFoxPip.react&&FlossFoxPip.react('pipA.save.ok',{},$('copymsg'),{siteAnnounces:true})))FlossFoxPip.saved($('copymsg'))}};
 load();renderList();
-window.FlossFoxProjects={refreshList:renderList,setCoverId,addColor,undoAddColor,fullBackupWithMedia,backupPhotoNote,mediaMissing,setProgress:(id,pct)=>{const p=proj(id);if(!p)return{ok:false,reason:"missing"};const before=p.status;if(pct===null||pct===undefined||pct===""){if("progressPct"in p)delete p.progressPct}else{if(!Number.isInteger(pct)||pct<0||pct>100)return{ok:false,reason:"bad"};p.progressPct=pct}touch(p);if(openId===id)renderEditor();renderList();return{ok:true,status:p.status,progressPct:p.progressPct,statusUnchanged:p.status===before}},_caut:CAUT,checkIn:(id,key,n)=>{const p=proj(id);if(!p)return{ok:false};const r=checkIn(p,key,n);if(openId===id){renderEditor();renderList()}return r},undoCheckIn:()=>{const r=undoCheckIn();if(openId){renderEditor();renderList()}return r},openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,rawSnapshot:snapshot,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
+window.FlossFoxProjects={refreshList:renderList,setCoverId,addColor,undoAddColor,fullBackupWithMedia,backupPhotoNote,mediaMissing,setProgress,isCurrent,_caut:CAUT,checkIn:(id,key,n)=>{const p=proj(id);if(!p)return{ok:false};const r=checkIn(p,key,n);if(openId===id){renderEditor();renderList()}return r},undoCheckIn:()=>{const r=undoCheckIn();if(openId){renderEditor();renderList()}return r},openId:()=>openId,lastProject:()=>store.projects.slice().sort((a,b)=>b.updated.localeCompare(a.updated))[0]||null,openProject:id=>openProject(id),estimateInput,plan,planText,csv,migrate,backup,fullBackup,downloadBackupText:download,restoreFile,checkBackup,rawSnapshot:snapshot,PREKEY,_store:()=>store,KEY,canSave:()=>canSave,
  replaceAll:data=>{store={schema:SCHEMA,projects:data.projects};canSave=true;storeMsg('');openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false;const ok=save();renderList();return ok},
  removeDemo:()=>{const n=store.projects.filter(x=>x.demo).length;store.projects=store.projects.filter(x=>!x.demo);if(openId&&!proj(openId)){openId=null;$('projEdit').hidden=true;$('projListCard').hidden=false}save();renderList();return n},showView,open:id=>{showView('projects');openProject(id)},missingCount:id=>{const p=proj(id);return p?p.items.filter(i=>i.qty===null).length:0},
  fillMissing:id=>{const p=proj(id);if(!p)return 0;const c=p.items.filter(i=>i.qty===null);c.forEach(i=>{i.qty=1;i.stated=false;i.assumed=1});if(c.length){fillUndo={id,codes:c.map(i=>i.code)};touch(p);if(openId===id)renderEditor()}return c.length},
  undoFill:()=>{const u=fillUndo;fillUndo=null;const p=u&&proj(u.id);if(!p)return 0;let n=0;u.codes.forEach(code=>{const i=p.items.find(x=>x.code===code);if(i&&i.qty===1&&i.assumed===1){i.qty=null;i.stated=true;i.assumed=0;n++}});touch(p);if(openId===u.id)renderEditor();return n},
- add:p=>{const m=normProject(p);if(!m)return null;store.projects.push(m);save();renderList();return m.id}}; // for tests and debugging
+ add:p=>{const m=normProject(p);if(!m||proj(m.id)||!canSave||!isCurrent())return null;const raw=lsGet(KEY);store.projects.push(m);if(!savedP()){store.projects=store.projects.filter(x=>x!==m);try{if(raw===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,raw)}catch(e){}return null}renderList();return m.id}}; // for tests and debugging
 })();
