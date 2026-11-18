@@ -49,7 +49,7 @@ def focus_ring(g, sel):
     return g.locator(sel).first.evaluate("e=>{const s=getComputedStyle(e);return document.activeElement===e&&((s.outlineStyle!=='none'&&parseFloat(s.outlineWidth)>0)||s.boxShadow!=='none')}")
 
 with sync_playwright() as p:
-    br = p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
+    br = p.chromium.launch(executable_path=os.environ.get('FF_CHROME','/usr/bin/google-chrome'), args=['--no-sandbox'])
     # ---------- 1. Every width, light and dark: entry points, layout, keyboard, read-only navigation ----------
     for w in (360, 390, 768, 1280):
         for th in ('morning', 'moon'):
@@ -220,15 +220,15 @@ with sync_playwright() as p:
     ok('separate Threadwood file restores as a fallback', len(json.loads(ls(g, TWK) or '{"entries":[]}')['entries']) == 1)
     c.close()
 
-    # ---------- 4. Offline: service worker v5-gemini-audit-seo5 ----------
+    # ---------- 4. Offline: service worker v5-gemini-audit-2-seo5 ----------
     c, g = new(br, 390, sw='allow'); boot(g, '')
     g.wait_for_function("navigator.serviceWorker&&navigator.serviceWorker.controller", timeout=20000) if False else g.evaluate("navigator.serviceWorker.ready.then(()=>1)")
     g.wait_for_timeout(1500)
-    ck = g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/v5-gemini-audit-seo5/.test(x));if(!k)return{ks};const c=await caches.open(k),r=await c.keys();return{k,ks,u:r.map(x=>x.url)}})")
+    ck = g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/v5-gemini-audit-2-seo5/.test(x));if(!k)return{ks};const c=await caches.open(k),r=await c.keys();return{k,ks,u:r.map(x=>x.url)}})")
     u = ck.get('u', [])
-    ok('SW cache v5-gemini-audit-seo5 holds Smart Stash, Threadwood and the dev config', all(any(x.endswith(f) for x in u) for f in ('smart-stash/ui.js', 'threadwood/ui.js', 'threadwood/style.css', 'smart-stash/vendor/jszip.min.js', 'dev-build-config.js')), ck.get('ks'))
+    ok('SW cache v5-gemini-audit-2-seo5 holds Smart Stash, Threadwood and the dev config', all(any(x.endswith(f) for x in u) for f in ('smart-stash/ui.js', 'threadwood/ui.js', 'threadwood/style.css', 'smart-stash/vendor/jszip.min.js', 'dev-build-config.js')), ck.get('ks'))
     ok('large OCR files are NOT precached', not any('/vendor/ocr/' in x for x in u))
-    ok('no older dev cache left', all('v5-gemini-audit-seo5' in k for k in ck.get('ks', []) if k.startswith('flossfox-dev')), ck.get('ks'))
+    ok('no older dev cache left', all('v5-gemini-audit-2-seo5' in k for k in ck.get('ks', []) if k.startswith('flossfox-dev')), ck.get('ks'))
     c.set_offline(True); g.reload(); g.wait_for_function('window.FlossFoxThreadwood&&window.FlossFoxSmartStashUI', timeout=20000); g.evaluate("document.documentElement.classList.remove('ff-landing')")
     g.click('#tabThreads'); g.wait_for_timeout(300); ok('offline reload: Smart Stash works', g.locator('#ffSmartStash').is_visible())
     open_more(g, 'tabThreadwood'); ok("offline reload: Pip's Den works", g.locator('#threadwoodView').is_visible())
