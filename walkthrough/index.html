@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Floss Fox tester walkthrough</title>
+<style>
+:root{--bg:#f7f1e6;--card:#fffaf2;--line:#e6dccb;--txt:#3b2f28;--mut:#6f6257;--accent:#b4532a;--sage:#5f7a5c;--ok:#3d5a45}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:18px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:42rem;margin:0 auto;padding:20px 16px 64px}
+header h1{margin:0 0 .25rem;font-size:1.7rem}
+header h1 span{color:var(--accent)}
+.lead,.note,.foot{color:var(--mut)}
+a{color:var(--sage)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;margin:16px 0;box-shadow:0 2px 10px #7a4b2a12}
+h2{margin:0 0 .6rem;font-size:1.25rem}
+h3{margin:1.1rem 0 .4rem;font-size:1.05rem}
+ol,ul{padding-left:1.2rem}
+li{margin:.3rem 0}
+.form-slot{background:#f3ead9;border:1px dashed #c9b89a;border-radius:10px;padding:12px 14px}
+.q{margin:12px 0 4px;font-weight:600}
+.choices{display:flex;flex-wrap:wrap;gap:8px 12px;margin:4px 0 10px}
+label.ch{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 4px;cursor:pointer}
+textarea{width:100%;min-height:90px;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--txt)}
+button.copy{min-height:44px;padding:8px 16px;border:0;border-radius:999px;background:var(--sage);color:#fff;font:600 1rem/1.2 inherit;cursor:pointer;margin-top:8px}
+button.copy:focus{outline:3px solid #c8642f;outline-offset:2px}
+.copied{color:var(--ok);font-weight:600;margin-left:8px}
+nav.toc a{display:inline-block;margin:0 10px 6px 0}
+.foot{font-size:.95rem;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Floss <span>Fox</span> tester walkthrough</h1>
+<p class="lead">A guided tour of each page and feature, with a short questionnaire at the end of every section.</p>
+</header>
+
+<div class="card">
+<p>Thank you for helping test Floss Fox. Floss Fox is a free helper for cross-stitchers. It turns DMC color lists into matching brands like Anchor, keeps track of the threads you own, checks your projects against your stash, and helps you work out fabric and shopping.</p>
+<p>Please do the walkthrough in the <strong>live app</strong>:</p>
+<p><a href="https://flossfox.com/">https://flossfox.com/</a></p>
+<p>Your threads and projects are saved only on your own device. Nothing is sent to us. This walkthrough page does not save any of your answers and does not add trackers.</p>
+<p>It takes about 20 to 30 minutes. Do the sections in order if you can. There are no wrong answers. If you get stuck, that is useful to know too, so just note it and move on.</p>
+<p>Your helper along the way is <strong>Pip</strong>, a little fox. Pip uses they/them pronouns. They will show tips as you go. If you ever want them quieter, look in Settings for Pip's talking level.</p>
+</div>
+
+<div class="card form-slot" id="formSlot">
+<strong>How to send your answers</strong>
+<p>After each section, tap <strong>Copy my answers</strong>, then paste the text in a message or email to Myke. You can send one section at a time or collect them and send them all at the end.</p>
+<p><strong>Google Form (coming later):</strong> A link will appear here when Myke has the form ready. Until then, please use Copy my answers and send the text to Myke.</p>
+<!-- GOOGLE_FORM_LINK: paste the published Google Form URL in the paragraph above when it is ready. -->
+</div>
+
+<nav class="toc card" aria-label="Sections">
+<strong>Sections</strong><br>
+<a href="#home">1. Home</a>
+<a href="#find">2. Find floss</a>
+<a href="#threads">3. My threads and Smart Stash</a>
+<a href="#projects">4. Projects and the workbasket</a>
+<a href="#shop">5. Shopping</a>
+<a href="#fabric">6. Fabric calculator</a>
+<a href="#den">7. Pip's Den</a>
+<a href="#backup">8. Backup and restore</a>
+<a href="#settings">9. Settings, themes and Help</a>
+<a href="#overall">10. Overall</a>
+</nav>
+
+<section class="card" id="home" data-section="1. Home">
+<h2>1. Home</h2>
+<p><strong>What it does:</strong> The first screen is a short welcome from Pip, with three main choices so you can get started without hunting through menus.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open https://flossfox.com/.</li>
+<li>Read Pip's greeting.</li>
+<li>Look at the three main choices: Find colors for a pattern, Start or continue a project, and Organize my threads.</li>
+<li>If you already have a project in progress, check whether a Continue button appears.</li>
+<li>Look for the quieter link to Pip's Den. You do not have to go in yet.</li>
+<li>Open More tools and see that Shopping, Fabric, Settings and Pip's Den live there.</li>
+</ol>
+<p><strong>Notice:</strong> Was it clear what Floss Fox is for? Did you know where to go next?</p>
+</div>
+<div class="qs">
+<p class="q">How clear were the three choices on the home page?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="h1" value="1"> 1 not clear</label>
+<label class="ch"><input type="radio" name="h1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="h1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="h1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="h1" value="5"> 5 very clear</label>
+</div>
+<p class="q">If you have a project in progress, how easy was it to find Continue?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="h2" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="h2" value="2"> 2</label>
+<label class="ch"><input type="radio" name="h2" value="3"> 3</label>
+<label class="ch"><input type="radio" name="h2" value="4"> 4</label>
+<label class="ch"><input type="radio" name="h2" value="5"> 5 very easy</label>
+<label class="ch"><input type="radio" name="h2" value="no project yet"> I do not have a project yet</label>
+</div>
+<p class="q">Did you notice the Pip's Den link without feeling pushed to use it?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="h3" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="h3" value="I noticed it but it felt prominent"> I noticed it but it felt prominent</label>
+<label class="ch"><input type="radio" name="h3" value="I missed it"> I missed it</label>
+<label class="ch"><input type="radio" name="h3" value="Not sure"> Not sure</label>
+</div>
+<p class="q">Anything confusing on the home screen, or anything you wish it said?</p>
+<textarea name="h4" aria-label="Anything confusing on the home screen, or anything you wish it said?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="find" data-section="2. Find floss">
+<h2>2. Find floss</h2>
+<p><strong>What it does:</strong> Turns a list of DMC color numbers into matching Anchor and other brands. You can paste a list or import a pattern PDF.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Choose Find colors for a pattern, or open Find floss from the app.</li>
+<li>Type or paste a few DMC numbers, for example: 310, 699, 740, 3354, BLANC, WHITE, B5200.</li>
+<li>Look at the matches under the colors Floss Fox found. BLANC, WHITE and B5200 should stay as three separate colors.</li>
+<li>If you have a pattern PDF, try Import a pattern (PDF) and look at the colors Pip found. Fix anything Pip asks you to check. If you do not have a PDF, skip this step and say so below.</li>
+<li>If you want, add a color you own to your collection, or save the list as a project.</li>
+</ol>
+<p><strong>Notice:</strong> Were the matches easy to read? Did any words confuse you? Floss Fox suggests checking a real shade card before buying, since matches are close but not always exact.</p>
+</div>
+<div class="qs">
+<p class="q">How easy was it to find matching colors?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="f1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="f1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="f1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="f1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="f1" value="5"> 5 very easy</label>
+</div>
+<p class="q">If you imported a PDF, did Floss Fox find your pattern's colors correctly?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="f2" value="All of them"> All of them</label>
+<label class="ch"><input type="radio" name="f2" value="Most of them"> Most of them</label>
+<label class="ch"><input type="radio" name="f2" value="Only some"> Only some</label>
+<label class="ch"><input type="radio" name="f2" value="None"> None</label>
+<label class="ch"><input type="radio" name="f2" value="I did not import a PDF"> I did not import a PDF</label>
+</div>
+<p class="q">How clear were the results, including any notes about estimates or colors to check?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="f3" value="1"> 1 not clear</label>
+<label class="ch"><input type="radio" name="f3" value="2"> 2</label>
+<label class="ch"><input type="radio" name="f3" value="3"> 3</label>
+<label class="ch"><input type="radio" name="f3" value="4"> 4</label>
+<label class="ch"><input type="radio" name="f3" value="5"> 5 very clear</label>
+</div>
+<p class="q">Anything confusing, missing, or wrong? If you tried a PDF, which pattern was it?</p>
+<textarea name="f4" aria-label="Anything confusing, missing, or wrong? If you tried a PDF, which pattern was it?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="threads" data-section="3. My threads and Smart Stash">
+<h2>3. My threads and Smart Stash</h2>
+<p><strong>What it does:</strong> My threads is your keepsake box of the floss you already own. Smart Stash helps you fill that box faster: import a list, pick lots of colors at once, photograph labels, or scan barcodes. Photos and barcodes are read on your device and are not uploaded. Photo recognition and barcode scanning are free for now.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open Organize my threads, or go to My threads.</li>
+<li>Add one or two colors by hand, with how many skeins you have. Change one amount.</li>
+<li>In Smart Stash, try Import a list with a short typed or pasted list, or a file if you have one. Review the colors before you save, then try Undo if you want to put things back.</li>
+<li>Try Choose colors (bulk pick) and add a color that way.</li>
+<li>Try Photograph your threads if your device has a camera, or pick a photo of a skein label. Review any suggested numbers before saving. You can skip this if you prefer.</li>
+<li>Try Scan barcodes if you have a skein with a barcode handy. You can skip this too.</li>
+</ol>
+<p><strong>Notice:</strong> Was adding and changing threads easy? Did the review-before-saving step feel safe? Would you keep your real stash here?</p>
+</div>
+<div class="qs">
+<p class="q">How easy was it to add and change threads by hand?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="t1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="t1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="t1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="t1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="t1" value="5"> 5 very easy</label>
+</div>
+<p class="q">How useful was Smart Stash (import, choose colors, photo, or barcode)?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="t2" value="1"> 1 not useful</label>
+<label class="ch"><input type="radio" name="t2" value="2"> 2</label>
+<label class="ch"><input type="radio" name="t2" value="3"> 3</label>
+<label class="ch"><input type="radio" name="t2" value="4"> 4</label>
+<label class="ch"><input type="radio" name="t2" value="5"> 5 very useful</label>
+<label class="ch"><input type="radio" name="t2" value="I only used manual entry"> I only used manual entry</label>
+</div>
+<p class="q">If you tried photo recognition or barcode scanning, how well did it work?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="t3" value="Worked well"> Worked well</label>
+<label class="ch"><input type="radio" name="t3" value="Partly worked"> Partly worked</label>
+<label class="ch"><input type="radio" name="t3" value="Did not work"> Did not work</label>
+<label class="ch"><input type="radio" name="t3" value="I skipped the scanners"> I skipped the scanners</label>
+</div>
+<p class="q">Anything confusing in My threads or Smart Stash? If a photo or barcode went wrong, what happened?</p>
+<textarea name="t4" aria-label="Anything confusing in My threads or Smart Stash? If a photo or barcode went wrong, what happened?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="projects" data-section="4. Projects">
+<h2>4. Projects and the workbasket</h2>
+<p><strong>What it does:</strong> A project holds one pattern's colors so you can mark Have enough, Need to buy, or Not sure, compare with your stash, and leave a note about where you left off.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open Start or continue a project, or go to Projects.</li>
+<li>Open a project (or save a new one from a short color list).</li>
+<li>For each color, choose Have enough, Need to buy, or Not sure. If you are offered a comparison with your collection, look at the preview first. Nothing should change until you confirm. There should be a way to Undo.</li>
+<li>Add a Where I left off note, for example &quot;sky, one more row.&quot;</li>
+<li>If you like, add a cover photo of the project. This stays on your device.</li>
+<li>Look at your project list and the workbasket or project page to see whether the note and photo show up clearly, even if the project name is long.</li>
+</ol>
+<p><strong>Notice:</strong> Did the compare step feel safe? Was the note easy to find later?</p>
+</div>
+<div class="qs">
+<p class="q">How easy was it to work through a project's colors (Have enough, Need to buy, Not sure)?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="p1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="p1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="p1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="p1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="p1" value="5"> 5 very easy</label>
+</div>
+<p class="q">If you compared a project with your collection, how clear was the preview before anything changed?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="p2" value="1"> 1 not clear</label>
+<label class="ch"><input type="radio" name="p2" value="2"> 2</label>
+<label class="ch"><input type="radio" name="p2" value="3"> 3</label>
+<label class="ch"><input type="radio" name="p2" value="4"> 4</label>
+<label class="ch"><input type="radio" name="p2" value="5"> 5 very clear</label>
+<label class="ch"><input type="radio" name="p2" value="I did not try this"> I did not try this</label>
+</div>
+<p class="q">How useful is the Where I left off note, and a cover photo if you added one?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="p3" value="1"> 1 not useful</label>
+<label class="ch"><input type="radio" name="p3" value="2"> 2</label>
+<label class="ch"><input type="radio" name="p3" value="3"> 3</label>
+<label class="ch"><input type="radio" name="p3" value="4"> 4</label>
+<label class="ch"><input type="radio" name="p3" value="5"> 5 very useful</label>
+<label class="ch"><input type="radio" name="p3" value="I did not try these"> I did not try these</label>
+</div>
+<p class="q">Anything confusing in Projects? If a long project name was hard to read, please say so.</p>
+<textarea name="p4" aria-label="Anything confusing in Projects? If a long project name was hard to read, please say so."></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="shop" data-section="5. Shopping">
+<h2>5. Shopping</h2>
+<p><strong>What it does:</strong> Gathers the floss you still need into a shopping list, with links to stores.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open More tools, then Shopping.</li>
+<li>Look at the shopping list for your project.</li>
+<li>If you see Kit this project, try it to set aside threads you already have. Look first, then confirm.</li>
+<li>Tap a color's store link to see where you could buy it. You do not need to buy anything.</li>
+<li>Try Copy as text or print the list if those options are there.</li>
+</ol>
+<p><strong>Notice:</strong> Would you use this list at the store or when ordering online?</p>
+</div>
+<div class="qs">
+<p class="q">How useful was the shopping list?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="s1" value="1"> 1 not useful</label>
+<label class="ch"><input type="radio" name="s1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="s1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="s1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="s1" value="5"> 5 very useful</label>
+</div>
+<p class="q">How easy was it to find Shopping under More tools?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="s2" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="s2" value="2"> 2</label>
+<label class="ch"><input type="radio" name="s2" value="3"> 3</label>
+<label class="ch"><input type="radio" name="s2" value="4"> 4</label>
+<label class="ch"><input type="radio" name="s2" value="5"> 5 very easy</label>
+</div>
+<p class="q">Would you use this list at the store or when ordering online?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="s3" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="s3" value="Maybe"> Maybe</label>
+<label class="ch"><input type="radio" name="s3" value="No"> No</label>
+</div>
+<p class="q">Anything confusing in Shopping, or any store link that looked wrong?</p>
+<textarea name="s4" aria-label="Anything confusing in Shopping, or any store link that looked wrong?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="fabric" data-section="6. Fabric calculator">
+<h2>6. Fabric calculator</h2>
+<p><strong>What it does:</strong> Works out how much fabric to cut for a design.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open More tools, then Fabric.</li>
+<li>Enter your design size in stitches.</li>
+<li>Pick your fabric type and count, for example 14 count Aida, and how much extra fabric you want around the edges.</li>
+<li>Look at the finished design size and the fabric to cut, in inches and centimeters.</li>
+</ol>
+<p><strong>Notice:</strong> Did the answer match what you would have cut? Was anything unclear?</p>
+</div>
+<div class="qs">
+<p class="q">How easy was the fabric calculator to use?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="c1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="c1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="c1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="c1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="c1" value="5"> 5 very easy</label>
+</div>
+<p class="q">Did the answer match what you would have cut?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="c2" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="c2" value="Close enough"> Close enough</label>
+<label class="ch"><input type="radio" name="c2" value="No"> No</label>
+<label class="ch"><input type="radio" name="c2" value="Not sure"> Not sure</label>
+</div>
+<p class="q">How clear were the units and the extra fabric around the edges?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="c3" value="1"> 1 not clear</label>
+<label class="ch"><input type="radio" name="c3" value="2"> 2</label>
+<label class="ch"><input type="radio" name="c3" value="3"> 3</label>
+<label class="ch"><input type="radio" name="c3" value="4"> 4</label>
+<label class="ch"><input type="radio" name="c3" value="5"> 5 very clear</label>
+</div>
+<p class="q">Anything confusing in the fabric calculator?</p>
+<textarea name="c4" aria-label="Anything confusing in the fabric calculator?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="den" data-section="7. Pip's Den">
+<h2>7. Pip's Den</h2>
+<p><strong>What it does:</strong> Pip's Den is an optional corner for stitching time and memories. It does not replace your projects or your thread collection. Everything here stays on your device.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open Pip's Den from the home link, or from More tools.</li>
+<li>Stitchside: start a short session on a project, then pause or end it.</li>
+<li>Pip's Treasures: save a discovery if one is offered, and try Undo if you want to take it back.</li>
+<li>Stitching Journey: add a short note, and a photo if you like, about a moment in your project.</li>
+<li>Keepsake Collection: look for a finished project. Open it if one is there.</li>
+<li>Stitch and Share: if a postcard download is offered, try it. It should save a picture on your device and not post anywhere.</li>
+</ol>
+<p><strong>Notice:</strong> Did the Den feel like a nice extra, or did it get in the way of the main tools?</p>
+</div>
+<div class="qs">
+<p class="q">How easy was Pip's Den to understand and move around in?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="d1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="d1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="d1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="d1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="d1" value="5"> 5 very easy</label>
+</div>
+<p class="q">Which parts did you try? You can pick more than one.</p>
+<div class="choices">
+<label class="ch"><input type="checkbox" name="d2" value="Stitchside"> Stitchside</label>
+<label class="ch"><input type="checkbox" name="d2" value="Treasures"> Treasures</label>
+<label class="ch"><input type="checkbox" name="d2" value="Stitching Journey"> Stitching Journey</label>
+<label class="ch"><input type="checkbox" name="d2" value="Keepsakes"> Keepsakes</label>
+<label class="ch"><input type="checkbox" name="d2" value="Stitch and Share"> Stitch and Share</label>
+<label class="ch"><input type="checkbox" name="d2" value="None of them"> None of them</label>
+</div>
+<p class="q">Would you come back to Pip's Den while you stitch?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="d3" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="d3" value="Maybe"> Maybe</label>
+<label class="ch"><input type="radio" name="d3" value="No"> No</label>
+</div>
+<p class="q">What did you like or find confusing in Pip's Den?</p>
+<textarea name="d4" aria-label="What did you like or find confusing in Pip's Den?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="backup" data-section="8. Backup and restore">
+<h2>8. Backup and restore</h2>
+<p><strong>What it does:</strong> Because your data lives only on your device, a backup file lets you keep a safe copy or move it to another device. Floss Fox also keeps automatic copies on this device that you can restore.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open More tools, then Settings, and find Backup.</li>
+<li>Download a backup and save the file somewhere you can find it.</li>
+<li>Look at Automatic copies on this device and the Restore list. Just look if you prefer. If you do try a restore, make sure you have a downloaded backup first.</li>
+<li>Optional, only if you are comfortable: restore from the file you just downloaded onto this same device, and check that your projects and threads come back as they were.</li>
+</ol>
+<p><strong>Notice:</strong> Did you understand why a backup matters? Did you find the file afterwards?</p>
+</div>
+<div class="qs">
+<p class="q">Were you able to download a backup file?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="b1" value="Yes, easily"> Yes, easily</label>
+<label class="ch"><input type="radio" name="b1" value="Yes, but it was tricky"> Yes, but it was tricky</label>
+<label class="ch"><input type="radio" name="b1" value="No"> No</label>
+<label class="ch"><input type="radio" name="b1" value="I skipped this"> I skipped this</label>
+</div>
+<p class="q">Did it make sense why a backup matters?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="b2" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="b2" value="Somewhat"> Somewhat</label>
+<label class="ch"><input type="radio" name="b2" value="No"> No</label>
+</div>
+<p class="q">If you looked at automatic copies or tried Restore, how clear was that?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="b3" value="1"> 1 not clear</label>
+<label class="ch"><input type="radio" name="b3" value="2"> 2</label>
+<label class="ch"><input type="radio" name="b3" value="3"> 3</label>
+<label class="ch"><input type="radio" name="b3" value="4"> 4</label>
+<label class="ch"><input type="radio" name="b3" value="5"> 5 very clear</label>
+<label class="ch"><input type="radio" name="b3" value="I only downloaded a backup"> I only downloaded a backup</label>
+</div>
+<p class="q">Anything confusing about backup or restore? If you could not find the file, what device did you use?</p>
+<textarea name="b4" aria-label="Anything confusing about backup or restore? If you could not find the file, what device did you use?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="settings" data-section="9. Settings, themes and Help">
+<h2>9. Settings, themes and Help</h2>
+<p><strong>What it does:</strong> Settings is where you can change how Floss Fox looks, how talkative Pip is, and find Help.</p>
+<div class="try"><h3>Try this</h3><ol>
+<li>Open More tools, then Settings.</li>
+<li>Try a theme if you see theme choices (for example a lighter or darker look). You can switch back.</li>
+<li>Look at Pip's talking level if it is there, and change it if you want.</li>
+<li>Open Help and skim how Floss Fox works, or what the words mean.</li>
+<li>Look at Recent changes if it appears, just to see what it tells you.</li>
+</ol>
+<p><strong>Notice:</strong> Could you find what you needed? Did any wording feel unclear?</p>
+</div>
+<div class="qs">
+<p class="q">How easy was it to find Settings, themes, and Help?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="e1" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="e1" value="2"> 2</label>
+<label class="ch"><input type="radio" name="e1" value="3"> 3</label>
+<label class="ch"><input type="radio" name="e1" value="4"> 4</label>
+<label class="ch"><input type="radio" name="e1" value="5"> 5 very easy</label>
+</div>
+<p class="q">If you tried a theme, how did it feel to use?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="e2" value="1"> 1 hard to use</label>
+<label class="ch"><input type="radio" name="e2" value="2"> 2</label>
+<label class="ch"><input type="radio" name="e2" value="3"> 3</label>
+<label class="ch"><input type="radio" name="e2" value="4"> 4</label>
+<label class="ch"><input type="radio" name="e2" value="5"> 5 easy and pleasant</label>
+<label class="ch"><input type="radio" name="e2" value="I did not try a theme"> I did not try a theme</label>
+</div>
+<p class="q">Was Help useful?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="e3" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="e3" value="Somewhat"> Somewhat</label>
+<label class="ch"><input type="radio" name="e3" value="No"> No</label>
+<label class="ch"><input type="radio" name="e3" value="I did not open Help"> I did not open Help</label>
+</div>
+<p class="q">Anything you could not find in Settings or Help, or any wording that felt unclear?</p>
+<textarea name="e4" aria-label="Anything you could not find in Settings or Help, or any wording that felt unclear?"></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<section class="card" id="overall" data-section="10. Overall">
+<h2>10. Overall</h2>
+<p><strong>What it does:</strong> When you have tried the sections that matter to you, please finish with these last questions.</p>
+<div class="qs">
+<p class="q">What device did you use?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="o1" value="iPhone"> iPhone</label>
+<label class="ch"><input type="radio" name="o1" value="Android phone"> Android phone</label>
+<label class="ch"><input type="radio" name="o1" value="iPad or tablet"> iPad or tablet</label>
+<label class="ch"><input type="radio" name="o1" value="Windows computer"> Windows computer</label>
+<label class="ch"><input type="radio" name="o1" value="Mac"> Mac</label>
+<label class="ch"><input type="radio" name="o1" value="Other"> Other</label>
+</div>
+<p class="q">What browser did you use?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="o2" value="Safari"> Safari</label>
+<label class="ch"><input type="radio" name="o2" value="Chrome"> Chrome</label>
+<label class="ch"><input type="radio" name="o2" value="Edge"> Edge</label>
+<label class="ch"><input type="radio" name="o2" value="Firefox"> Firefox</label>
+<label class="ch"><input type="radio" name="o2" value="Not sure"> Not sure</label>
+<label class="ch"><input type="radio" name="o2" value="Other"> Other</label>
+</div>
+<p class="q">Overall, how easy was Floss Fox to use?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="o3" value="1"> 1 very hard</label>
+<label class="ch"><input type="radio" name="o3" value="2"> 2</label>
+<label class="ch"><input type="radio" name="o3" value="3"> 3</label>
+<label class="ch"><input type="radio" name="o3" value="4"> 4</label>
+<label class="ch"><input type="radio" name="o3" value="5"> 5 very easy</label>
+</div>
+<p class="q">Would you use Floss Fox for your own stitching?</p>
+<div class="choices" role="radiogroup">
+<label class="ch"><input type="radio" name="o4" value="Yes"> Yes</label>
+<label class="ch"><input type="radio" name="o4" value="Maybe"> Maybe</label>
+<label class="ch"><input type="radio" name="o4" value="No"> No</label>
+</div>
+<p class="q">What was your favorite part, what was most frustrating, and is there anything else you wish Floss Fox could do? Your name is optional.</p>
+<textarea name="o5" aria-label="What was your favorite part, what was most frustrating, and is there anything else you wish Floss Fox could do? Your name is optional."></textarea>
+<button type="button" class="copy">Copy my answers</button><span class="copied" hidden>Copied</span>
+</div></section>
+
+<p class="foot">All done! Thank you. Please copy any remaining answers and send them to Myke. This page does not keep a copy.</p>
+</div>
+<script>
+(function(){
+  function answers(section){
+    var title = section.getAttribute('data-section') || 'Section';
+    var lines = ['Floss Fox tester walkthrough', 'Section: ' + title, ''];
+    section.querySelectorAll('.qs .q').forEach(function(q){
+      var vals = [];
+      var n = q.nextElementSibling;
+      while(n && !n.classList.contains('q') && n.tagName !== 'BUTTON'){
+        if(n.querySelectorAll) n.querySelectorAll('input:checked').forEach(function(i){ vals.push(i.value); });
+        if(n.tagName === 'TEXTAREA' && n.value.trim()) vals.push(n.value.trim());
+        n = n.nextElementSibling;
+      }
+      lines.push(q.textContent.trim());
+      lines.push(vals.length ? vals.join(', ') : '(no answer)');
+      lines.push('');
+    });
+    return lines.join('\n');
+  }
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function(resolve, reject){
+      var t = document.createElement('textarea');
+      t.value = text; t.setAttribute('readonly',''); t.style.position='fixed'; t.style.left='-9999px';
+      document.body.appendChild(t); t.select();
+      try{ if(!document.execCommand('copy')) throw new Error('copy failed'); resolve(); }
+      catch(e){ reject(e); }
+      finally{ document.body.removeChild(t); }
+    });
+  }
+  document.querySelectorAll('button.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var section = btn.closest('section');
+      var note = btn.nextElementSibling;
+      copyText(answers(section)).then(function(){
+        if(note){ note.hidden = false; setTimeout(function(){ note.hidden = true; }, 2000); }
+      }).catch(function(){
+        window.prompt('Copy these answers and send them to Myke:', answers(section));
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
