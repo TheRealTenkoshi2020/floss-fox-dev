@@ -1,6 +1,9 @@
 > **DEV PREVIEW REPO (floss-fox-dev).** The top commit "DEV ONLY" adds a preview banner, noindex, robots disallow, removes canonical/OG URLs, and switches storage to `flossfox-dev.v1` (Pip preference: `flossfox-dev.pip.v1`). **Never merge or cherry-pick that commit into production (`floss-fox`).** Promote features from the `milestone-*` branch of the production repo instead.
 
 # Floss Fox
+
+V5 development candidate combines the current Smart Stash and Threadwood application, the Gemini audit implementation, and the sitewide SEO update. See [V5 integration](docs/V5_INTEGRATION.md) for the current entry points, data safeguards, verification commands and release boundaries. The pages in this repository intentionally remain `noindex`; this source candidate does not imply a production deployment.
+
 Static DMC → Anchor floss converter. No build step: open `index.html`.
 
 - Rename: change `APP_NAME` in index.html.

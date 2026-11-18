@@ -1,7 +1,12 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v2.0a-ci005-106'; // 3.9: Smart Stash + Threadwood (V4 package); OCR vendor files are lazy, never precached
+const CACHE = 'flossfox-dev-v5-gemini-audit-seo5'; // V5: Smart Stash, Threadwood, audit features and guides; OCR vendor files stay lazy
 const CORE = [
+  "audit/ff-audit-core.js",
+  "audit/ff-stitch-sessions.js",
+  "audit/ff-audit-ui.js",
+  "audit/ff-audit-feedback.js",
+  "audit/ff-audit.css",
   "backup-core.js",
   "backup-ui.js",
   "snapshots.js",
@@ -41,6 +46,10 @@ const CORE = [
   "pip-hybrid/pip-flows.js",
   "pip-hybrid/offline-knowledge.js",
   './',
+  "tools.html",
+  "floss-conversion-guide.html",
+  "thread-inventory-guide.html",
+  "cross-stitch-project-planning.html",
   "about.html",
   "assets/nav.css",
   "demo.js",

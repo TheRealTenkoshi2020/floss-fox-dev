@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const F=window.FlossFoxFabric,$=id=>document.getElementById(id);
-const KEY=(/floss-fox-dev/.test(location.pathname)?'flossfox-dev':'flossfox')+'.fabric.v1';
+const KEY='flossfox-dev.fabric.v1'; // Development build: same namespace at localhost and on Pages.
 const S={unit:'in',fabric:'aida:14',over:1,margin:'framing',marginIn:3,custom:''};   // marginIn: full precision inches
 let overTouched=false,lastOk=null,namedPresets=[];
 const MAX_PRESETS=12;

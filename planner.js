@@ -54,5 +54,5 @@ ${r.issues.length?`<div class="errbox" id="planIssues"><ul>${r.issues.map(i=>`<l
  $('planCopy').onclick=()=>{const t=text(r);(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>$('planMsg').textContent='Copied.',()=>$('planMsg').textContent='Couldn\'t copy automatically. Select the list and copy it.')};
  $('planPrint').onclick=()=>{const w=window.open('','_blank');if(!w){$('planMsg').textContent='Your browser blocked printing.';return}w.document.write('<!doctype html><title>Floss Fox shopping plan</title><pre style="white-space:pre-wrap;font:14px/1.4 sans-serif"></pre>');w.document.querySelector('pre').textContent=text(r);w.document.close();w.focus();w.print()}}
 $('planOpen').onclick=()=>{const C=$('planCard');C.hidden=false;draw();C.focus()};
-window.FlossFoxPlanner={compute,text};
+window.FlossFoxPlanner={compute,text,describeReason:k=>WHY[k]||'Check project details',describeIssue:i=>(i.code?'DMC '+i.code+': ':'')+(ISS[i.kind]||'Check project details')};
 })();
