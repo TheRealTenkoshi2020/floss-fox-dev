@@ -29,7 +29,10 @@ function draw(){const C=$('planCard'),projs=P._store().projects.filter(p=>!p.dem
  C.innerHTML=`<h2>Plan shopping for several projects</h2><p class="hint">Pick the projects you're shopping for. We add up colors they share and count each confirmed skein you own once. Nothing in your projects or collection changes.</p>
 ${projs.length?`<fieldset class="bkmode"><legend>Projects</legend>${projs.map(p=>`<label style="display:block"><input type="checkbox" data-plan="${esc(p.id)}"> ${esc(p.name||'Untitled project')} <span class="mut">(${p.items.length} color${p.items.length===1?'':'s'})</span></label>`).join('')}</fieldset>`:'<p>No projects yet.</p>'}
 <div class="row"><button type="button" class="pri" id="planGo">Show shopping plan</button><button type="button" class="ghost" id="planClose">Close</button></div><div id="planOut" aria-live="polite"></div>`;
- $('planGo').onclick=()=>{const ids=[...C.querySelectorAll('[data-plan]:checked')].map(i=>i.dataset.plan);if(!ids.length){$('planOut').innerHTML='<p class="hint">Pick at least one project.</p>';return}last=compute(ids);show(last)};
+ let shown=false;
+ const update=()=>{shown=true;const ids=[...C.querySelectorAll('[data-plan]:checked')].map(i=>i.dataset.plan);if(!ids.length){last=null;$('planOut').innerHTML='<p class="hint">Pick at least one project.</p>';return}last=compute(ids);show(last)};
+ $('planGo').onclick=update;
+ C.querySelectorAll('[data-plan]').forEach(c=>c.addEventListener('change',()=>{if(shown)update()}));
  $('planClose').onclick=()=>{C.hidden=true;C.innerHTML='';$('planOpen').focus()}}
 const ASM=new Set(['assumed-quantity','assumed-portion','partly-assumed','assumed']);const asm=x=>(x.reviewReasons||[]).some(k=>ASM.has(k));
 function show(r){const buy=r.rows.filter(x=>x.status==='buy'),rev=r.rows.filter(x=>x.status==='review'),O=$('planOut');
