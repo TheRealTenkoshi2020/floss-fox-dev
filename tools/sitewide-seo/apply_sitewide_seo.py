@@ -131,7 +131,7 @@ def patch_sw(s,site):
     if site=='dev' and not old.startswith('flossfox-dev-'):raise ValueError('Dev cache isolation must be retained')
     if site=='production' and (old.startswith('flossfox-dev-') or not old.startswith('flossfox-')):
         raise ValueError('Production service worker cache namespace mismatch')
-    if not old.endswith('-seo5'):
+    if not re.search(r'-seo\d+$', old):
         s=s[:m.start(1)]+old+'-seo5'+s[m.end(1):]
     for filename in GUIDES:
         if f'"{filename}"' not in s:
