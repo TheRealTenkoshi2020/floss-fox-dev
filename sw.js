@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v5-gemini-audit-3-art40-1'; // V5 + Pixel Pip art 11-50 (new files only; images runtime-cached)
+const CACHE = 'flossfox-dev-v5-gemini-audit-3-links1'; // V5 + verified store links on Find floss, shopping, restock
 const CORE = [
   "audit/ff-audit-core.js",
   "audit/ff-stitch-sessions.js",
