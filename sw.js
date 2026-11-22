@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v5-gemini-audit-3-calm1'; // V5 calm pass: folded secondary tools (layout only); OCR vendor files stay lazy
+const CACHE = 'flossfox-dev-v5-gemini-audit-3-art40-1'; // V5 + Pixel Pip art 11-50 (new files only; images runtime-cached)
 const CORE = [
   "audit/ff-audit-core.js",
   "audit/ff-stitch-sessions.js",
@@ -25,7 +25,7 @@ const CORE = [
   "pip-hybrid/pattern-trust-ui.js",
   "analytics.js",
   "landing.js",
-  "guided-ux.js","guided-ux.css","calm.js","calm.css",
+  "guided-ux.js","guided-ux.css","calm.js","calm.css","pip-art40.js","pip-art40.css",
   "landing.css",
   "support/links.js","support/links.css",
   "pip-hybrid/pattern-ui.js",
