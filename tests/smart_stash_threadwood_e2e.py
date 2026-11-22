@@ -42,7 +42,7 @@ def open_more(g, tab):
     if not g.locator('#' + tab).is_visible(): g.click('#ffuxNavSummary')
     g.click('#' + tab); g.wait_for_timeout(300)
 def to_threads(g):
-    g.evaluate("document.documentElement.classList.remove('ff-landing')"); g.click('#tabThreads'); g.wait_for_selector('#ffSmartStash')
+    g.evaluate("document.documentElement.classList.remove('ff-landing')"); g.click('#tabThreads'); g.wait_for_selector('#thMoreAdd', state='attached'); g.evaluate("document.getElementById('thMoreAdd').open=true"); g.wait_for_selector('#ffSmartStash')
 def ssbtn(g, text): g.locator('#ffSmartStash button', has_text=text).first.click(); g.wait_for_timeout(250)
 def focus_ring(g, sel):
     g.keyboard.press('Tab'); g.locator(sel).first.focus()
@@ -69,7 +69,7 @@ with sync_playwright() as p:
             if SH and th == 'morning' and w in (390, 1280):
                 g.evaluate("document.querySelectorAll('#threadwoodView details').forEach((d,i)=>d.open=i===0)"); g.evaluate('scrollTo(0,0)'); g.screenshot(path=f'{SH}/pips-den-{w}.png', full_page=True)
             open_more(g, 'tabThreadwood'); ok(t + "Pip's Den reachable from More tools", g.locator('#threadwoodView').is_visible())
-            g.click('#tabThreads'); g.wait_for_selector('#ffSmartStash')
+            g.click('#tabThreads'); g.wait_for_selector('#thMoreAdd', state='attached'); g.evaluate("document.getElementById('thMoreAdd').open=true"); g.wait_for_selector('#ffSmartStash')
             ok(t + 'floating Pip companion is back on My threads after leaving the Den', g.evaluate("(e=>!!e&&getComputedStyle(e).display!=='none')(document.getElementById('pip'))"))
             ok(t + 'My threads shows the Smart Stash entry; Den closes', g.locator('#ffSmartStash').is_visible() and not g.locator('#threadwoodView').is_visible())
             ok(t + 'scanners say Free during testing, no prices or upgrade prompts', 'Free during testing' in g.inner_text('#ffSmartStash') and not any(x in g.inner_text('body') for x in ('$', 'Upgrade', 'Subscribe', 'Checkout', 'per month')))
@@ -220,17 +220,17 @@ with sync_playwright() as p:
     ok('separate Threadwood file restores as a fallback', len(json.loads(ls(g, TWK) or '{"entries":[]}')['entries']) == 1)
     c.close()
 
-    # ---------- 4. Offline: service worker v5-gemini-audit-2-seo6 ----------
+    # ---------- 4. Offline: service worker v5-gemini-audit-3-calm1 ----------
     c, g = new(br, 390, sw='allow'); boot(g, '')
     g.wait_for_function("navigator.serviceWorker&&navigator.serviceWorker.controller", timeout=20000) if False else g.evaluate("navigator.serviceWorker.ready.then(()=>1)")
     g.wait_for_timeout(1500)
-    ck = g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/v5-gemini-audit-2-seo6/.test(x));if(!k)return{ks};const c=await caches.open(k),r=await c.keys();return{k,ks,u:r.map(x=>x.url)}})")
+    ck = g.evaluate("caches.keys().then(async ks=>{const k=ks.find(x=>/v5-gemini-audit-3-calm1/.test(x));if(!k)return{ks};const c=await caches.open(k),r=await c.keys();return{k,ks,u:r.map(x=>x.url)}})")
     u = ck.get('u', [])
-    ok('SW cache v5-gemini-audit-2-seo6 holds Smart Stash, Threadwood and the dev config', all(any(x.endswith(f) for x in u) for f in ('smart-stash/ui.js', 'threadwood/ui.js', 'threadwood/style.css', 'smart-stash/vendor/jszip.min.js', 'dev-build-config.js')), ck.get('ks'))
+    ok('SW cache v5-gemini-audit-3-calm1 holds Smart Stash, Threadwood and the dev config', all(any(x.endswith(f) for x in u) for f in ('smart-stash/ui.js', 'threadwood/ui.js', 'threadwood/style.css', 'smart-stash/vendor/jszip.min.js', 'dev-build-config.js')), ck.get('ks'))
     ok('large OCR files are NOT precached', not any('/vendor/ocr/' in x for x in u))
-    ok('no older dev cache left', all('v5-gemini-audit-2-seo6' in k for k in ck.get('ks', []) if k.startswith('flossfox-dev')), ck.get('ks'))
+    ok('no older dev cache left', all('v5-gemini-audit-3-calm1' in k for k in ck.get('ks', []) if k.startswith('flossfox-dev')), ck.get('ks'))
     c.set_offline(True); g.reload(); g.wait_for_function('window.FlossFoxThreadwood&&window.FlossFoxSmartStashUI', timeout=20000); g.evaluate("document.documentElement.classList.remove('ff-landing')")
-    g.click('#tabThreads'); g.wait_for_timeout(300); ok('offline reload: Smart Stash works', g.locator('#ffSmartStash').is_visible())
+    g.click('#tabThreads'); g.wait_for_timeout(300); g.evaluate("document.getElementById('thMoreAdd').open=true"); ok('offline reload: Smart Stash works', g.locator('#ffSmartStash').is_visible())
     open_more(g, 'tabThreadwood'); ok("offline reload: Pip's Den works", g.locator('#threadwoodView').is_visible())
     c.close()
     # direct link

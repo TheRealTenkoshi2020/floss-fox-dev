@@ -13,6 +13,10 @@ import sys
 import threading
 from playwright.sync_api import sync_playwright
 
+def unfold(g):
+    # calm pass: secondary tools sit in folded details.ffcalm sections; open them like a tester would
+    g.wait_for_timeout(50); g.evaluate("document.querySelectorAll('details.ffcalm').forEach(d=>d.open=true)")
+
 ROOT = Path(__file__).resolve().parents[1]
 BASE = (sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8775/').rstrip('/') + '/'
 GUIDES = ['tools.html', 'floss-conversion-guide.html', 'thread-inventory-guide.html', 'cross-stitch-project-planning.html']
@@ -79,7 +83,7 @@ with sync_playwright() as p:
         page.wait_for_selector('#' + view)
         ok('guide route opens actual ' + view, page.locator('#' + view).is_visible() and not page.evaluate('document.documentElement.classList.contains("ff-landing")'))
         if view == 'threadsView':
-            page.click('#ffauImport')
+            unfold(page); page.click('#ffauImport')
             ok('guide route reaches integrated Smart Stash importer', page.locator('#ffssFile').is_visible())
         context.close()
 
@@ -118,7 +122,7 @@ with sync_playwright() as p:
         before = page.evaluate('(keys)=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))', keys)
         UpgradeHandler.before = False
         page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())')
-        expected = 'flossfox-dev-v5-gemini-audit-2-seo6'
+        expected = 'flossfox-dev-v5-gemini-audit-3-calm1'
         # Async predicates passed to wait_for_function can be truthy Promises.
         # Await the actual lifecycle/cache condition before cutting the network.
         page.evaluate('''async ({expected,old})=>{
@@ -141,11 +145,11 @@ with sync_playwright() as p:
         page.wait_for_function('!!window.FlossFoxAuditUI')
         ok('upgrade preserves browser projects, collection and sessions', before == page.evaluate('(keys)=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))', keys))
         page.evaluate("FlossFoxProjects.open('v5-upgrade')")
-        page.locator('#ffauSessions > summary').click()
+        unfold(page); page.locator('#ffauSessions > summary').click()
         ok('offline upgraded journal displays saved entry', '100 stitches' in page.inner_text('#ffauRecent'))
         ok('offline upgraded progress stays manual and saved', page.input_value('#ffauPercent') == '37')
         page.evaluate("FlossFoxProjects.showView('shop')")
-        page.click('#ffauShopStart')
+        unfold(page); page.click('#ffauShopStart')
         ok('offline upgraded combined list works', page.locator('#ffauTrip-310').count() == 1)
         backup = page.evaluate('FlossFoxProjects.fullBackup()')
         ok('offline backup still contains sessions after V5 update', len(backup['stitchSessions']['sessions']) == 1)
