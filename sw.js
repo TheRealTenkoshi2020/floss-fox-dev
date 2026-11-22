@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v5-gemini-audit-3-links1'; // V5 + verified store links on Find floss, shopping, restock
+const CACHE = 'flossfox-dev-v5-gemini-audit-3-links2'; // V5 + store links; precache bypasses the HTTP cache so updates never keep old files
 const CORE = [
   "audit/ff-audit-core.js",
   "audit/ff-stitch-sessions.js",
@@ -257,7 +257,8 @@ const CORE = [
   'manifest.webmanifest'
 ];
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));
+  // cache:'reload' skips the browser's HTTP cache (GitHub Pages sends max-age=600), so a new version never precaches files left over from the old one.
+  e.waitUntil(caches.open(CACHE).then(c => Promise.all(CORE.map(u => c.add(new Request(u, {cache: 'reload'})).catch(() => {})))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('flossfox-dev-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -270,6 +271,6 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); } return res; })
       .catch(() => caches.match(r, {ignoreSearch: true}).then(m => m || caches.match('./')).then(m => m || caches.match('offline.html'))));
   } else {
-    e.respondWith(caches.match(r).then(m => m || fetch(r).then(res => { if (res.ok && res.type === 'basic') { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); } return res; })));
+    e.respondWith(caches.match(r).then(m => m || fetch(r, {cache: 'no-cache'}).then(res => { if (res.ok && res.type === 'basic') { const cp = res.clone(); caches.open(CACHE).then(c => c.put(r, cp)); } return res; })));
   }
 });
