@@ -6,6 +6,10 @@ No production requests. Test APIs seed inputs; actual controls exercise workflow
 import os, sys, json, copy
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+
+def unfold(g):
+    # calm pass: secondary tools sit in folded details.ffcalm sections; open them like a tester would
+    g.wait_for_timeout(50); g.evaluate("document.querySelectorAll('details.ffcalm').forEach(d=>d.open=true)")
 B=(sys.argv[1] if len(sys.argv)>1 else 'http://127.0.0.1:8765/').rstrip('/')+'/'
 KEY='flossfox-dev.v1'; TK='flossfox-dev.threads.v1'; SK='flossfox-dev.stitch-sessions.v1'
 COUNT=0
@@ -36,6 +40,7 @@ def view(g,v):g.evaluate('(v)=>FlossFoxProjects.showView(v)',v)
 def openjournal(g):
     g.evaluate("FlossFoxProjects.open('pa')")
 
+    unfold(g)
     if g.locator('#ffauSessions').get_attribute('open') is None:g.locator('#ffauSessions > summary').click()
 def backup(g):return js(g,'FlossFoxProjects.fullBackup()')
 def restore(g,data,mode='merge',collision='replace'):
@@ -54,19 +59,19 @@ with sync_playwright() as p:
     for w in (360,390,768,1280):
         for theme in ('morning','moon'):
             c,g=new(br,w);g.evaluate('(t)=>FlossFoxAtelierTheme.apply(t)',theme)
-            view(g,'threads');g.locator('#ffauImport').click();ok(f'{w} {theme}: import shortcut opens original importer',g.locator('#ffssFile').is_visible());wide(g,f'{w} {theme}: inventory width')
+            view(g,'threads');unfold(g);g.locator('#ffauImport').click();ok(f'{w} {theme}: import shortcut opens original importer',g.locator('#ffssFile').is_visible());wide(g,f'{w} {theme}: inventory width')
             # Close through the original toggle; shortcut must reopen the existing hidden input.
             g.locator('#ffSmartStash button.ffss-choice',has_text='Import a list').click();g.locator('#ffauImport').click();ok(f'{w} {theme}: collapsed importer reopens',g.locator('#ffssFile').is_visible())
-            view(g,'shop');g.locator('#ffauShopStart').click();ok(f'{w} {theme}: shared 310 subtracts stash once','3 skeins' in g.inner_text('#ffauTrip-310 + span'))
+            view(g,'shop');unfold(g);g.locator('#ffauShopStart').click();ok(f'{w} {theme}: shared 310 subtracts stash once','3 skeins' in g.inner_text('#ffauTrip-310 + span'))
             ok(f'{w} {theme}: uncertain 321 stays check first',g.locator('#ffauTrip-321').count()==0 and '321' in g.text_content('#ffauTrip details'))
             wide(g,f'{w} {theme}: combined trip width');g.screenshot(path=f'../verification/trip-{w}-{theme}.png',full_page=True)
             openjournal(g);wide(g,f'{w} {theme}: journal width');ok(f'{w} {theme}: journal controls labeled',g.get_by_label('Stitches completed',exact=True).count()==1)
             c.close()
-    c,g=new(br);view(g,'shop');g.click('#ffauShopStart');before=raw(g,TK);projectsBefore=raw(g,KEY)
+    c,g=new(br);view(g,'shop');unfold(g);g.click('#ffauShopStart');before=raw(g,TK);projectsBefore=raw(g,KEY)
     g.check('#ffauTrip-310');ok('Found never changes purchases or stash',raw(g,TK)==before and raw(g,KEY)==projectsBefore)
-    g.reload();view(g,'shop');g.click('#ffauShopStart');ok('Found survives reload',g.is_checked('#ffauTrip-310'))
+    g.reload();view(g,'shop');unfold(g);g.click('#ffauShopStart');ok('Found survives reload',g.is_checked('#ffauTrip-310'))
     g.uncheck('#ffauPick-pb');g.get_by_role('button',name='Show combined list',exact=True).click();ok('Selection recalculates real planner','1 skein' in g.inner_text('#ffauTrip-310 + span'))
-    g.reload();view(g,'shop');g.click('#ffauShopStart');ok('Selected projects survive reload',not g.is_checked('#ffauPick-pb'))
+    g.reload();view(g,'shop');unfold(g);g.click('#ffauShopStart');ok('Selected projects survive reload',not g.is_checked('#ffauPick-pb'))
     openjournal(g);g.fill('#ffauStitches','150');g.fill('#ffauMinutes','45');g.fill('#ffauNotes','A real test of the integrated app')
     g.locator('#ffauSessions form details summary').click();g.fill('#ffauUsageCode','310');g.fill('#ffauUsageQty','0.25');g.fill('#ffauMoreUsage','321 0.50')
     g.get_by_role('button',name='Save stitching session',exact=True).click();ok('Journal saves stitches, time and two recorded usage entries',len(json.loads(raw(g,SK))['sessions'][0]['usage'])==2)
