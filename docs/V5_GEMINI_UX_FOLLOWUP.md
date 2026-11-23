@@ -28,7 +28,7 @@ The expanded `tests/v5_navigation_feedback_e2e.py` checks 320, 390, 880 and 1280
 FF_CHROME=/usr/bin/chromium python3 tests/v5_navigation_feedback_e2e.py http://127.0.0.1:8776/
 ```
 
-Additional existing suites and their exact results are recorded in the engineering report accompanying the full repository ZIP. Browser tests use isolated synthetic profiles and local source. Legacy suites use their existing compact-row/navigation helper where needed; the focused feedback test does not. A stale, pre-existing service-worker identifier assertion was updated with the new cache revision rather than weakening its asset checks.
+Additional existing suites and their exact results are recorded in the engineering report accompanying the full repository ZIP. Browser tests use isolated synthetic profiles and local source. Legacy suites use their existing compact-row/navigation helper where needed; the focused feedback test does not. A stale, pre-existing service-worker identifier assertion was updated with the new cache revision rather than weakening its asset checks. The master suite's old quick-help assertion prohibited a chat shortcut; its replacement checks the single existing Chat with Pip button, contextual explanation, primary action and Close, while keeping topics/settings outside the card. Artwork assertions follow the approved art40 mappings and numbered filenames.
 
 ## Data, offline and release boundaries
 

@@ -822,8 +822,8 @@ with sync_playwright() as p:
     a = tp(fresh=False); ctx = lambda: a.get_attribute('#askPip .actx', 'data-ctx')
     a.click('#askPipBtn'); ok('T9 Ask Pip opens, focused, no free-text input', a.locator('#askPip').is_visible() and a.evaluate("document.activeElement.id") == 'askPipH' and a.locator('#askPip textarea, #askPip input[type=text], #askPip input:not([type])').count() == 0 and a.get_attribute('#askPipBtn', 'aria-expanded') == 'true')
     ok('T9b empty context', ctx() == 'empty', ctx())
-    # Help topics moved from the Ask Pip card to Help > Pip, your helper (#helpPip); the card keeps only screen help + Close
-    ok('T9h Ask Pip card: screen help, one primary, Close; no topics/chat/tips', a.locator('#askPip .atopics, #askPip [data-piph-open], #askPip input[type=checkbox]').count() == 0 and a.locator('#askPip [data-ffnext]').count() == 1 and a.locator('#askPip [data-a=close]').count() == 1)
+    # Topics/tips stay in Help; quick help now also offers the existing separate chat dialog.
+    ok('T9h Ask Pip card: screen help, one primary, Close and one Chat with Pip shortcut; no inline topics/tips', a.locator('#askPip .atopics, #askPip input[type=checkbox]').count() == 0 and a.locator('#askPip [data-piph-open]').count() == 1 and a.locator('#askPip [data-piph-open]').inner_text() == 'Chat with Pip' and 'Quick help for this page.' in a.inner_text('#askPip') and a.locator('#askPip [data-ffnext]').count() == 1 and a.locator('#askPip [data-a=close]').count() == 1)
     a.click('#tabHelp'); topics = a.locator('#helpPip .atopics button').all_inner_texts()
     ok('T9c the four Find floss topics, plus tour, Chat with Pip and tips, now in Help', topics == ['How do I enter my colors?', 'What does this result mean?', 'What are thread alternatives?', 'How do I use my shopping list?'] and a.locator('#helpTour').count() == 1 and a.locator('#helpPip [data-piph-open]').count() == 1 and a.locator('#hintsHelp').count() == 1, topics)
     a.click('#helpPip [data-a=alts]'); ok('T9d topic answer shown, focused, honest about charts', 'not exact' in a.inner_text('#askAns') and a.evaluate("document.activeElement.id") == 'askAns')
