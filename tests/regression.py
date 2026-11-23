@@ -972,7 +972,7 @@ with sync_playwright() as p:
     ok('C2 empty projects -> organizing pose, carried by the one companion Pip (card art hidden)', og is not None and og[2] == 0 and cp == 'organizing', (og, cp))
     c.click('#tabHelp') if c.locator('#tabHelp').count() else c.evaluate("document.getElementById('helpView').hidden=false")
     c.wait_for_timeout(100); hn = c.evaluate("(()=>{const i=document.querySelector('#helpView .helphead img');return i?[i.dataset.pose,i.naturalWidth>0,Math.round(i.getBoundingClientRect().width)]:null})()")
-    ok('C3 Help (how-to) header keeps needle markup but its art is hidden; the companion carries the Help pose', hn and hn[0] == 'needle' and hn[2] == 0 and c.evaluate("document.getElementById('pip').dataset.pose") in ('helpful', 'needle'), (hn, c.evaluate("document.getElementById('pip').dataset.pose")))
+    ok('C3 Help header keeps approved lantern markup hidden; the companion carries the Help pose', hn and hn[0] == '45-help-lantern' and hn[2] == 0 and c.evaluate("document.getElementById('pip').dataset.pose") in ('helpful', 'needle'), (hn, c.evaluate("document.getElementById('pip').dataset.pose")))
     c.goto(B); c.click('#tabHelp'); poses = []
     for _ in range(2):
         c.click('#helpPip [data-a=enter]'); c.wait_for_timeout(80); poses.append(c.get_attribute('#helpPip .ahead', 'data-pose'))
