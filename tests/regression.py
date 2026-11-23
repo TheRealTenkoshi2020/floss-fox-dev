@@ -416,18 +416,18 @@ with sync_playwright() as p:
     s1 = sub(pp, '310\n9999'); ok('P3 unknown number -> reassuring (let us fix that)', s1 == ['error', 'reassuring', "Let's fix that one. I couldn't read “9999” as a DMC number. It's highlighted below."], s1)
     s2 = sub(pp, '310\n310 x2'); ok('P3b duplicate -> duplicates, and the claim is true (one line, amounts summed)', s2[:2] == ['duplicate', 'duplicates'] and s2[2] == 'Found a repeat! I combined it and added up the skeins.' and pp.evaluate("state.items.length") == 1 and pp.evaluate("state.items[0].qty") == 3, s2)
     s3 = sub(pp, '310, 321'); ok('P3c first clean list -> one celebration', s3 == ['celebrating', 'celebrating', 'Yay, your list is ready!'], s3)
-    pp.wait_for_timeout(4300); s3b = pst(pp); ok('P3c2 celebration settles to calm presenting, no new animation loop', s3b == ['listReady', 'presenting', 'Here are your colors. Save them as a project to check what you own.'] and pp.evaluate("document.getElementById('pipFig').className.includes('pip-')") is False, (s3b, pp.evaluate("document.getElementById('pipFig').className")))
+    pp.wait_for_timeout(4300); s3b = pst(pp); ok('P3c2 celebration settles to the approved rainbow bundle, no new animation loop', s3b == ['listReady', '18-rainbow-bundle', 'Here are your colors. Save them as a project to check what you own.'] and pp.evaluate("document.getElementById('pipFig').className.includes('pip-')") is False, (s3b, pp.evaluate("document.getElementById('pipFig').className")))
     s3c = sub(pp, '310, 321, 415'); ok('P3c3 later clean lists do not celebrate again', s3c[0] == 'listReady', s3c)
     s4 = sub(pp, '310\n310\nzzz'); ok('P3d priority: error beats duplicate', s4[0] == 'error', s4)
-    s5 = sub(pp, '   '); ok('P3e empty submit -> curious guidance', s5[:2] == ['empty', 'curious'], s5)
+    s5 = sub(pp, '   '); ok('P3e empty submit -> approved no-match guidance', s5[:2] == ['empty', '20-shrug-no-match'], s5)
     pp.click('#clear'); ok('P3f clear -> calm idle (neutral)', pst(pp)[:2] == ['idle', 'neutral'], pst(pp))
-    pp.click('#tabHelp'); pp.click('#tabConvert'); pp.locator('#inp').focus(); ok('P3g focusing the empty box -> attentive (curious)', pst(pp)[:2] == ['attentive', 'curious'], pst(pp))
+    pp.click('#tabHelp'); pp.click('#tabConvert'); pp.locator('#inp').focus(); ok('P3g focusing the empty box -> attentive magnifier', pst(pp)[:2] == ['attentive', '16-magnifier'], pst(pp))
     pp.click('#sample'); ok('P3h example list uses the same rules (duplicate/listReady)', pst(pp)[0] in ('duplicate', 'listReady', 'error'), pst(pp))
     sub(pp, '310, 321'); before = pst(pp)
     pp.click('#tabHelp'); pp.click('#tabConvert'); pp.fill('#inp', '9999 typing not submitted')
     ok('P4 unrelated actions and typing do not change Pip', pst(pp) == before, (before, pst(pp)))
     pp.select_option('#dest', 'sullivans'); hs = pst(pp)
-    ok('P4b Buy in Sullivans with chart matches -> helpful, and the count is true', hs[:2] == ['helpful', 'discovery'] and hs[2] == 'Look! The chart has Sullivans matches for 2 of your 2 colors.' and pp.locator('#shop li').count() == 2, hs)
+    ok('P4b Buy in Sullivans with chart matches -> helpful, and the count is true', hs[:2] == ['helpful', '17-two-skeins'] and hs[2] == 'Look! The chart has Sullivans matches for 2 of your 2 colors.' and pp.locator('#shop li').count() == 2, hs)
     pp.select_option('#dest', 'dmc'); ok('P4c back to DMC -> no alternative claim', pst(pp)[0] == 'listReady', pst(pp))
     pp.evaluate("""()=>{const i=document.getElementById('inp'),g=document.getElementById('go');for(const t of ['9999','310\\n310','zzz','310, 321, 666']){i.value=t;g.click()}}""")
     pp.wait_for_timeout(600)
@@ -455,17 +455,18 @@ with sync_playwright() as p:
     ok('P8 reduced motion: no Pip animation', rmp.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") == 'none')
     ok('P8b with motion: gentle whole-image animation only', pp.evaluate("getComputedStyle(document.getElementById('pipImg')).animationName") in ('pippop', 'piptilt', 'pipfade', 'pfin', 'none'))  # pfin = one-Pip soft pose crossfade (opacity/transform only)
     # ---------- Pip phase 2 ----------
+    # Artwork expectations follow the approved art40 update; behavioral/data checks are retained.
     close_finished_contexts(pp.context)
     def fresh(w=412, rm=False):
         c = br.new_context(viewport={'width': w, 'height': 900}, reduced_motion='reduce' if rm else 'no-preference'); g = c.new_page(); rq = []
         g.on('request', lambda r: rq.append(r.url)); g.on('pageerror', lambda e: errs.append(str(e))); g.goto(B); g.wait_for_load_state('networkidle'); return g, rq
     q, qrq = fresh()
     # all 8 states load the right art
-    loaded = q.evaluate("""async()=>{const out={};for(const n of ['welcome','listReady','error','duplicate','helpful','tangled','celebrating','sleepy']){FlossFoxPip.show(n,{items:[{src:['a','a']}],errs:[{t:'x',kind:'code'}]});const i=document.getElementById('pipImg');await new Promise(r=>{if(i.complete&&i.naturalWidth)r();else{i.onload=r;i.onerror=r}});out[n]=[document.getElementById('pip').dataset.pose,i.naturalWidth>0,/pip-([a-z]+)-/.exec(i.currentSrc)[1]]}return out}""")
-    ok('Q1 core states load their own artwork (visual refresh: resting poses in the hero show the gardener theme art)', all(v[1] and (v[0] == v[2] or (v[0] in ('greeting', 'greeting-alt', 'neutral') and v[2] == 'gardener')) for v in loaded.values()) and {v[0] for v in loaded.values()} == {'greeting', 'presenting', 'reassuring', 'duplicates', 'discovery', 'tangled', 'celebrating', 'sleepy'}, loaded)
+    loaded = q.evaluate(r"""async()=>{const out={};for(const n of ['welcome','listReady','error','duplicate','helpful','tangled','celebrating','sleepy']){FlossFoxPip.show(n,{items:[{src:['a','a']}],errs:[{t:'x',kind:'code'}]});const i=document.getElementById('pipImg');await new Promise(r=>{if(i.complete&&i.naturalWidth)r();else{i.onload=r;i.onerror=r}});out[n]=[document.getElementById('pip').dataset.pose,i.naturalWidth>0,/pip-([a-z0-9-]+)-[0-9]+\.(?:webp|png)/.exec(i.currentSrc)[1]]}return out}""")
+    ok('Q1 core states load their own artwork (visual refresh: resting poses in the hero show the gardener theme art)', all(v[1] and (v[0] == v[2] or (v[0] in ('greeting', 'greeting-alt', 'neutral') and v[2] == 'gardener')) for v in loaded.values()) and {v[0] for v in loaded.values()} == {'greeting', '18-rainbow-bundle', 'reassuring', 'duplicates', '17-two-skeins', 'tangled', 'celebrating', 'sleepy'}, loaded)
     ok('Q1b fake "processing" state still never shown (thinking only for real checks)', q.evaluate("FlossFoxPip.STATES.processing.pose==='thinking'"))
     old = q.evaluate("['welcome','attentive','empty','listReady','duplicate','error'].map(n=>[n,typeof FlossFoxPip.STATES[n].pose==='function'?FlossFoxPip.STATES[n].pose({items:[],errs:[{kind:'code'}]}):FlossFoxPip.STATES[n].pose])")
-    ok('Q1c old states keep their poses', old == [['welcome', 'greeting'], ['attentive', 'curious'], ['empty', 'curious'], ['listReady', 'presenting'], ['duplicate', 'duplicates'], ['error', 'reassuring']], old)
+    ok('Q1c states use the approved Pip artwork mappings', old == [['welcome', 'greeting'], ['attentive', '16-magnifier'], ['empty', '20-shrug-no-match'], ['listReady', '18-rainbow-bundle'], ['duplicate', 'duplicates'], ['error', 'reassuring']], old)
     q.goto(B); q.fill('#inp', '310, 321'); q.click('#go'); q.wait_for_timeout(4300)
     # tangled easter egg
     q.click('#pipHi'); t1 = pst(q)
@@ -495,7 +496,7 @@ with sync_playwright() as p:
     z, _ = fresh(); z.evaluate("FlossFoxPip._timing({idle:600,minSleep:300})"); z.wait_for_timeout(900)
     zs = pst(z); ok('Q6 sleepy after inactivity, no dialogue', zs == ['sleepy', 'sleepy', ''] and z.evaluate("getComputedStyle(document.getElementById('pipMsg')).visibility") == 'hidden', zs)
     z.mouse.move(50, 50); z.mouse.move(80, 90); z.wait_for_timeout(400); zw = pst(z)
-    ok('Q6b wakes to curious on activity, once', zw[:2] == ['attentive', 'curious'], zw)
+    ok('Q6b wakes to attentive magnifier on activity, once', zw[:2] == ['attentive', '16-magnifier'], zw)
     z.fill('#inp', '9999'); z.click('#go'); z.wait_for_timeout(1000); ok('Q6c never sleeps over an error', pst(z)[0] == 'error', pst(z))
     z.fill('#inp', '310\n310'); z.click('#go'); z.wait_for_timeout(1000); ok('Q6d never sleeps over a duplicate', pst(z)[0] == 'duplicate', pst(z))
     z.fill('#inp', '310'); z.click('#go'); z.wait_for_timeout(300); ok('Q6e never sleeps during the celebration', pst(z)[0] == 'celebrating', pst(z))
@@ -821,8 +822,8 @@ with sync_playwright() as p:
     a = tp(fresh=False); ctx = lambda: a.get_attribute('#askPip .actx', 'data-ctx')
     a.click('#askPipBtn'); ok('T9 Ask Pip opens, focused, no free-text input', a.locator('#askPip').is_visible() and a.evaluate("document.activeElement.id") == 'askPipH' and a.locator('#askPip textarea, #askPip input[type=text], #askPip input:not([type])').count() == 0 and a.get_attribute('#askPipBtn', 'aria-expanded') == 'true')
     ok('T9b empty context', ctx() == 'empty', ctx())
-    # Help topics moved from the Ask Pip card to Help > Pip, your helper (#helpPip); the card keeps only screen help + Close
-    ok('T9h Ask Pip card: screen help, one primary, Close; no topics/chat/tips', a.locator('#askPip .atopics, #askPip [data-piph-open], #askPip input[type=checkbox]').count() == 0 and a.locator('#askPip [data-ffnext]').count() == 1 and a.locator('#askPip [data-a=close]').count() == 1)
+    # Topics/tips stay in Help; quick help now also offers the existing separate chat dialog.
+    ok('T9h Ask Pip card: screen help, one primary, Close and one Chat with Pip shortcut; no inline topics/tips', a.locator('#askPip .atopics, #askPip input[type=checkbox]').count() == 0 and a.locator('#askPip [data-piph-open]').count() == 1 and a.locator('#askPip [data-piph-open]').inner_text() == 'Chat with Pip' and 'Quick help for this page.' in a.inner_text('#askPip') and a.locator('#askPip [data-ffnext]').count() == 1 and a.locator('#askPip [data-a=close]').count() == 1)
     a.click('#tabHelp'); topics = a.locator('#helpPip .atopics button').all_inner_texts()
     ok('T9c the four Find floss topics, plus tour, Chat with Pip and tips, now in Help', topics == ['How do I enter my colors?', 'What does this result mean?', 'What are thread alternatives?', 'How do I use my shopping list?'] and a.locator('#helpTour').count() == 1 and a.locator('#helpPip [data-piph-open]').count() == 1 and a.locator('#hintsHelp').count() == 1, topics)
     a.click('#helpPip [data-a=alts]'); ok('T9d topic answer shown, focused, honest about charts', 'not exact' in a.inner_text('#askAns') and a.evaluate("document.activeElement.id") == 'askAns')
@@ -935,10 +936,10 @@ with sync_playwright() as p:
     ok('B1b tangled is never an error pose', b2.evaluate("['error'].every(n=>FlossFoxPip.STATES[n].pose({errs:[{kind:'multi'}]})!=='tangled'&&FlossFoxPip.STATES[n].pose({errs:[{kind:'code'}]})!=='tangled')"))
     b2s('310'); b2.wait_for_timeout(4300); b2s('310\n9999'); r1 = b2s('310, 321')
     ok('B2 real recovery: the list with errors now reads cleanly -> reassuring "All fixed!"', r1[:2] == ['recovered', 'reassuring'] and r1[2].startswith('All fixed!'), r1)
-    r2 = b2s('310, 321, 415'); ok('B2b recovery only once, then presenting', r2[:2] == ['listReady', 'presenting'], r2)
-    ok('B3 results summary uses presenting, celebrating stays for big wins', b2.evaluate("FlossFoxPip.STATES.listReady.pose") == 'presenting' and b2.evaluate("FlossFoxPip.STATES.celebrating.pose") == 'celebrating')
+    r2 = b2s('310, 321, 415'); ok('B2b recovery only once, then approved rainbow bundle', r2[:2] == ['listReady', '18-rainbow-bundle'], r2)
+    ok('B3 results use the approved rainbow bundle; celebration stays for big wins', b2.evaluate("FlossFoxPip.STATES.listReady.pose({items:[]})") == '18-rainbow-bundle' and b2.evaluate("FlossFoxPip.STATES.celebrating.pose") == 'celebrating')
     b2.select_option('#dest', 'anchor'); dsc = b2.evaluate("[FlossFoxPip.current(),document.getElementById('pip').dataset.pose,document.getElementById('pipMsg').textContent]")
-    ok('B4 real alternatives found -> discovery (aha), claim matches the list', dsc[:2] == ['helpful', 'discovery'] and 'Anchor matches for 3 of your 3 colors' in dsc[2], dsc)
+    ok('B4 real alternatives found -> approved two-skein comparison, claim matches the list', dsc[:2] == ['helpful', '17-two-skeins'] and 'Anchor matches for 3 of your 3 colors' in dsc[2], dsc)
     b2.select_option('#dest', 'dmc'); b2.select_option('#dest', 'dmc')
     ok('B4b compare-brands tip uses discovery; start tip uses peeking', b2.evaluate("FlossFoxPip.STATES.hintCompare.pose") == 'discovery' and b2.evaluate("[FlossFoxPip.STATES.hintStart.pose(),FlossFoxPip.STATES.hintStart.pose()]") == ['peeking', 'peeking'])
     b2.close()
@@ -971,7 +972,7 @@ with sync_playwright() as p:
     ok('C2 empty projects -> organizing pose, carried by the one companion Pip (card art hidden)', og is not None and og[2] == 0 and cp == 'organizing', (og, cp))
     c.click('#tabHelp') if c.locator('#tabHelp').count() else c.evaluate("document.getElementById('helpView').hidden=false")
     c.wait_for_timeout(100); hn = c.evaluate("(()=>{const i=document.querySelector('#helpView .helphead img');return i?[i.dataset.pose,i.naturalWidth>0,Math.round(i.getBoundingClientRect().width)]:null})()")
-    ok('C3 Help (how-to) header keeps needle markup but its art is hidden; the companion carries the Help pose', hn and hn[0] == 'needle' and hn[2] == 0 and c.evaluate("document.getElementById('pip').dataset.pose") in ('helpful', 'needle'), (hn, c.evaluate("document.getElementById('pip').dataset.pose")))
+    ok('C3 Help header keeps approved lantern markup hidden; the companion carries the Help pose', hn and hn[0] == '45-help-lantern' and hn[2] == 0 and c.evaluate("document.getElementById('pip').dataset.pose") in ('helpful', 'needle'), (hn, c.evaluate("document.getElementById('pip').dataset.pose")))
     c.goto(B); c.click('#tabHelp'); poses = []
     for _ in range(2):
         c.click('#helpPip [data-a=enter]'); c.wait_for_timeout(80); poses.append(c.get_attribute('#helpPip .ahead', 'data-pose'))
@@ -1014,11 +1015,11 @@ with sync_playwright() as p:
     close_finished_contexts(c.context)
     ld = page(412, True, init=SEED); reqs = []; ld.on('request', lambda r: reqs.append(r.url) if '/assets/pip/' in r.url else None); ld.goto(B); ld.wait_for_timeout(600)
     poses = sorted({re.sub(r'-(\d+)\.(webp|png)$', '', u.split('/pip-')[-1]) for u in reqs})
-    ok('A1 first screen loads only the Pip images it shows (current pose + Ask Pip face, one size each)', set(poses) - {'curious', 'presenting', 'reassuring', 'puzzled'} <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight'} and len([u for u in reqs if 'face-icon' in u]) == 1, reqs)  # returning visitors also fetch the HTML default greeting once (known, ~15 KB)
+    ok('A1 first screen loads only the Pip images it shows (current pose + Ask Pip face, one size each)', set(poses) - {'curious', 'presenting', 'reassuring', 'puzzled'} <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight', '11-spool-stage', '12-sewing-box-door', '16-magnifier'} and len([u for u in reqs if 'face-icon' in u]) == 1, reqs)  # returning visitors also fetch the HTML default greeting once (known, ~15 KB)
     ld.wait_for_timeout(3600); poses = {re.sub(r'-(\d+)\.(webp|png)$', '', u.split('/pip-')[-1]) for u in reqs}
-    ok('A1c after idle only the 5 likely-next companion poses are warmed; tips, empty states, tour, goodbye, cross-stitch art wait for their view', poses <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight', 'curious', 'presenting', 'reassuring', 'puzzled'}, sorted(poses))
+    ok('A1c after idle only the 5 likely-next companion poses are warmed; tips, empty states, tour, goodbye, cross-stitch art wait for their view', poses <= {'greeting', 'greeting-alt', 'neutral', 'face-icon', 'gardener', 'starlight', 'curious', 'presenting', 'reassuring', 'puzzled', '11-spool-stage', '12-sewing-box-door', '16-magnifier'}, sorted(poses))
     ld.click('#tabHelp') if ld.locator('#tabHelp').count() else None; ld.wait_for_timeout(300)
-    ok('A1b deferred images still load when their view opens (Help needle)', any('pip-needle' in u for u in reqs), reqs)
+    ok('A1b deferred images load when Help opens (approved lantern)', any('pip-45-help-lantern' in u for u in reqs), reqs)
     dist = []
     for view in ['#tabConvert', '#tabProjects', '#tabHelp']:
         if ld.locator(view).count(): ld.click(view); ld.wait_for_timeout(200)
@@ -1032,7 +1033,7 @@ with sync_playwright() as p:
     big.set_viewport_size({'width': 320, 'height': 360}); big.wait_for_timeout(100)
     ok('U2b keyboard-open height (360px): peeking still covers nothing', big.evaluate("""(()=>{const p=document.querySelector('#helpPip .apeek');if(!p)return true;const r=p.getBoundingClientRect();return ![...document.querySelectorAll('#helpPip button,#inp')].some(b=>{const q=b.getBoundingClientRect();return !(q.right<=r.left||q.left>=r.right||q.bottom<=r.top||q.top>=r.bottom)})})()"""))
     rv2 = page(412, True, init=SEED); rv2.goto(B); rv2.wait_for_timeout(150)
-    ok('U3 Pip messages are not a live region (no chatty screen reader output); Pip art is alt=""', rv2.evaluate("!document.getElementById('pipMsg').hasAttribute('aria-live')&&[...document.querySelectorAll('img[src*=pip-]')].every(i=>i.alt==='')"))
+    ok('U3 Pip messages are not a live region; companion art is decorative', rv2.evaluate("!document.getElementById('pipMsg').hasAttribute('aria-live')&&[...document.querySelectorAll('#pip img')].every(i=>i.alt==='')"))
     ok('C6b phone: no horizontal overflow with cross-stitch', c.evaluate('document.documentElement.scrollWidth') <= 412)
     ab = page(412, True, init=SEED); ab.goto(B + 'about.html'); ab.wait_for_timeout(150)
     ax = ab.evaluate("(()=>{const i=document.querySelector('img[data-pose=cross-stitch]');return i?[i.naturalWidth>0,Math.round(i.getBoundingClientRect().width),i.alt]:null})()")

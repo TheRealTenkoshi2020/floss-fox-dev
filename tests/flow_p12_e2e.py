@@ -65,7 +65,8 @@ with sync_playwright() as p:
     g.click('#tabShop'); g.wait_for_timeout(200)
     opts = g.eval_on_selector_all('#shopPick option', 'o=>o.map(x=>x.textContent)')
     ok('b4 Shopping has a project picker at the top listing every project', g.is_visible('#shopPick') and 'Alpha' in opts and 'Beta' in opts, opts)
-    ok('b2b with projects, Plan shopping for several projects is on Shopping', g.is_visible('#shopSeveral'))
+    if g.locator('#shopMoreTrip').get_attribute('open') is None:g.locator('#shopMoreTrip > summary').click()
+    ok('b2b with projects, Plan shopping for several projects is available in Shopping tools', g.is_visible('#shopSeveral'))
     g.select_option('#shopPick', label='Alpha'); g.wait_for_timeout(300); ok('b5 picking a project shows its list in the same view', 'Alpha' in g.inner_text('#shopProj') and g.is_visible('#shopBody'), g.inner_text('#shopProj'))
     g.click('#tabProjects'); g.wait_for_timeout(200)
     if g.is_visible('#pClose'): g.click('#pClose')
@@ -84,7 +85,7 @@ with sync_playwright() as p:
     # (d) import label everywhere
     g = page(seed([], threads=False)); L = 'Import a pattern (PDF)'
     lf = g.inner_text('#convertView .pat-launch'); top = g.evaluate("document.querySelector('#convertView .pat-launch').parentElement===document.getElementById('go').parentElement")
-    g.click('#tabProjects'); le = g.inner_text('#emptyImport'); lp = g.inner_text('#patLaunchProjects')
+    g.click('#tabProjects'); le = g.inner_text('#emptyImport'); lp = g.text_content('#patLaunchProjects')
     ok('d1 one label on Find floss (in the Add my colors row, top of the add area), My Projects and the empty Projects state', lf == L and le == L and lp == L and top, (lf, le, lp, top))
     ok('d2 old label gone', 'Import a full pattern' not in g.inner_text('body'))
     # (e) save feedback + name prompt

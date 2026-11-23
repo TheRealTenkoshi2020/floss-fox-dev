@@ -96,6 +96,7 @@ function context(){
  if(inView('projectsView'))return $('projEdit')&&!$('projEdit').hidden?{key:'project',text:'This is one of your projects. Mark each color Have enough, Need to buy or Not sure, then use Shop my list.'}:{key:'projects',text:'These are your saved projects. They stay in this browser on this device.'};
  if(FH()&&['threads','shop'].includes(scr())){const e=FH().entry(scr());if(e)return{key:scr(),text:''}}
  if(inView('settingsView'))return{key:'settings',text:''};
+ if($('workbasketView')&&inView('workbasketView'))return{key:'workbasket',text:''};
  if(inView('helpView'))return{key:'help',text:'This page explains how Floss Fox works and what the words mean.'};
  const s=st();
  if(s.errs.length)return{key:'errors',text:`${plural(s.errs.length,'line')} couldn't be read. ${s.errs.length===1?"It's":"They're"} listed in red under Your colors. Fix the box above and tap Add my colors again.`};
@@ -117,10 +118,11 @@ const FH=()=>window.FFHelp,scr=()=>FH()?FH().screen():'convert',offConvert=()=>i
    Help topics, Chat with Pip and the tips checkbox live in Help (renderHelpPip). */
 const LIVE_CTX=['tour','errors','duplicates','alternatives','results'];
 function renderAsk(){const c=context();const ffk=FH()?(FH().tabKey?FH().tabKey():scr()):null,ffb=ffk&&idx<0?(FH().tabBody?FH().tabBody(ffk):FH().blockHtml(ffk)):'';const live=LIVE_CTX.includes(c.key)&&c.text;
- ask.innerHTML=`<h2 id="askPipH" tabindex="-1">Ask Pip</h2><p class="actx" data-ctx="${c.key}"${live?'':' hidden'}>${esc(c.text)}</p>${ffb}
+ ask.innerHTML=`<h2 id="askPipH" tabindex="-1">Ask Pip</h2><p class="hint">Quick help for this page.${window.FlossFoxPipHybrid?' Choose Chat with Pip to type a stitching question.':''}</p><p class="actx" data-ctx="${c.key}"${live?'':' hidden'}>${esc(c.text)}</p>${ffb}
  ${idx>=0?'<div class="row"><button type="button" class="pri" data-a="resume">Back to the tour</button></div>':''}
  <div class="row"><button type="button" class="ghost" data-a="close">Close</button></div>`;
- if(ffb&&FH()){FH().bindBlock(ask,()=>closeAsk(false));if(FH().tabBind)FH().tabBind(ask,()=>closeAsk(false))}}
+ if(ffb&&FH()){FH().bindBlock(ask,()=>closeAsk(false));if(FH().tabBind)FH().tabBind(ask,()=>closeAsk(false))}
+ window.FlossFoxPipHybrid?.decorateAskPanel(ask)}
 /* Help > Pip, your helper: the Find floss questions, Chat with Pip (pip-hybrid) and the tips checkbox (already in Help) */
 const helpPip=$('helpPip');
 function renderHelpPip(focusAns){if(!helpPip)return;const a=TOPICS.find(t=>t[0]===lastTopic);const list=TOPICS.filter(t=>t[0]!=='tour');
@@ -137,7 +139,12 @@ askBtn.onclick=()=>ask.hidden?openAsk():closeAsk(true);
 ask.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
  if(a==='close')closeAsk(true);else if(a==='tour')start();else if(a==='resume'){closeAsk(false);go(idx)}
  });
-['tabConvert','tabProjects','tabHelp','tabThreads','tabShop','tabSettings'].filter(id=>$(id)).forEach(id=>$(id).addEventListener('click',()=>{if(!ask.hidden)renderAsk()}));
+// Observe the resulting screen, covering tab clicks, Continue, deep links and history navigation.
+const askContextWatch=new MutationObserver(()=>{if(!ask.hidden)renderAsk()});
+['convertView','projectsView','helpView','threadsView','shopView','settingsView','workbasketView','projEdit','backupBox'].forEach(id=>{const el=$(id);if(el)askContextWatch.observe(el,{attributes:true,attributeFilter:['hidden','open']})});
+// Workbasket is mounted later by Atelier; observe its tab selection via the existing navigation.
+const askNav=document.querySelector('nav.tabs');if(askNav)askContextWatch.observe(askNav,{subtree:true,attributes:true,attributeFilter:['aria-pressed']});
+document.addEventListener('flossfox:result',()=>{if(!ask.hidden)renderAsk()});
 $('helpTour').onclick=start;
 
 /* ---------- Contextual tips ---------- */

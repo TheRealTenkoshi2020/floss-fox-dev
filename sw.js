@@ -1,6 +1,6 @@
 /* Floss Fox service worker: offline support. Same-origin GET only; HTML network-first, static cache-first. */
 /* DEV build: own cache prefix; scope is the /floss-fox-dev/ folder (registered relatively) */
-const CACHE = 'flossfox-dev-v5-gemini-audit-3-links2'; // V5 + store links; precache bypasses the HTTP cache so updates never keep old files
+const CACHE = 'flossfox-dev-v5-gemini-audit-4-ux1-seo5'; // V5 + store links; precache bypasses the HTTP cache so updates never keep old files
 const CORE = [
   "audit/ff-audit-core.js",
   "audit/ff-stitch-sessions.js",

@@ -4,7 +4,14 @@
    search and guided steps still land. */
 (function(){'use strict';
 const d=document,$=id=>d.getElementById(id);
-function openUp(el){let x=el&&el.closest?el.closest('details.ffcalm:not([open])'):null;while(x){x.open=true;x=x.parentElement&&x.parentElement.closest('details.ffcalm:not([open])')}}
+function openUp(el){
+ // A summary controls its own section. Reveal outer sections only; opening its own
+ // details during focusin would make the following click/Space close it again.
+ const summary=el&&el.closest?el.closest('summary'):null;
+ const start=summary&&summary.parentElement&&summary.parentElement.tagName==='DETAILS'?summary.parentElement.parentElement:el;
+ let x=start&&start.closest?start.closest('details.ffcalm:not([open])'):null;
+ while(x){x.open=true;x=x.parentElement&&x.parentElement.closest('details.ffcalm:not([open])')}
+}
 const sv=Element.prototype.scrollIntoView;Element.prototype.scrollIntoView=function(){openUp(this);return sv.apply(this,arguments)};
 const fo=HTMLElement.prototype.focus;HTMLElement.prototype.focus=function(){openUp(this);return fo.apply(this,arguments)};
 d.addEventListener('toggle',e=>{const t=e.target;if(t&&t.open&&t.parentElement)openUp(t.parentElement)},true);

@@ -21,7 +21,7 @@ This is the complete Floss Fox development application, based on `TheRealTenkosh
 
 The existing project schema and storage keys remain compatible. Full backups, snapshots and restore/Undo include stitching sessions and preserve older backups. Journal history whose project is absent after a legacy restore is retained as archived JSON, rather than attached to another project. There is no archive browser in this version. See [audit integration](GEMINI_AUDIT_INTEGRATION.md) for the precise contracts.
 
-The development cache is `flossfox-dev-v5-gemini-audit-2-seo5`. It includes all four guides and audit assets. Activation removes superseded development caches without changing localStorage or clearing other cache namespaces. Large OCR vendor binaries remain lazy loaded.
+The development cache is `flossfox-dev-v5-gemini-audit-4-ux1-seo5`. It includes all four guides and audit assets, retaining the fresh-precache update fix. Activation removes superseded development caches without changing localStorage or clearing other cache namespaces. Large OCR vendor binaries remain lazy loaded.
 
 ## Verification
 
@@ -53,6 +53,8 @@ The SEO installer dry-run should report no changes for this already integrated c
 The final engineering report and raw logs accompanying the full source archive record the exact suites actually run, results, publishing status and limitations. Emulated mobile widths are not physical-device certification.
 
 The November 18 independent QA follow-up fixes stale displayed shopping results after project selections change in both shopping planners. The calculation engine is unchanged. A deliberately empty combined-trip selection persists and removes old share/copy actions; changing the list resets obsolete Found checkmarks. See [QA follow-up](V5_QA_FOLLOWUP.md) for the evidence and disposition of the other reported findings.
+
+The [November 22 navigation and usability follow-up](V5_GEMINI_UX_FOLLOWUP.md) keeps open Pip help aligned with the active screen, reserves space for the companion, removes duplicate empty-project imports, stabilizes Workbasket navigation, fixes rapid search selection and closes search on navigation. Folded section headings retain their native first-click/Space behavior. DMC search previews can prepare an inventory entry for review; only the existing explicit Add action saves it. Same-brand headings omit the redundant conversion wording, and the help card links to the existing local chat. The approved artwork and store-link updates already on development main are retained.
 
 ## Release boundaries
 
