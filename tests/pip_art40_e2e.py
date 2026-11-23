@@ -39,7 +39,7 @@ ok('all 40 new poses have 160/320/480 png+webp (simulated)', not missing, missin
 ok('existing pose files still present (not overwritten by new slugs)', all(os.path.exists(os.path.join(ROOT, f'assets/pip/{k}-160.png')) or os.path.exists(os.path.join(ROOT, f'assets/pip/{k}-160.webp')) for k in KEEP))
 
 sw = open(os.path.join(ROOT, 'sw.js'), encoding='utf-8').read()
-ok('SW cache bumped to flossfox-dev-v5-gemini-audit-3-art40-1', "const CACHE = 'flossfox-dev-v5-gemini-audit-3-art40-1'" in sw)
+ok('SW cache bumped to flossfox-dev-v5-gemini-audit-4-ux1-seo5', "const CACHE = 'flossfox-dev-v5-gemini-audit-4-ux1-seo5'" in sw)
 ok('pip-art40.js and css are in the SW CORE list; new images are not precached',
    '"pip-art40.js"' in sw and '"pip-art40.css"' in sw and 'pip-11-spool-stage' not in sw)
 

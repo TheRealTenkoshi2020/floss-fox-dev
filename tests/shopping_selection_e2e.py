@@ -18,7 +18,11 @@ SEED={'schema':2,'projects':[project('qa-a',2,1),project('qa-b',3,2)]}
 STOCK={'schema':2,'threads':{'310':{'n':1,'partial':False,'restock':False,'confirmed':True},'321':{'n':2,'partial':False,'restock':False,'confirmed':False}}}
 def view(g,name):g.evaluate('(v)=>FlossFoxProjects.showView(v)',name)
 def raw(g,k):return g.evaluate('(k)=>localStorage.getItem(k)',k)
-def trip(g):view(g,'shop');g.click('#ffauShopStart')
+def trip(g):
+    view(g,'shop')
+    g.wait_for_selector('#shopMoreTrip > summary')
+    if g.locator('#shopMoreTrip').get_attribute('open') is None:g.locator('#shopMoreTrip > summary').click()
+    g.click('#ffauShopStart')
 def need(g,width,label,n,legacy=False):
     selector='#planBuy > li[data-code="310"]' if legacy else '#ffauTrip-310 + span'
     text=g.inner_text(selector)
@@ -70,7 +74,9 @@ with sync_playwright() as p:
         g.check('[data-plan="qa-a"]');need(g,width,'existing planner recovers from empty selection',1,True)
         g.click('#planClose')
         ok(f'{width}: selection changes never mutate projects or inventory',raw(g,KEY)==beforeProjects and raw(g,TK)==beforeStock)
-        g.evaluate("FlossFoxProjects.open('qa-a')");g.locator('#ffauSessions > summary').click()
+        g.evaluate("FlossFoxProjects.open('qa-a')")
+        if g.locator('#pMore').get_attribute('open') is None:g.locator('#pMore > summary').click()
+        g.locator('#ffauSessions > summary').click()
         for i in range(3):
             g.fill('#ffauStitches','150');g.fill('#ffauMinutes','15');g.get_by_role('button',name='Save stitching session',exact=True).click()
         g.fill('#ffauPercent','37');g.get_by_role('button',name='Update percentage',exact=True).click()

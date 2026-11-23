@@ -2,7 +2,7 @@
    the import window, backup, the Fabric page and the "?" term chips. All wording comes from flow-strings.js (placeholders). */
 (function(){'use strict';
 /* New strings for the tab Ask Pip cards: PLACEHOLDERS for Pixel (see /workspace/ask-pip-tabs/STRINGS_FOR_PIXEL.md). */
-window.FF_ASKTAB=window.FF_ASKTAB||{findNext:'Paste or import my list',projectsNext:'Create a project',shopNext:'Open my shopping list',settingsTitle:'Backup and settings',settingsBody:'Your projects and threads live only in this browser. Save a backup file now and then so you can restore them here or on another device.',settingsNext:'Export Backup (.json)'};
+window.FF_ASKTAB=window.FF_ASKTAB||{findNext:'Paste or import my list',projectsNext:'Create a project',shopNext:'Open my shopping list',settingsTitle:'Backup and settings',settingsBody:'Your projects and threads live only in this browser. Save a backup file now and then so you can restore them here or on another device.',settingsNext:'Export Backup (.json)',workbasketTitle:'Your workbasket',workbasketBody:'See your saved projects, notes and threads in one place. Start a project or add threads whenever you are ready.',workbasketNext:'Find colors for a pattern'};
 const S=()=>window.FF_STR||{},$=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const vis=id=>{const e=$(id);return!!(e&&!e.hidden)};
 const P=()=>window.FlossFoxProjects;
@@ -30,6 +30,8 @@ function doNext(k){const e=entry(k)||{};switch(k){
 function screen(){
  if(/fabric\.html/.test(location.pathname)||document.body.dataset.ffScreen==='fabric')return'fabric';
  const d=$('ffPatternDialog');if(d&&d.open)return'import';
+ if(vis('settingsView'))return'settings';
+ if(vis('workbasketView'))return'workbasket';
  if(vis('threadsView'))return'threads';
  if(vis('projectsView')){if(vis('projEdit')){const r=$('pReady');if(r&&!r.hidden){const b=r.getBoundingClientRect();if(b.top<innerHeight*0.5&&b.bottom>80)return'readiness'}return'project'}const b=$('backupBox');return b&&b.open?'backup':'projects'}
  if(vis('shopView'))return'shop';
@@ -68,14 +70,15 @@ function findNext(){const w=$('findNext'),r=$('results');if(!w||!r)return;w.hidd
 /* Ask Pip card on the index tabs (the Fabric card pattern: bold heading, short explanation, one primary action).
    Body is Pixel's per-screen help (flow phases 1-2); the primary button runs the tab's main next step. */
 const AT=()=>window.FF_ASKTAB||{};
-function tabKey(){const k=screen();return k==='results'?'convert':k==='readiness'?'project':k==='backup'?'projects':vis('settingsView')?'settings':k}
+function tabKey(){const k=screen();return k==='results'?'convert':k==='readiness'?'project':k==='backup'?'projects':k}
 function tabNext(k){const A=AT();switch(k){
  case'convert':return{label:A.findNext,run:()=>{const i=$('inp');if(i){i.scrollIntoView({block:'center'});i.focus()}}};
  case'projects':return{label:A.projectsNext,run:()=>click('newEmpty')};
  case'shop':{/* a list is showing: Pixel's existing step (Copy, download or print); otherwise open the latest project's list */const c=document.querySelector('#shopBody #pCopy')||document.querySelector('#shopBody details.shopextra summary');if(c&&vis('shopBody'))return doNext('shop');const last=P()&&P().lastProject();return{label:A.shopNext,run:()=>{if(last){P().open(last.id);click('pShop')}else P().showView('projects')}}}
  case'settings':return{label:A.settingsNext,run:()=>focus('settingsExport')};
+ case'workbasket':return{label:A.workbasketNext,run:()=>{P().showView('convert');focus('inp')}};
  default:return doNext(k)}}
-function tabBody(k){const e=k==='settings'?{title:AT().settingsTitle,eli5:AT().settingsBody}:entry(k);if(!e)return'';const nx=tabNext(k);
+function tabBody(k){const e=k==='settings'?{title:AT().settingsTitle,eli5:AT().settingsBody}:k==='workbasket'?{title:AT().workbasketTitle,eli5:AT().workbasketBody}:entry(k);if(!e)return'';const nx=tabNext(k);
  return`<div class="ffhelp" data-ffscreen="${k}"><p class="ffeli5"><b>${esc(e.title||'')}</b><br>${esc(e.eli5||'')}</p>${nx&&nx.label?`<div class="row"><button type="button" class="pri" data-ffnext="${k}" data-fftabnext="${k}">${esc(nx.label)}</button></div>`:''}</div>`}
 function tabBind(root,onDo){root.querySelectorAll('[data-fftabnext]').forEach(b=>b.onclick=()=>{const nx=tabNext(b.dataset.fftabnext);if(onDo)onDo();if(nx)nx.run()})}
 /* "?" term chips */

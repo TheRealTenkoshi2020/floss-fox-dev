@@ -72,7 +72,7 @@
       const name = entry && entry.name ? entry.name : '';
       const srcHex = hexOf(DMC, code);
       const matches = Cmp.matchesFor(code, dest, chartsOf(DMC, SULL, code), choice && choice[code]);
-      const title = t('studio.dest.in', { source: 'DMC ' + code, brand: destBrand }) || (`DMC ${code} in ${destBrand}`);
+      const title = dest === 'dmc' ? 'DMC ' + code : t('studio.dest.in', { source: 'DMC ' + code, brand: destBrand }) || (`DMC ${code} in ${destBrand}`);
       const cols = [`<div class="ffa-cmpcol is-src">${swatch(srcHex, 'DMC ' + code + ' swatch, approximate')}<span class="ffa-ccode">DMC ${esc(code)}</span><span class="ffa-cname">${esc(name)}${name ? ' · ' : ''}${esc(srcLab)}</span>${dest === 'dmc' ? kindBadge('exact') : ''}</div>`];
       const shown = matches.filter(m => !m.source);
       const canPick = dest !== 'dmc' && shown.length > 1;

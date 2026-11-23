@@ -169,6 +169,7 @@ with sync_playwright() as p:
     before = dump_inv(g)
     g.click('#projList [data-open="p1"]'); g.wait_for_timeout(300)
     ok('project: chart-match panel is present next to collection compare', g.locator('#pChartCmp .ffa-pcc').count() == 1)
+    if g.locator('#pMore').get_attribute('open') is None:g.locator('#pMore > summary').click()
     ptxt = g.inner_text('#pChartCmp')
     ok('project: chart-match panel lists exact/close/estimated language or DMC codes',
        'DMC 310' in ptxt and 'DMC BLANC' in ptxt, ptxt[:300])

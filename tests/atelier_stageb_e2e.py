@@ -42,7 +42,7 @@ with sync_playwright() as p:
     ok('new: landing shown with Start here', g.locator('#ffLanding').is_visible() and g.locator('#ffStartHere').count() == 1)
     g.click('#ffLanding a[data-tab="tabConvert"]'); g.wait_for_timeout(300)
     base = g.evaluate(DUMP)
-    ok('new: Workbasket tab hidden', g.locator('#tabWorkbasket').is_hidden())
+    ok('new: Workbasket tab available before first save', g.locator('#tabWorkbasket').is_visible())
     ok('new: search button present (44px)', g.evaluate("(()=>{const r=document.getElementById('ffSearchBtn').getBoundingClientRect();return r.width>=44&&r.height>=44})()"))
     for tab in ('Threads', 'Projects', 'Shop', 'Help', 'Settings', 'Convert'): g.click('#tab' + tab); g.wait_for_timeout(120)
     g.click('#ffSearchBtn'); g.fill('#ffSearchIn', '310'); g.wait_for_timeout(300); g.keyboard.press('Escape')
