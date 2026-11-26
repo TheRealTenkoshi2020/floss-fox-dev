@@ -55,3 +55,8 @@ except Exception:
 # Explicit runner override for machines with system Chromium instead of Google Chrome.
 if os.environ.get('FF_CHROME'):
     import browser_runtime
+
+# V6 preserves old engines while replacing their presentation. Legacy workflow
+# suites opt into actual V6 navigation; fresh V6 UX suites do not load this file.
+if os.environ.get('FF_V6_COMPAT') == '1':
+    import v6_navigation

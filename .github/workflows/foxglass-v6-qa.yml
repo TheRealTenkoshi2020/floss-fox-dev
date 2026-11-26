@@ -62,3 +62,71 @@ jobs:
             test-results/foxglass-browser
             test-browser.log
           retention-days: 14
+  legacy-browser:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test driver
+        run: python3 -m pip install playwright pillow
+      - name: Run existing application workflows through V6 navigation
+        env:
+          FF_CHROME: /usr/bin/google-chrome
+        run: python3 -u tools/foxglass_qa.py legacy --shard ${{ matrix.shard }} --shards 8 --out test-results/legacy-${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-legacy-${{ matrix.shard }}
+          path: |
+            test-results/legacy-${{ matrix.shard }}/results.json
+            test-results/legacy-${{ matrix.shard }}/*.log
+          retention-days: 14
+  fixture-and-backup-browser:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test drivers
+        run: |
+          python3 -m pip install playwright pillow
+          npm install --prefix "$RUNNER_TEMP/foxglass-driver" playwright --no-save --no-package-lock
+      - name: Execute supplied fixture assertions
+        env:
+          FF_CHROME: /usr/bin/google-chrome
+        run: |
+          set -o pipefail
+          mkdir -p test-results/fixture-backup
+          python3 -u tests/foxglass_fixture_e2e.py | tee test-results/fixture-backup/fixture.log
+      - name: Execute complete backup browser round trips
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+          FF_TEST_NODE_MODULES: ${{ runner.temp }}/foxglass-driver/node_modules
+        run: |
+          set -o pipefail
+          node tests/backup_settings_e2e.cjs | tee test-results/fixture-backup/backup.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-fixture-backup
+          path: test-results/fixture-backup
+          retention-days: 14

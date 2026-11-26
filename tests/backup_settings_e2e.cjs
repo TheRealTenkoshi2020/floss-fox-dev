@@ -23,7 +23,7 @@ async function main(){
    for(const pfx of ['flossfox-dev','flossfox']){localStorage.setItem(pfx+'.tour.v1','{"status":"dismissed"}');localStorage.setItem(pfx+'.hints.v1','off');}
    if(picker==='unsupported')Object.defineProperty(window,'showSaveFilePicker',{value:undefined,configurable:true,writable:true});
   },{seed,threads,KEY,TK,picker});
-  const page=await context.newPage();const click=page.click.bind(page);page.click=async(selector,...args)=>{if(selector==='#tabSettings'&&!await page.isVisible(selector))await click('#ffuxNavSummary');return click(selector,...args)};page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(base+'/?nosw');await page.waitForFunction(()=>window.FlossFoxBackupUI&&window.FlossFoxProjects);return{page,context,requests,errors};
+  const page=await context.newPage();const click=page.click.bind(page);page.click=async(selector,...args)=>{if(selector==='#tabSettings'&&await page.locator('html.fg-ready').count()){await click('#fg-nav [data-fg-area=more]');return page.locator('#fg-more').getByRole('button',{name:'Backup & settings',exact:true}).click()}if(selector==='#tabSettings'&&!await page.isVisible(selector))await click('#ffuxNavSummary');return click(selector,...args)};page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());await page.goto(base+'/?nosw');await page.waitForFunction(()=>window.FlossFoxBackupUI&&window.FlossFoxProjects);return{page,context,requests,errors};
  }
  const raw=page=>page.evaluate(({KEY,TK})=>({projects:localStorage.getItem(KEY),threads:localStorage.getItem(TK)}),{KEY,TK});
  const meta=page=>page.evaluate(SK=>JSON.parse(localStorage.getItem(SK)||'null'),SK);

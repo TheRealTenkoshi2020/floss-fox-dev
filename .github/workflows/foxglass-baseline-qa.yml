@@ -1,0 +1,41 @@
+name: Foxglass V5 baseline comparison
+on:
+  push:
+    branches: [feat/foxglass-v6]
+    paths: [.github/workflows/foxglass-baseline-qa.yml]
+permissions:
+  contents: read
+jobs:
+  baseline-browser:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test driver
+        run: python3 -m pip install playwright pillow
+      - name: Prepare read-only baseline
+        run: git worktree add "$RUNNER_TEMP/flossfox-baseline" 09f381ca8846754cb789d7b8554db966ca537c76
+      - name: Run baseline browser shard
+        env:
+          FF_CHROME: /usr/bin/google-chrome
+        run: python3 -u tools/foxglass_qa.py legacy --app-root "$RUNNER_TEMP/flossfox-baseline" --shard ${{ matrix.shard }} --shards 8 --out test-results/baseline-${{ matrix.shard }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-baseline-${{ matrix.shard }}
+          path: |
+            test-results/baseline-${{ matrix.shard }}/results.json
+            test-results/baseline-${{ matrix.shard }}/*.log
+          retention-days: 14
