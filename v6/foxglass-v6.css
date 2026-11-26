@@ -109,3 +109,10 @@ html.fg-ready[data-atelier-scheme="dark"] body{--fg-selected-ink:#172720}
 
 /* Reserve the same companion column used by the original workspaces. */
 @media(min-width:880px){html.fg-ready body.pipone .wrap>#fg-stage{margin-right:200px}}
+
+/* The existing live companion supplies Pip on Home; avoid a second character beside it. */
+html.fg-ready body.pipone .fg-home-hero>img{display:none}
+
+/* Add threads owns entry choices; the old disclosure only hosts the chosen importer. */
+html.fg-ready #threadsView:not([data-fg-add-mode="import"]) #thMoreAdd,
+html.fg-ready #threadsView #thMoreAdd>summary{display:none!important}

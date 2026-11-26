@@ -21,9 +21,9 @@ ROWS=[];ERRORS=[]
 def ok(label,condition,detail=None):
     condition=bool(condition);ROWS.append({'name':label,'passed':condition,'detail':None if condition else detail});print(('PASS ' if condition else 'FAIL ')+label+('' if condition else ': '+str(detail)),flush=True)
 def raw(g):return g.evaluate('ks=>ks.map(k=>localStorage.getItem(k))',[KEY,TK,JK])
-def fresh(browser,width=390,workers='block',seed=True):
+def fresh(browser,width=390,workers='block',seed=True,extra=None):
     c=browser.new_context(viewport={'width':width,'height':900},is_mobile=width<701,has_touch=width<701,service_workers=workers,accept_downloads=True,reduced_motion='reduce')
-    if seed:c.add_init_script('(()=>{if(!sessionStorage.getItem("fg.integrity.seed")){for(const [k,v] of Object.entries('+json.dumps(SEED)+'))localStorage.setItem(k,v);sessionStorage.setItem("fg.integrity.seed","1")}})()')
+    if seed:c.add_init_script('(()=>{if(!sessionStorage.getItem("fg.integrity.seed")){for(const [k,v] of Object.entries('+json.dumps({**SEED,**(extra or {})})+'))localStorage.setItem(k,v);sessionStorage.setItem("fg.integrity.seed","1")}})()')
     g=c.new_page();g.set_default_timeout(15000);g.on('pageerror',lambda e:ERRORS.append(str(e)));g.on('dialog',lambda d:d.accept());return c,g
 def boot(g,route='home'):
     g.goto(BASE+'?nosw#'+route);g.wait_for_function('!!window.FlossFoxV6');g.wait_for_timeout(150)
@@ -47,7 +47,7 @@ def catalog(browser,width):
         g.click('#fg-add-close');add(g,'Paste or import');g.wait_for_selector('#ffssPaste');g.fill('#ffssPaste','WHITE x2\n03 x1\nB5200 x1');g.locator('#ffSmartStash').get_by_role('button',name='Review pasted list',exact=True).click()
         ok(f'{width}: paste shortcut opens original review before saving',g.locator('#ffSmartStash h4').filter(has_text='review before saving').is_visible() and raw(g)==before)
         g.locator('#ffSmartStash button').filter(has_text='Save ').first.click();stored=g.evaluate('k=>JSON.parse(localStorage.getItem(k)).threads',TK)
-        ok(f'{width}: reviewed paste preserves special codes and existing quantities',stored['WHITE']['n']==2 and stored['03']['n']==1 and stored['B5200']['n']==1 and stored['310']['n']==1 and not stored['321']['confirmed'])
+        ok(f'{width}: reviewed paste preserves special codes and existing quantities',stored['WHITE']['n']==2 and stored['03']['n']==1 and stored['B5200']['n']==1 and stored['310']['n']==1 and not stored['321'].get('confirmed',False))
         g.locator('#ffSmartStash').get_by_role('button',name='Undo this import',exact=True).click();ok(f'{width}: undo import restores exact original records',raw(g)==before)
     finally:c.close()
 
@@ -62,6 +62,9 @@ def notes_and_history(browser,width):
         nav(g,'home');nav(g,'threads');nav(g,'more');g.go_back();g.wait_for_selector('#threadsView');ok(f'{width}: Back restores Threads',g.locator('#threadsView').is_visible());g.go_forward();g.wait_for_selector('#fg-more');ok(f'{width}: Forward restores More',g.locator('#fg-more').is_visible())
         g.locator('#fg-more').get_by_role('button',name='Backup & settings',exact=True).click();g.wait_for_timeout(150);ok(f'{width}: Settings receives keyboard heading focus',g.evaluate('document.activeElement.id')=='settingsTitle')
         nav(g,'home');g.wait_for_timeout(150);ok(f'{width}: Home receives its heading focus',g.locator('#fg-home h1').evaluate('e=>e===document.activeElement'))
+        companion=g.locator('.pipc');ok(f'{width}: original live Pip remains reachable on Home',companion.is_visible())
+        g.click('#pipMinBtn');ok(f'{width}: Pip still minimizes on Home',g.locator('#pipFaceBtn').is_visible());g.click('#pipFaceBtn')
+        ok(f'{width}: Pip restores on Home',g.locator('#pipMinBtn').is_visible())
         if width>=880:
             overlap=g.evaluate('''()=>{const p=document.querySelector('.pipc'),h=document.querySelector('.fg-home-hero');if(!p||!p.getClientRects().length)return false;const a=p.getBoundingClientRect(),b=h.getBoundingClientRect();return a.right>b.left&&a.left<b.right&&a.bottom>b.top&&a.top<b.bottom}''')
             ok(f'{width}: companion has its own column beside Home',not overlap);g.screenshot(path=str(OUT/f'home-column-{width}.png'),full_page=True)
@@ -91,6 +94,49 @@ def fabric(browser,width):
         g.locator('#fg-nav').get_by_role('link',name='Projects',exact=True).click();g.wait_for_selector('#projectsView');ok(f'{width}: Fabric link returns to actual project workspace',g.locator('#fg-nav [data-fg-area=projects]').get_attribute('aria-current')=='page')
     finally:c.close()
 
+def resume(browser,last_tab):
+    prefs={'v':1,'rememberPlace':True,'lastTab':last_tab,'lastProjectId':'qa-note' if last_tab=='projects' else None}
+    c,g=fresh(browser,extra={'flossfox-dev.atelier.v1':json.dumps(prefs)})
+    try:
+        g.goto(BASE+'?nosw');g.wait_for_function('!!window.FlossFoxV6');g.wait_for_timeout(500)
+        ok('opted-in resume retains '+last_tab,g.locator('#'+last_tab+'View').is_visible())
+        if last_tab=='projects':ok('opted-in resume opens the saved project',g.evaluate('FlossFoxProjects.openId()')=='qa-note')
+        g.goto(BASE+'?nosw#convert');g.wait_for_selector('#convertView');ok('explicit URL takes precedence over '+last_tab+' resume',g.locator('#convertView').is_visible())
+    finally:c.close()
+
+def large_project_and_photo(browser):
+    text=(ROOT/'index.html').read_text();catalog=json.JSONDecoder().raw_decode(text[text.index('const DMC=')+len('const DMC='):])[0]
+    large={**PROJECT,'name':'GEMINI-V6 '+('A long fox sampler name ' * 4)[:88],'items':[{**PROJECT['items'][0],'code':code,'src':[code+' x2']} for code in list(catalog)[:150]]}
+    c,g=fresh(browser,390,extra={KEY:json.dumps({'schema':2,'projects':[large]})})
+    try:
+        boot(g);g.get_by_role('button',name='Continue project',exact=True).click();g.wait_for_selector('#fg-project-tabs')
+        ok('150-color project opens without lost requirements',g.evaluate('FlossFoxProjects._store().projects[0].items.length')==150)
+        for key in ['threads','progress','details']:
+            segment(g,key);ok('150-color mobile '+key+' has no horizontal overflow',g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+        from PIL import Image
+        photo=io.BytesIO();Image.new('RGB',(1600,1200),(134,55,35)).save(photo,'JPEG',quality=90)
+        before=g.evaluate('k=>localStorage.getItem(k)',TK);g.set_input_files('#ffaCoverFile',{'name':'synthetic-fox-cover.jpg','mimeType':'image/jpeg','buffer':photo.getvalue()})
+        g.wait_for_function('!!FlossFoxProjects._store().projects[0].coverId');ok('real photo input preserves Details selection',g.locator('#fg-project-tabs [data-fg-project=details]').get_attribute('aria-selected')=='true')
+        photo_backup=g.evaluate('FlossFoxProjects.fullBackupWithMedia()');ok('full backup includes re-encoded cover photo',photo_backup['media']['count']==1 and photo_backup['version']==2)
+        ok('adding a cover never changes stock',g.evaluate('k=>localStorage.getItem(k)',TK)==before)
+        record=g.evaluate('''async()=>{const p=FlossFoxProjects._store().projects[0],r=await FlossFoxAtelierMedia.getRecord(p.coverId),data=await r.blob.arrayBuffer();return{w:r.w,h:r.h,n:data.byteLength,mime:r.mime,exif:new TextDecoder('latin1').decode(data).includes('Exif')}}''')
+        ok('cover stays within original privacy and size limits',record['w']<=1280 and record['h']<=1280 and record['n']<=200*1024 and record['mime']=='image/jpeg' and not record['exif'],record)
+        g.screenshot(path=str(OUT/'large-project-photo-390.png'),full_page=True)
+        for width in [640,320]:
+            g.set_viewport_size({'width':width,'height':900});nav(g,'home');ok(f'CSS viewport {width} keeps all five navigation targets',g.locator('#fg-nav > button:visible').count()==5 and g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+        # These viewport checks model reflow, not physical device/browser zoom.
+    finally:c.close()
+
+def tour(browser):
+    c,g=fresh(browser,320,seed=False)
+    try:
+        boot(g);before=raw(g);nav(g,'more');g.locator('#fg-more').get_by_role('button',name='Take the tour',exact=True).click();g.wait_for_selector('#tourCard')
+        g.click('#tourCard [data-t=next]');ok('tour step two highlights the actual Add threads entry',g.locator('#fg-entry.tour-target').is_visible())
+        g.click('#tourCard [data-t=next]');g.click('#tourCard [data-t=next]');ok('tour empty-shopping target is visible',g.locator('#shopEmpty.tour-target').is_visible())
+        ok('tour fits 320px without horizontal overflow',g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
+        g.click('#tourCard [data-t=close]');ok('tour closes without inventing inventory or projects',raw(g)==before)
+    finally:c.close()
+
 def upgrade(browser):
     with tempfile.TemporaryDirectory(prefix='fg-v5-baseline-') as temp:
         old=pathlib.Path(temp);archive=subprocess.check_output(['git','archive',V5],cwd=ROOT)
@@ -103,7 +149,7 @@ def upgrade(browser):
         c,g=fresh(browser,390,'allow')
         try:
             g.goto(origin+'index.html#projects');g.evaluate('navigator.serviceWorker.ready');g.reload();g.wait_for_function('!!navigator.serviceWorker.controller');g.wait_for_function('!!window.FlossFoxProjects')
-            oldcache='flossfox-dev-v5-navigation-feedback-1'
+            # The old app remains in memory until a document reload, even after the worker is replaced.
             actualold=g.evaluate('caches.keys()');ok('real V5 app and worker installed before upgrade',not g.locator('#fg-nav').count() and any('v5' in key for key in actualold),actualold)
             before=raw(g);g.evaluate("caches.open('unrelated-qa-cache')");Handler.candidate=True;g.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())')
             expected='flossfox-dev-v6-foxglass-built-1'
@@ -111,7 +157,7 @@ def upgrade(browser):
             cache=g.evaluate('k=>caches.open(k).then(c=>c.keys()).then(rs=>rs.map(r=>new URL(r.url).pathname))',expected)
             ok('V6 worker precaches all four new presentation assets',all('/v6/'+name in cache for name in ['foxglass-v6.js','foxglass-v6.css','foxglass-fabric.js','foxglass-fabric.css']),len(cache))
             ok('worker update retains unrelated caches',g.evaluate("caches.has('unrelated-qa-cache')"))
-            c.set_offline(True);g.goto(origin+'index.html#home');g.wait_for_function('!!window.FlossFoxV6');ok('V5 to V6 upgrade preserves projects, stock and journal bytes',raw(g)==before)
+            c.set_offline(True);g.goto(origin+'index.html#home');g.reload();g.wait_for_function('!!window.FlossFoxV6');ok('V5 to V6 upgrade preserves projects, stock and journal bytes',raw(g)==before)
             g.get_by_role('button',name='Continue project',exact=True).click();segment(g,'progress');g.click('#ffauSessions > summary');ok('cold offline V6 journal displays prior stitches and manual progress','450 stitches' in g.inner_text('#ffauRecent') and g.input_value('#ffauPercent')=='37')
             nav(g,'shopping');g.click('#fg-combine');g.wait_for_selector('#ffauTrip-310');ok('cold offline combined shopping subtracts confirmed stock once','1 skein' in g.inner_text('#ffauTrip-310 + span'))
             backup=g.evaluate('FlossFoxProjects.fullBackup()');ok('cold offline full backup retains journal and original collection',backup['threads']['threads']['310']['n']==1 and len(backup['stitchSessions']['sessions'])==1)
@@ -125,6 +171,8 @@ with sync_playwright() as p:
     for width in [320,390,880,1280]:
         case(f'{width} catalog',lambda w=width:catalog(browser,w));case(f'{width} saved notes',lambda w=width:notes_and_history(browser,w));case(f'{width} Fabric',lambda w=width:fabric(browser,w))
     for mode in ['blocked','partial']:case(mode+' fallback',lambda m=mode:fallback(browser,m))
+    for tab in ['threads','projects']:case(tab+' resume',lambda t=tab:resume(browser,t))
+    case('large project and photo',lambda:large_project_and_photo(browser));case('V6 guided tour',lambda:tour(browser))
     case('real V5 to V6 offline upgrade',lambda:upgrade(browser));browser.close()
 ok('no application JavaScript exceptions',not ERRORS,ERRORS)
 (OUT/'assertions.json').write_text(json.dumps(ROWS,indent=2)+'\n');failed=sum(not r['passed'] for r in ROWS);print(f'{len(ROWS)-failed} passed, {failed} failed',flush=True);sys.exit(int(bool(failed)))

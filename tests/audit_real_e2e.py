@@ -80,7 +80,7 @@ with sync_playwright() as p:
     g.reload();openjournal(g);ok('Journal survives reload','150 stitches' in g.inner_text('#ffauRecent'))
     data=backup(g);ok('Full backup includes sessions',len(data['stitchSessions']['sessions'])==1)
     snap=js(g,"FlossFoxProjects.rawSnapshot().keys");ok('Snapshots include session sidecar',SK in snap)
-    c2,h=new(br,seed=False);h.get_by_role('link',name='Start or continue a project',exact=False).click();restore(h,data,mode='replace');ok('Fresh full-app backup restore roundtrips sessions',json.loads(raw(h,SK))==data['stitchSessions'])
+    c2,h=new(br,seed=False);h.click('#fg-nav [data-fg-area=projects]') if h.locator('html.fg-ready').count() else h.get_by_role('link',name='Start or continue a project',exact=False).click();restore(h,data,mode='replace');ok('Fresh full-app backup restore roundtrips sessions',json.loads(raw(h,SK))==data['stitchSessions'])
     # Collision copy, skip and replacement are tested against the real restore transaction.
     restore(h,data,collision='copy');ok('Copied projects receive independent sessions',len(json.loads(raw(h,SK))['sessions'])==2)
     prev=raw(h,SK);restore(h,data,collision='skip');ok('Skipped projects keep existing sessions',raw(h,SK)==prev)

@@ -49,6 +49,7 @@ function mount(){if(comp&&comp.isConnected)return true;
 // Same element, same controls (Minimize, Hide Pip, Pip level); only where it is drawn changes.
 // ci005-77: on phones the companion is an inline note at the top of the open view (never a bar over content).
 function inlineSpot(){const w=document.querySelector('.wrap');if(!w)return null;if(isFabric){const c=w.querySelector('.card');return c?[c.parentElement,c]:null}
+ const custom=w.querySelector('#fg-home:not([hidden]),#fg-more:not([hidden])');if(custom)return[custom.parentElement,custom];
  const v=[...w.querySelectorAll(':scope>div[id$="View"]')].find(x=>!x.hidden);return v?[v,v.firstElementChild]:null}
 function placeInline(){if(!comp)return false;body.classList.toggle('pipc-inline',!wide.matches);if(wide.matches)return false;const sp=inlineSpot();if(!sp)return false;const [par,ref]=sp;
  if(comp.parentElement!==par||comp.nextElementSibling!==ref){if(ref===comp)return true;const f=comp.contains(document.activeElement)?document.activeElement:null;par.insertBefore(comp,ref&&ref.parentElement===par?ref:null);if(f)f.focus({preventScroll:true})}return true}

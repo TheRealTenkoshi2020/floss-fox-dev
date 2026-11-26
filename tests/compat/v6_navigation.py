@@ -39,10 +39,24 @@ def route(g,sel,action):
   if sel=='#ffuxNavSummary' and action=='click':area(g,'more');return True
   if sel=='#ffuxDenLink' and action=='click':area(g,'den');return True
   if sel in ['#tourNo','#tourYes'] and not g.locator(sel).is_visible():area(g,'convert')
-  if sel in ['#pMore > summary','#pMore summary'] and action=='click':section(g,'details');return True
+  if sel in ['#pMore > summary','#pMore summary','.pmore summary','.pmore > summary'] and action=='click':section(g,'details');return True
   if sel=='#ffauImport' and action=='click':
    if not g.locator('#threadsView').is_visible():area(g,'stash')
-   add_mode(g,'import');g.wait_for_selector('#ffssFile');return True
+   add_mode(g,'import')
+   if not g.locator('#ffssFile').is_visible():g.locator('#ffSmartStash .ffss-choice').filter(has_text='Import a list').click()
+   g.wait_for_selector('#ffssFile');return True
+  if action in ['click','tap'] and re.fullmatch(r'#ffLanding a\[data-tab=[\"\']tab(Convert|Threads|Projects)[\"\']\]',sel):
+   target=re.search(r'tab(Convert|Threads|Projects)',sel)[1].lower();area(g,'stash' if target=='threads' else target);return True
+  flow=re.fullmatch(r'\[data-flow=[\"\'](shop|cmp|review|ready)[\"\']\]',sel)
+  if flow and action=='click':
+   if flow[1]=='shop':area(g,'shopping')
+   else:
+    section(g,'threads')
+    target={'cmp':'#pCmpBox > summary','review':'#pThreads','ready':'#pReady details > summary'}[flow[1]]
+    if g.locator(target).count():
+     if flow[1]=='review':g.locator(target).scroll_into_view_if_needed()
+     else:click(g,target)
+   return True
   meta=g.evaluate(META,sel)
   if not meta:return False
   view=meta['view'];names={'convertView':'convert','threadsView':'stash','projectsView':'projects','shopView':'shopping','settingsView':'settings','helpView':'help','threadwoodView':'den'}
