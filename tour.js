@@ -36,9 +36,9 @@ const STEPS=[
   extra:()=>st().items.length?'':`<button type="button" class="sec" data-t="example">Try an example (310, 321, 666, 699)</button>`,
   done:()=>st().items.length>0,
   help:''},
- {id:'threads',title:TS(1).title||'My threads',view:'threads',target:()=>$('thAdd'),anchor:()=>$('thAdd'),pose:()=>'organizing',msg:()=>TS(1).body||'',more:()=>'',help:''},
+ {id:'threads',title:TS(1).title||'My threads',view:'threads',target:()=>$('fg-entry')||$('thAdd'),anchor:()=>$('fg-entry')||$('thAdd')?.closest('.thquick')||$('thAdd'),pose:()=>'organizing',msg:()=>TS(1).body||'',more:()=>'',help:''},
  {id:'project',title:TS(2).title||'Projects',view:'projects',target:()=>{const e=$('projEdit');return e&&!e.hidden?e.querySelector('.ptitle'):$('newEmpty')},anchor:()=>{const e=$('projEdit');return e&&!e.hidden?e.querySelector('.ptitle'):$('newEmpty').parentElement},pose:()=>'presenting',msg:()=>TS(2).body||'',more:()=>'',help:''},
- {id:'shop',title:TS(3).title||'Shopping',view:'shop',target:()=>{const b=$('shopBody');return b&&!b.hidden?b:null},anchor:()=>$('shopPickRow')&&!$('shopPickRow').hidden?$('shopPickRow'):$('shopCard').firstElementChild,pose:()=>'pointing',msg:()=>TS(3).body||'',more:()=>'',help:''},
+ {id:'shop',title:TS(3).title||'Shopping',view:'shop',target:()=>{const b=$('shopBody');if(b&&!b.hidden)return b;const e=$('shopEmpty');return e&&!e.hidden?e:$('shopCard')},anchor:()=>$('shopPickRow')&&!$('shopPickRow').hidden?$('shopPickRow'):$('shopCard').firstElementChild,pose:()=>'pointing',msg:()=>TS(3).body||'',more:()=>'',help:''},
  {id:'finish',title:TS(4).title||"You're all set",view:'convert',target:()=>null,anchor:()=>document.querySelector('.hero .row'),pose:()=>'goodbye',msg:()=>TS(4).body||'',more:()=>'',final:true}
 ];
 
@@ -93,6 +93,7 @@ if(!pref)showInvite(false);else if(pref.status==='active')showInvite(true);
 const ask=$('askPip'),askBtn=$('askPipBtn');
 function context(){
  if(idx>=0)return{key:'tour',text:`We're on step ${idx+1} of ${STEPS.length} of the tour.`};
+ if(FH()&&['home','more'].includes(scr()))return{key:scr(),text:''};
  if(inView('projectsView'))return $('projEdit')&&!$('projEdit').hidden?{key:'project',text:'This is one of your projects. Mark each color Have enough, Need to buy or Not sure, then use Shop my list.'}:{key:'projects',text:'These are your saved projects. They stay in this browser on this device.'};
  if(FH()&&['threads','shop'].includes(scr())){const e=FH().entry(scr());if(e)return{key:scr(),text:''}}
  if(inView('settingsView'))return{key:'settings',text:''};
@@ -145,6 +146,7 @@ const askContextWatch=new MutationObserver(()=>{if(!ask.hidden)renderAsk()});
 // Workbasket is mounted later by Atelier; observe its tab selection via the existing navigation.
 const askNav=document.querySelector('nav.tabs');if(askNav)askContextWatch.observe(askNav,{subtree:true,attributes:true,attributeFilter:['aria-pressed']});
 document.addEventListener('flossfox:result',()=>{if(!ask.hidden)renderAsk()});
+window.addEventListener('ff:workspace-changed',()=>{if(!ask.hidden)renderAsk()});
 $('helpTour').onclick=start;
 
 /* ---------- Contextual tips ---------- */

@@ -61,6 +61,14 @@ async function exportBackup(options={}){
   if(result.status==='file-written'){confirmed(snapshot);if(photoNote)feedback(('Backup saved.'+photoNote).trim(),false);}
   else if(result.status==='download-started'){pending=snapshot;feedback(('Download started. Check that the JSON file was saved, then confirm below. A download starting does not confirm the file was saved.'+photoNote).trim(),true);}
   else if(result.status==='canceled')feedback('Backup was not saved. Your data and previous backup history are unchanged.');
+  else if(result.status==='failed'&&options.mode==='save'){
+   // The native Save dialog can be rejected by embedded/automated browsers.
+   // Fall back to the browser's normal download without claiming a file was saved.
+   const dl=await C.writeFile(text,{mode:'download',download:P.downloadBackupText,filename:'floss-fox-backup-'+data.exported.slice(0,10)+'.json'});
+   if(dl.status==='download-started'){pending=snapshot;feedback(('Your browser could not finish saving the file, so a normal backup download has started. Check the JSON file really saved, then confirm below.'+photoNote).trim(),true);}
+   else{feedback('The backup could not be downloaded here. Your data is still unchanged. Try another browser or use Download file instead.');$('bkDownloadInstead').hidden=false;}
+   return dl;
+  }
   else{feedback('The backup file could not be saved. Your data and previous backup history are unchanged.');$('bkDownloadInstead').hidden=false;}
   return result;
  }catch(e){feedback('The backup could not be prepared. Your existing data was not changed.');return{status:'failed'};}

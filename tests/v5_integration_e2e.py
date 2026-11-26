@@ -122,7 +122,7 @@ with sync_playwright() as p:
         before = page.evaluate('(keys)=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))', keys)
         UpgradeHandler.before = False
         page.evaluate('navigator.serviceWorker.getRegistration().then(r=>r.update())')
-        expected = 'flossfox-dev-v5-gemini-audit-4-ux1-seo5'
+        expected = 'flossfox-dev-v6-foxglass-built-1'
         # Async predicates passed to wait_for_function can be truthy Promises.
         # Await the actual lifecycle/cache condition before cutting the network.
         page.evaluate('''async ({expected,old})=>{

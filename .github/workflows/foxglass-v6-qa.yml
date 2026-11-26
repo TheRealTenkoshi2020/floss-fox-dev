@@ -1,0 +1,34 @@
+name: Foxglass V6 development QA
+on:
+  push:
+    branches: [feat/foxglass-v6]
+permissions:
+  contents: read
+concurrency:
+  group: foxglass-v6-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  unit-and-seo:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install QA dependencies
+        run: python3 -m pip install pytest beautifulsoup4
+      - name: Execute unit and SEO checks
+        run: python3 tools/foxglass_qa.py unit --out test-results/foxglass-unit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-unit-and-seo
+          path: test-results/foxglass-unit
+          retention-days: 14
