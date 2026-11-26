@@ -32,3 +32,33 @@ jobs:
           name: foxglass-unit-and-seo
           path: test-results/foxglass-unit
           retention-days: 14
+  actual-app-browser:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test driver
+        run: python3 -m pip install playwright pillow
+      - name: Serve complete application and run V6 workflows
+        env:
+          FF_CHROME: /usr/bin/google-chrome
+          FF_QA_OUT: test-results/foxglass-browser
+        run: |
+          set -o pipefail
+          google-chrome --version
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/foxglass-server.log 2>&1 &
+          python3 -u tests/foxglass_actual_e2e.py http://127.0.0.1:8765/ | tee test-browser.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-actual-browser
+          path: |
+            test-results/foxglass-browser
+            test-browser.log
+          retention-days: 14
