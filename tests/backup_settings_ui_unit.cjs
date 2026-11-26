@@ -36,11 +36,22 @@ test('an exported older snapshot cannot clear a newer major-edit reminder',async
  h.nodes.get('bkConfirmSave').onclick();assert.equal(h.state().majorToken,token);assert.equal(h.nodes.get('bkReminder').hidden,false);
  await h.ui.exportBackup();h.nodes.get('bkConfirmSave').onclick();assert.equal(h.state().majorToken,null);assert.equal(h.nodes.get('bkReminder').hidden,true);
 });
-test('file-picker cancellation and failure preserve prior history without a duplicate download',async()=>{
+test('file-picker cancellation never forces a download; writer failure starts one unconfirmed fallback',async()=>{
  const initial={...C.emptyState(),lastConfirmedAt:1000},h=harness({meta:initial});
  h.sandbox.showSaveFilePicker=async()=>{const e=new Error('canceled');e.name='AbortError';throw e;};assert.equal((await h.ui.exportBackup({mode:'save'})).status,'canceled');assert.deepEqual(h.state(),initial);assert.equal(h.downloads.length,0);
  let aborted=false;h.sandbox.showSaveFilePicker=async()=>({createWritable:async()=>({write:async()=>{throw new Error('full');},abort:async()=>{aborted=true;}})});
- assert.equal((await h.ui.exportBackup({mode:'save'})).status,'failed');assert.equal(aborted,true);assert.deepEqual(h.state(),initial);assert.equal(h.nodes.get('bkDownloadInstead').hidden,false);
+ const before=h.raw();assert.equal((await h.ui.exportBackup({mode:'save'})).status,'download-started');assert.equal(aborted,true);assert.deepEqual(h.state(),initial);assert.equal(h.downloads.length,1);assert.equal(h.nodes.get('bkConfirmSave').hidden,false);assert.equal(h.nodes.get('bkDownloadInstead').hidden,true);assert.deepEqual(h.raw(),before);assert.match(h.nodes.get('bkFeedbackMsg').textContent,/Check the JSON file really saved/);assert.equal(JSON.parse(h.downloads[0].text).projects[0].id,'real');
+});
+test('rejected native picker falls back without recording a saved file until explicit confirmation',async()=>{
+ const initial={...C.emptyState(),lastConfirmedAt:1000},h=harness({meta:initial}),before=h.raw();
+ h.sandbox.showSaveFilePicker=async()=>{const e=new Error('unavailable');e.name='SecurityError';throw e;};
+ assert.equal((await h.ui.exportBackup({mode:'save'})).status,'download-started');assert.equal(h.downloads.length,1);assert.deepEqual(h.state(),initial);assert.deepEqual(h.raw(),before);
+ h.nodes.get('bkConfirmSave').onclick();assert.ok(h.state().lastConfirmedAt>1000);assert.deepEqual(h.raw(),before);
+});
+test('failed fallback download keeps history and records unchanged and offers another attempt',async()=>{
+ const initial={...C.emptyState(),lastConfirmedAt:1000},h=harness({meta:initial}),before=h.raw();
+ h.sandbox.showSaveFilePicker=async()=>{throw new Error('picker unavailable');};h.P.downloadBackupText=()=>{throw new Error('download unavailable');};
+ assert.equal((await h.ui.exportBackup({mode:'save'})).status,'failed');assert.deepEqual(h.state(),initial);assert.deepEqual(h.raw(),before);assert.equal(h.nodes.get('bkConfirmSave').hidden,true);assert.equal(h.nodes.get('bkDownloadInstead').hidden,false);
 });
 test('a successful writer updates history only after close, with the full actual JSON payload',async()=>{
  const h=harness();let release,contents='';h.sandbox.showSaveFilePicker=async()=>({createWritable:async()=>({write:async t=>{contents=t;},close:()=>new Promise(r=>{release=r;})})});

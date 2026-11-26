@@ -1,0 +1,9 @@
+/* Unified navigation for the separate Fabric Calculator page. */
+html.fg-fabric-ready body{--fg-ink:var(--ink,#343b39);--fg-sub:var(--ink-2,#535b58);--fg-paper:var(--surface,#fffdf8);--fg-canvas:var(--canvas,#f8f4eb);--fg-line:var(--line,#ddd4c4);--fg-sage:var(--sage-ink,#3d5c48);--fg-fox:var(--fox-ink,#94401d)}
+html.fg-fabric-ready .fcnav{display:none!important}
+html.fg-fabric-ready .fg-nav{margin-top:8px}
+html.fg-fabric-ready .fg-nav-btn.fg-fabric-link{display:flex;align-items:center;justify-content:center;line-height:1.2;text-decoration:none;font-weight:750}
+html.fg-fabric-ready .fg-nav-btn.fg-fabric-link:hover{background:var(--sage-50,#e3ece1)}
+html.fg-fabric-ready .fg-nav-btn.fg-fabric-link:focus-visible{outline:3px solid var(--focus,#1e5fa8);outline-offset:2px}
+@media(max-width:700px){html.fg-fabric-ready body{padding-bottom:calc(90px + env(safe-area-inset-bottom))!important}}
+@media print{html.fg-fabric-ready .fg-nav{display:none!important}html.fg-fabric-ready body{padding-bottom:0!important}}

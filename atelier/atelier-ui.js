@@ -124,6 +124,7 @@ function mountSearch(){
 function openSearch(){if(!sPanel)return;opener=document.activeElement;sPanel.hidden=false;document.body.classList.add('ffa-searching');sBtn.setAttribute('aria-expanded','true');sIn.focus();run()}
 function closeSearch(restore){if(!sPanel||sPanel.hidden)return;clearTimeout(timer);clearTimeout(announce.t);sLive.textContent='';sPanel.hidden=true;document.body.classList.remove('ffa-searching');sBtn.setAttribute('aria-expanded','false');sIn.setAttribute('aria-expanded','false');sIn.removeAttribute('aria-activedescendant');sDetail.hidden=true;
  if(restore){const o=opener&&document.contains(opener)?opener:sBtn;try{o.focus()}catch(e){}}opener=null}
+window.addEventListener('ff:workspace-changed',()=>closeSearch(false));
 function getIndex(){if(index&&!dirty)return index;const ps=projects();index=SR.build({projects:ps||[],threads:threads(),catalog:CAT});dirty=false;return index}
 const WH=['DMC:BLANC','DMC:WHITE','DMC:B5200'];
 function run(){if(!sPanel||sPanel.hidden)return;let ix;sNote.textContent='';sNote.className='ffa-hint';

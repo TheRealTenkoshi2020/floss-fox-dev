@@ -64,7 +64,7 @@ function pad(){if(!comp)return;dock();const h=heroMode()||wide.matches||body.cla
 // wide: line up with the active section, but never above the tab bar / header
 let active=null;
 function place(){if(!comp)return;if(!wide.matches||heroMode()){comp.style.transform='';return}
- const hd=document.querySelector('.tabs')||document.querySelector('header');const minTop=hd?Math.max(16,hd.getBoundingClientRect().bottom+12):16;
+ const hd=document.querySelector('#fg-nav')||document.querySelector('.tabs')||document.querySelector('header');const minTop=hd?Math.max(16,hd.getBoundingClientRect().bottom+12):16;
  const t=active?active.getBoundingClientRect().top:minTop,h=comp.offsetHeight,max=innerHeight-h-16;
  comp.style.transform='translate3d(0,'+Math.round(Math.max(minTop,Math.min(t,max)))+'px,0)'}
 // IntersectionObserver: the section crossing the reading line (40% from the top) is active
