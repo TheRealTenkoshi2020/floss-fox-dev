@@ -20,10 +20,10 @@ def legacy(a):
    with log.open('w') as stream:
     try:code=subprocess.run([sys.executable,'-u',str(root/'tests'/name),'http://127.0.0.1:8765/'],cwd=root,env=env,stdout=stream,stderr=subprocess.STDOUT,timeout=900 if name=='regression.py' else 360).returncode
     except subprocess.TimeoutExpired:code=124
-   text=log.read_text(errors='replace');row={'suite':name,'status':'passed' if code==0 else 'failed','exit':code,'seconds':round(time.monotonic()-start,1),'passed_assertions':sum(x.startswith('PASS ') for x in text.splitlines()),'failed_assertions':sum(x.startswith('FAIL ') for x in text.splitlines()),'log':log.name};rows.append(row);print(json.dumps(row),flush=True)
+   text=log.read_text(errors='replace');row={'suite':name,'status':'passed' if code==0 and not any(x.startswith('FAIL ') for x in text.splitlines()) else 'failed','exit':code,'seconds':round(time.monotonic()-start,1),'passed_assertions':sum(x.startswith('PASS ') for x in text.splitlines()),'failed_assertions':sum(x.startswith('FAIL ') for x in text.splitlines()),'log':log.name};rows.append(row);print(json.dumps(row),flush=True)
    (a.out/'results.json').write_text(json.dumps({'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),'navigation_adapter':'actual V6 UI paths only when present; no assertion or calculation overrides','shard':a.shard,'shards':a.shards,'suites':rows},indent=2)+'\n')
  finally:server.terminate();server.wait(timeout=10)
- return int(any(r.get('exit',0) for r in rows))
+ return int(any(r['status']=='failed' for r in rows))
 
 def main():
  ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('mode',choices=['unit','legacy']);ap.add_argument('--out',type=pathlib.Path,required=True);ap.add_argument('--app-root',type=pathlib.Path);ap.add_argument('--shard',type=int,default=0);ap.add_argument('--shards',type=int,default=1);a=ap.parse_args();

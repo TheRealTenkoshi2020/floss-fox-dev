@@ -19,7 +19,7 @@
   const scrollTop = ()=>{try{root.scrollTo({top:0,behavior:'instant'})}catch(_){}};
   let header=null, nav=null, home=null, more=null, threadStrip=null, projectStrip=null, shoppingIntro=null, thEntry=null;
   let startupHash=(root.location.hash||'').slice(1);
-  let observer=null;
+  let observer=null, projectObserver=null, failed=false;
 
   function hideCustom(){home.hidden=true;more.hidden=true}
   function hideLegacy(){LEGACY.forEach(id=>{const n=$(id);if(n&&!n.hidden)n.hidden=true})}
@@ -27,9 +27,17 @@
   function routeHash(){let h=(root.location.hash||'').slice(1);try{h=decodeURIComponent(h)}catch(_){}if(h.startsWith('share='))return null;return MAP[h]||null}
   function setHash(h){if(!h)return;if(root.location.hash!=='#'+h){root.history.pushState(null,'','#'+h)}}
   function setNav(selected){for(const b of nav.querySelectorAll('[data-fg-area]')){const on=b.dataset.fgArea===selected;b.setAttribute('aria-current',on?'page':'false');b.classList.toggle('fg-active',on);if(!on)b.removeAttribute('aria-current')}nav.dataset.current=selected}
-  function focusHeading(){const target=state.area==='home'?home:state.area==='more'?more:({threads:()=>$(state.thread==='convert'?'heroH':'thCard')?.querySelector('h1,h2')||$('heroH'),projects:()=>d.querySelector('#projEdit:not([hidden]) #pTitle')||d.querySelector('#projListCard h2'),shopping:()=>shoppingIntro.querySelector('h2')})[state.area]?.();const h=typeof target==='function'?target():target;if(h){h.tabIndex=-1;try{h.focus({preventScroll:true})}catch(_){}}}
+  function focusHeading(){
+    let h;
+    if(state.area==='home')h=home.querySelector('h1');
+    else if(state.area==='more')h=more.hidden?d.querySelector('#settingsView:not([hidden]) h2,#helpView:not([hidden]) h2,#threadwoodView:not([hidden]) h1'):more.querySelector('h1');
+    else if(state.area==='threads')h=state.thread==='convert'?$('heroH'):$('thCard')?.querySelector('h1,h2');
+    else if(state.area==='projects')h=d.querySelector('#projEdit:not([hidden]) #pTitle')||d.querySelector('#projListCard h2');
+    else if(state.area==='shopping')h=shoppingIntro.querySelector('h2');
+    if(h){h.tabIndex=-1;try{h.focus({preventScroll:true})}catch(_){}}
+  }
   function navigate(to,{hash=true,focus=true,scroll=true}={}){
-    const [area,sub]=to.split(':');if(state.transition)return;
+    const [area,sub]=to.split(':');if(failed||state.transition)return;
     state.transition=true;
     try{
       hideCustom();
@@ -94,7 +102,9 @@
     const t=el('p','fg-muted fg-more-foot','Nothing here requires an account. Your collection and projects remain in your browser unless you choose to export or share them.');more.append(t);
   }
   function setAddMode(mode){
-    const view=$('threadsView');if(!view)return;view.dataset.fgAddMode=mode;
+    const view=$('threadsView');if(failed||!view)return;view.dataset.fgAddMode=mode;
+    // Calm groups these original controls in a disclosure; reveal that ancestor too.
+    if(mode==='import'){const group=$('thMoreAdd');if(group)group.open=true}
     const close=$('fg-add-close');if(close)close.hidden=mode==='none';
     const desc=$('fg-add-mode-status');if(desc)desc.textContent=mode==='quick'?'Quick add is ready below. Enter a DMC number and its amount.':mode==='import'?'Choose a list, photo, barcode, or multiple DMC colors below.':'Add options are closed.';
   }
@@ -111,7 +121,7 @@
     }),'fg-action-light'));
     actions.append(btn('Choose DMC colors',choose('import',()=>{
       const found=[...d.querySelectorAll('#ffSmartStash button.ffss-choice')].find(b=>/choose colors/i.test(b.textContent));
-      if(found)found.click();else showStatus('The DMC color picker is unavailable here. Use Quick add instead.');
+      if(found){found.click();const search=$('ffSmartStash')?.querySelector('input[type=search]');if(search){search.scrollIntoView({block:'nearest'});search.focus()}}else showStatus('The DMC color picker is unavailable here. Use Quick add instead.');
     }),'fg-action-light'));
     actions.append(btn('Review a pasted list',choose('quick',()=>{$('thBulkBtn')?.click()}),'fg-action-light'));
     actions.append(btn('Add from my projects',choose('quick',()=>{$('thImport')?.click()}),'fg-action-light'));
@@ -159,6 +169,7 @@
     if(!on){if(ed)ed.removeAttribute('data-fg-project-tab');return}
     if(!buildProjectTabs())return;
     const key=state.project,strip=$('fg-project-tabs');
+    ed.querySelectorAll('.pleftoff').forEach(n=>{n.hidden=key!=='progress'});
     for(const b of strip.querySelectorAll('button')){const selected=b.dataset.fgProject===key;b.classList.toggle('fg-selected',selected);b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1}
     const visible=(id,yes)=>{const n=$(id);if(n)n.hidden=!yes};
     visible('pSum',key==='threads');visible('pReady',key==='threads');visible('pTrust',key==='threads');visible('pThreads',key==='threads');visible('pCmp',key==='threads');visible('pKitGoRow',key==='threads');
@@ -176,19 +187,19 @@
     row.append(btn('Import a pattern PDF',()=>{if(typeof root.FFImportOpen==='function')root.FFImportOpen();else showStatus('Pattern import is unavailable in this build.')},'fg-action-light'));box.append(row);pMore.insertBefore(box,pMore.children[1]||null);
   }
   function syncShopping(){if(shoppingIntro)shoppingIntro.hidden=state.area!=='shopping'}
-  function reconcile(){if(state.transition)return;const active=activeLegacy();if(!active)return;hideCustom();const [area,sub]=active.split(':');
+  function reconcile(){if(failed||state.transition)return;const active=activeLegacy();if(!active)return;hideCustom();const [area,sub]=active.split(':');
     const desired=area==='help'||area==='settings'||area==='den'?'more':area;
     if(state.area!==desired||desired==='threads'&&state.thread!==sub){state.area=desired;if(desired==='threads')state.thread=sub==='convert'?'convert':'stash';setNav(state.area);syncThreads();syncProject();syncShopping()}
     if(desired==='projects')syncProject();}
   function installHooks(){
     observer=new MutationObserver(()=>reconcile());LEGACY.forEach(id=>{const x=$(id);if(x)observer.observe(x,{attributes:true,attributeFilter:['hidden']})});
-    const ed=$('projEdit');if(ed){const mo=new MutationObserver(()=>{if(state.area==='projects')syncProject()});mo.observe(ed,{attributes:true,attributeFilter:['hidden']});mo.observe(ed,{childList:true,subtree:true})}
+    const ed=$('projEdit');if(ed){const mo=projectObserver=new MutationObserver(()=>{if(!failed&&state.area==='projects')syncProject()});mo.observe(ed,{attributes:true,attributeFilter:['hidden']});mo.observe(ed,{childList:true,subtree:true})}
     root.addEventListener('popstate',()=>root.setTimeout(()=>routeFromLocation(),0));root.addEventListener('hashchange',()=>root.setTimeout(()=>routeFromLocation(),0));
     // Older start-up handlers can select a legacy tab on window load. Enforce aliases last.
     root.addEventListener('load',()=>root.setTimeout(()=>routeFromLocation(),0));
     // Existing HTML links and handlers continue using legacy routes. When leaving Home/More, the view observer syncs our nav.
-    d.addEventListener('click',e=>{const link=e.target.closest('a.ffstart');if(link){e.preventDefault();e.stopImmediatePropagation();navigate('home')}} ,true);
-    const logo=$('appname');if(logo)logo.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();navigate('home')},true);
+    d.addEventListener('click',e=>{const link=e.target.closest('a.ffstart');if(!failed&&link){e.preventDefault();e.stopImmediatePropagation();navigate('home')}} ,true);
+    const logo=$('appname');if(logo)logo.addEventListener('click',e=>{if(failed)return;e.preventDefault();e.stopImmediatePropagation();navigate('home')},true);
     // The search panel and contextual Pip guidance should not compete for visibility.
     const ask=$('askPipBtn'),search=$('ffSearchBtn');if(ask&&search){ask.addEventListener('click',()=>{const panel=$('ffSearch');if(panel&&!panel.hidden)search.click()},true);search.addEventListener('click',()=>{const pip=$('askPip');if(pip&&!pip.hidden)ask.click()},true)}
     if(nav){nav.addEventListener('keydown',e=>{const arr=[...nav.querySelectorAll('button')],i=arr.indexOf(d.activeElement);if(i<0)return;let j=i;if(e.key==='ArrowRight')j=(i+1)%arr.length;else if(e.key==='ArrowLeft')j=(i+arr.length-1)%arr.length;else if(e.key==='Home')j=0;else if(e.key==='End')j=arr.length-1;else return;e.preventDefault();arr[j].focus()})}
@@ -196,15 +207,28 @@
     root.addEventListener('ff:data-saved',()=>{if(state.area==='home')renderHome()});
     root.addEventListener('storage',()=>{if(state.area==='home')renderHome()});
   }
-  function routeFromLocation(){if(state.transition)return;const r=routeHash();if(r){navigate(r,{hash:false,focus:false,scroll:false})}else if((root.location.hash||'').startsWith('#share=')){// preserve existing share-reader route
+  function routeFromLocation(){if(failed||state.transition)return;const r=routeHash();if(r){navigate(r,{hash:false,focus:false,scroll:false})}else if((root.location.hash||'').startsWith('#share=')){// preserve existing share-reader route
       hideCustom();setNav('home');syncThreads();syncShopping();}
   }
-  function boot(){if(!createShell())return;installHooks();
+  function boot(){
+    // Activation is reversible even if an optional integration fails halfway through.
+    const landing=d.documentElement.classList.contains('ff-landing');
+    const hidden=[...d.querySelectorAll(LEGACY.map(id=>'#'+id).join(','))].flatMap(n=>[n,...n.querySelectorAll('*')]).map(n=>[n,n.hidden]);
+    try{if(!createShell())return;installHooks();
     const k=routeHash()||(startupHash.startsWith('share=')?null:'home');
     if(k)navigate(k,{hash:false,focus:false,scroll:false});else{hideCustom();setNav('home')}
     root.requestAnimationFrame(()=>{try{root.FlossFoxPipFollow?.pad();root.FlossFoxPipFollow?.place()}catch(_){}});
     const status=el('p','fg-sr');status.id='fg-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');nav.after(status);
     root.FlossFoxV6=Object.freeze({version:'v6-foxglass-built-1',navigate,home:()=>navigate('home'),readProjects,booted:true,state:()=>({...state}),renderHome,refresh:()=>{reconcile();syncProject()}});
+    }catch(error){
+      failed=true;observer?.disconnect();projectObserver?.disconnect();
+      d.documentElement.classList.remove('fg-ready');d.documentElement.classList.toggle('ff-landing',landing);
+      for(const [n,value] of hidden)n.hidden=value;
+      for(const id of ['fg-nav','fg-stage','fg-thread-tabs','fg-shopping-intro','fg-entry','fg-add-mode-status','fg-add-close','fg-status','fg-project-tabs','fg-prep-shortcuts'])$(id)?.remove();
+      $('threadsView')?.removeAttribute('data-fg-add-mode');$('projEdit')?.removeAttribute('data-fg-project-tab');
+      const note=el('p',null,'The new navigation could not start. Your original tools are available.');note.setAttribute('role','status');header?.after(note);
+      console.warn('Foxglass navigation was not activated:',error);
+    }
   }
   if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',boot);else boot();
 })(typeof window!=='undefined'?window:this);

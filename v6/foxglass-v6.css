@@ -106,3 +106,6 @@ html.fg-ready #threadsView #ffauImport {display:none!important}
 /* Accent backgrounds become light amber/lilac in dark themes. Keep their text dark. */
 html.fg-ready[data-atelier-scheme="dark"] body{--fg-selected-ink:#172720}
 .fg-nav-label{white-space:nowrap}
+
+/* Reserve the same companion column used by the original workspaces. */
+@media(min-width:880px){html.fg-ready body.pipone .wrap>#fg-stage{margin-right:200px}}

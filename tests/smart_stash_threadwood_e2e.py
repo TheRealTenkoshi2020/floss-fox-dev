@@ -55,7 +55,7 @@ with sync_playwright() as p:
         for th in ('morning', 'moon'):
             t = f'[{w} {th}] '; c, g = new(br, w); boot(g)
             g.evaluate(f"FlossFoxAtelierTheme.apply('{th}')"); g.wait_for_timeout(150); s0 = g.evaluate(SNAP)
-            ok(t + 'guided home keeps Continue and adds the quiet Pip\'s Den link', g.locator('#ffuxResume').is_visible() and g.locator('#ffuxDenLink').is_visible())
+            ok(t + 'Home keeps Continue and Den remains in More', (g.locator('#fg-home').get_by_role('button',name='Continue project',exact=True).is_visible() and g.locator('#fg-more').get_by_role('button',name="Pip\'s Den",exact=True).count()==1) if g.locator('html.fg-ready').count() else (g.locator('#ffuxResume').is_visible() and g.locator('#ffuxDenLink').is_visible()))
             ok(t + 'still exactly three main choices (no second landing page)', g.locator('#ffLanding nav.choices > a.ffux-choice, #ffLanding nav.choices > a[data-tab="tabConvert"], #ffLanding nav.choices > a[data-tab="tabThreads"], #ffLanding nav.choices > a[data-tab="tabProjects"]').count() == 3)
             wide(g, t + 'guided home')
             g.click('#ffuxDenLink'); g.wait_for_timeout(400)

@@ -62,6 +62,36 @@ jobs:
             test-results/foxglass-browser
             test-browser.log
           retention-days: 14
+  integrity-browser:
+    if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test driver
+        run: python3 -m pip install playwright pillow
+      - name: Exercise data and offline integration gates
+        env:
+          FF_CHROME: /usr/bin/google-chrome
+          FF_QA_OUT: test-results/foxglass-integrity
+        run: |
+          set -o pipefail
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/foxglass-integrity-server.log 2>&1 &
+          python3 -u tests/foxglass_integrity_e2e.py http://127.0.0.1:8765/ | tee integrity-browser.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foxglass-integrity-browser
+          path: |
+            test-results/foxglass-integrity
+            integrity-browser.log
+          retention-days: 14
   legacy-browser:
     if: github.repository == 'TheRealTenkoshi2020/floss-fox-dev'
     runs-on: ubuntu-24.04

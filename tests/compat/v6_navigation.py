@@ -32,11 +32,17 @@ def route(g,sel,action):
  try:
   if not g.evaluate('document.documentElement.classList.contains("fg-ready")'):return False
   match=re.fullmatch(r'\s*(?:nav\.tabs\s+)?#(tab\w+)\s*',sel)
-  if match and match[1] in TABS and action=='click':area(g,TABS[match[1]]);return True
+  if match and match[1] in TABS and action in ['click','tap']:
+   area(g,TABS[match[1]])
+   if match[1]=='tabThreads':add_mode(g,'import')
+   return True
+  if sel=='#ffuxNavSummary' and action=='click':area(g,'more');return True
+  if sel=='#ffuxDenLink' and action=='click':area(g,'den');return True
+  if sel in ['#tourNo','#tourYes'] and not g.locator(sel).is_visible():area(g,'convert')
   if sel in ['#pMore > summary','#pMore summary'] and action=='click':section(g,'details');return True
   if sel=='#ffauImport' and action=='click':
    if not g.locator('#threadsView').is_visible():area(g,'stash')
-   add_mode(g,'import');return True
+   add_mode(g,'import');g.wait_for_selector('#ffssFile');return True
   meta=g.evaluate(META,sel)
   if not meta:return False
   view=meta['view'];names={'convertView':'convert','threadsView':'stash','projectsView':'projects','shopView':'shopping','settingsView':'settings','helpView':'help','threadwoodView':'den'}
@@ -50,7 +56,7 @@ def route(g,sel,action):
   # Playwright executes the original selector and reports its own real error.
   return False
  return False
-for name in ['click','fill','check','uncheck','select_option','set_input_files','focus']:
+for name in ['click','fill','check','uncheck','select_option','set_input_files','focus','tap']:
  original=getattr(Page,name)
  def wrap_page(method,original):
   def wrapped(self,selector,*args,**kwargs):
@@ -66,3 +72,8 @@ for name in ['click','fill','check','uncheck','select_option','set_input_files',
    return original(self,*args,**kwargs)
   return wrapped
  setattr(Locator,name,wrap_locator(name,original_locator))
+
+_scroll=Locator.scroll_into_view_if_needed
+def scroll(self,*a,**k):
+ route(self.page,self._impl_obj._selector,'scroll');return _scroll(self,*a,**k)
+Locator.scroll_into_view_if_needed=scroll
