@@ -121,7 +121,7 @@
     target.insertAdjacentElement('beforebegin',notice);target.insertAdjacentElement('beforebegin',close);
     setAddMode('none');
     // A legacy contextual importer may still open from elsewhere in the app.
-    d.addEventListener('click',e=>{if(e.target.closest('#ffauImport'))setAddMode('import')},true);
+    d.addEventListener('click',e=>{if(e.target.closest('#ffauImport'))setAddMode('import');if(e.target.closest('[data-search-add]'))setAddMode('quick')},true);
   }
   function renderHome(){
     home.replaceChildren();const projects=readProjects();const active=projects.filter(p=>p.status!=='done').sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||'')))[0]||null;
@@ -130,7 +130,7 @@
     hero.append(words);const pic=d.createElement('img');pic.src='assets/pip/pip-gardener-160.png';pic.alt='';pic.width=110;pic.height=136;pic.decoding='async';hero.append(pic);home.append(hero);
     if(active){const card=el('section','fg-continue');card.append(el('p','fg-eyebrow','PICK UP WHERE YOU LEFT OFF'),el('h2',null,String(active.name||'Your project')));
       if(active.leftOff){card.append(el('p','fg-last-note',String(active.leftOff).slice(0,250)))}
-      const actions=el('div','fg-row');actions.append(btn('Continue project',()=>openProject(active.id),'fg-primary'));actions.append(btn('Shopping list',()=>navigate('shopping')));card.append(actions);home.append(card)}
+      const actions=el('div','fg-row');actions.append(btn('Continue project',()=>openProject(active.id),'fg-primary'));actions.append(btn('Shopping list',()=>{if(openProject(active.id)){const shop=$('pShop');if(shop)shop.click();else navigate('shopping')}}));card.append(actions);home.append(card)}
     const what=el('section','fg-home-choices');what.append(el('h2',null,active?'What would you like to do?':'What are we stitching up today?'));
     const grid=el('div','fg-card-grid');
     function tile(title,sub,target){const b=btn('',()=>{},'fg-choice');b.textContent='';b.append(el('strong',null,title),el('span','fg-muted',sub));b.onclick=()=>navigate(target);grid.append(b)}
@@ -143,7 +143,7 @@
     const safe=el('p','fg-data-hint','Your work stays in this browser. ');const b=btn('Backup & settings',()=>navigate('settings'),'fg-inline');safe.append(b);home.append(safe);
     home.querySelectorAll('a[href="#shop"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();navigate('shopping')}));
   }
-  function openProject(id){navigate('projects',{focus:false});try{P.open(id)}catch(_){showStatus('Could not open that project. Your saved data was not changed.')}syncProject();}
+  function openProject(id){navigate('projects',{focus:false});if(!readProjects().some(p=>p.id===id)){showStatus('That project is no longer available. Choose another saved project.');return false}try{P.open(id)}catch(_){showStatus('Could not open that project. Your saved data was not changed.');return false}syncProject();return !P.openId||P.openId()===id;}
 
   function syncThreads(){if(!threadStrip)return;const on=state.area==='threads';threadStrip.hidden=!on;
     for(const b of threadStrip.querySelectorAll('[data-fg-thread]')){const yes=b.dataset.fgThread===state.thread;b.setAttribute('aria-selected',String(yes));b.tabIndex=yes?0:-1;b.classList.toggle('fg-selected',yes)}

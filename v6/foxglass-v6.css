@@ -7,12 +7,12 @@ html.fg-ready #projEdit[data-fg-project-tab="details"] #pMore>summary {display:n
 html.fg-ready #projEdit #pMore[hidden],html.fg-ready #fg-project-tabs[hidden],
 html.fg-ready #fg-home[hidden],html.fg-ready #fg-more[hidden],
 html.fg-ready #fg-thread-tabs[hidden],html.fg-ready #fg-entry[hidden],html.fg-ready #fg-shopping-intro[hidden]{display:none!important}
-html.fg-ready body {--fg-ink:var(--ink,#343b39);--fg-sub:var(--ink-2,#535b58);--fg-paper:var(--surface,#fffdf8);--fg-canvas:var(--canvas,#f8f4eb);--fg-line:var(--line,#ddd4c4);--fg-sage:var(--sage-ink,#3d5c48);--fg-fox:var(--fox-ink,#94401d)}
+html.fg-ready body {--fg-ink:var(--ink,#343b39);--fg-sub:var(--ink-2,#535b58);--fg-paper:var(--surface,#fffdf8);--fg-canvas:var(--canvas,#f8f4eb);--fg-line:var(--line,#ddd4c4);--fg-sage:var(--sage-ink,#3d5c48);--fg-fox:var(--fox-ink,#94401d);--fg-selected-ink:#fff}
 .fg-nav,.fg-nav *,.fg-home,.fg-home *,.fg-more,.fg-more *,.fg-entry,.fg-entry *,.fg-shopping-intro,.fg-shopping-intro *,.fg-subbar,.fg-subbar *{box-sizing:border-box}
 .fg-nav{display:flex;align-items:center;justify-content:center;gap:6px;position:sticky;top:0;z-index:36;padding:8px 10px;margin:0 0 18px;background:var(--fg-canvas);border-bottom:1px solid var(--fg-line);box-shadow:0 3px 15px rgba(30,40,30,.045)}
 .fg-nav-btn{flex:1 1 0;min-width:0;min-height:47px!important;padding:8px 9px!important;border:1.5px solid transparent;background:transparent;color:var(--fg-ink);border-radius:14px;font:700 .93rem/1.25 system-ui,sans-serif;cursor:pointer;white-space:nowrap}
 .fg-nav-btn:hover{background:var(--sage-50,#e3ece1)}
-.fg-nav-btn.fg-active{background:var(--fg-sage);border-color:var(--fg-sage);color:#fff;box-shadow:0 2px 8px rgba(30,60,30,.13)}
+.fg-nav-btn.fg-active{background:var(--fg-sage);border-color:var(--fg-sage);color:var(--fg-selected-ink,#fff);box-shadow:0 2px 8px rgba(30,60,30,.13)}
 .fg-nav-btn:focus-visible,.fg-choice:focus-visible,.fg-segment:focus-visible,.fg-more-link:focus-visible,.fg-link:focus-visible,.fg-action:focus-visible{outline:3px solid var(--focus,#1e5fa8)!important;outline-offset:2px}
 .fg-workspace-stage{position:relative}
 .fg-eyebrow{font:.8rem/1.4 system-ui,sans-serif!important;font-weight:850!important;letter-spacing:.09em;color:var(--fg-sage);margin:0 0 8px!important}
@@ -28,7 +28,7 @@ html.fg-ready body {--fg-ink:var(--ink,#343b39);--fg-sub:var(--ink-2,#535b58);--
 .fg-row>*{max-width:100%}
 .fg-action,.fg-link{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;min-height:44px;padding:10px 15px;font-size:.95rem;font-weight:700;text-align:center;text-decoration:none;cursor:pointer;white-space:normal;line-height:1.25;border:1.5px solid var(--sage,#678a75);background:var(--fg-paper);color:var(--fg-sage)}
 .fg-action:hover,.fg-link:hover{background:var(--sage-50,#e3ece1)}
-.fg-action.fg-primary{background:var(--fg-sage);border-color:var(--fg-sage);color:#fff}
+.fg-action.fg-primary{background:var(--fg-sage);border-color:var(--fg-sage);color:var(--fg-selected-ink,#fff)}
 .fg-action.fg-primary:hover{background:var(--sage-ink-2,#314b3b)}
 .fg-action.fg-action-light{background:var(--fg-paper)}
 .fg-home-choices{padding:10px 0 0}.fg-home-choices h2{font-size:1.22rem;margin:14px 0 13px}
@@ -45,7 +45,7 @@ html.fg-ready body {--fg-ink:var(--ink,#343b39);--fg-sub:var(--ink-2,#535b58);--
 .fg-more-link:hover,.fg-more-card .fg-link:hover{background:var(--sage-50,#e3ece1)}.fg-more-foot{margin:18px 2px;font-size:.87rem}
 .fg-subbar{display:flex;gap:8px;align-items:stretch;max-width:700px;margin:0 0 14px;flex-wrap:nowrap}
 .fg-segment{border:1.5px solid var(--fg-line);border-radius:12px;min-height:46px;flex:1 1 0;padding:9px 11px;color:var(--fg-sage);background:var(--fg-paper);font-size:.95rem;font-weight:700;cursor:pointer;white-space:normal;min-width:0}
-.fg-segment:hover{background:var(--sage-50,#e3ece1)}.fg-segment.fg-selected{background:var(--fg-sage);border-color:var(--fg-sage);color:#fff}
+.fg-segment:hover{background:var(--sage-50,#e3ece1)}.fg-segment.fg-selected{background:var(--fg-sage);border-color:var(--fg-sage);color:var(--fg-selected-ink,#fff)}
 .fg-project-tabs{margin:12px 0 18px;max-width:730px}
 .fg-entry{margin:0 0 15px;padding:0 17px;border:1.5px solid var(--fg-line);border-radius:14px;background:var(--fg-paper)}
 .fg-entry>summary{list-style:none;cursor:pointer;display:flex;align-items:center;min-height:51px;font-size:1rem;font-weight:750;color:var(--fg-sage)}
@@ -96,9 +96,13 @@ html.fg-ready #threadsView #ffauImport {display:none!important}
 /* Explicitly outrank the reusable action-button hover rules (including touch emulated hover). */
 .fg-nav .fg-nav-btn{background:transparent;border-color:transparent;color:var(--fg-ink)}
 .fg-nav .fg-nav-btn:hover:not(.fg-active){background:var(--sage-50,#e3ece1);color:var(--fg-ink)}
-.fg-nav .fg-nav-btn.fg-active,.fg-nav .fg-nav-btn.fg-active:hover{background:var(--fg-sage);border-color:var(--fg-sage);color:#fff}
+.fg-nav .fg-nav-btn.fg-active,.fg-nav .fg-nav-btn.fg-active:hover{background:var(--fg-sage);border-color:var(--fg-sage);color:var(--fg-selected-ink,#fff)}
 /* Small visual anchors: approved existing icon vocabulary, with real text labels. */
 .fg-nav .fg-nav-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .fg-nav-icon{font-size:1.12rem;line-height:1;flex:none}
 .fg-nav-label{font-size:inherit;line-height:inherit;min-width:0}
 @media(max-width:700px){.fg-nav .fg-nav-btn{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center}.fg-nav-icon{font-size:1.23rem}.fg-nav-label{font-size:inherit;letter-spacing:-.01em}}
+
+/* Accent backgrounds become light amber/lilac in dark themes. Keep their text dark. */
+html.fg-ready[data-atelier-scheme="dark"] body{--fg-selected-ink:#172720}
+.fg-nav-label{white-space:nowrap}

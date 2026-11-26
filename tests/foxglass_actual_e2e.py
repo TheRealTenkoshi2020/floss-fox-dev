@@ -53,7 +53,7 @@ def fresh(g,width,theme):
  ok(tag+' explicit save preserves confirmed and uncertain quantities',stock['310']['n']==2 and stock['310']['confirmed'] and stock['823']['n']==1 and not stock['823'].get('confirmed'))
  segment(g,'Find & convert');g.fill('#inp','310 x2\n321 x1');g.click('#go');g.wait_for_selector('#ffStudio .ffa-cmp')
  ok(tag+' converter headings retain V5 fix','in DMC' not in g.locator('#ffStudio .ffa-cmp h3').first.inner_text())
- g.fill('#newProjName','GEMINI-V6-created-'+str(width));g.click('#saveProj');g.wait_for_selector('#fg-project-tabs');ok(tag+' real UI creates project with V6 sections',g.locator('#fg-project-tabs [role=tab]').count()==3 and g.locator('#pThreads').is_visible())
+ g.fill('#newProjName','GEMINI-V6-created-'+str(width));g.click('#saveProj');g.click('#openSaved');g.wait_for_selector('#fg-project-tabs');ok(tag+' real UI creates project with V6 sections',g.locator('#fg-project-tabs [role=tab]').count()==3 and g.locator('#pThreads').is_visible())
  segment(g,'Progress');ok(tag+' journal present in Progress',g.locator('#ffauSessions').is_visible())
  if g.locator('#ffauSessions').get_attribute('open') is None:g.locator('#ffauSessions > summary').click()
  g.fill('#ffauStitches','150');g.fill('#ffauMinutes','15');g.get_by_role('button',name='Save stitching session',exact=True).click()
@@ -68,6 +68,7 @@ def fresh(g,width,theme):
  g.screenshot(path=str(OUT/f'home-{width}-{theme}.png'),full_page=True)
  ok(tag+' no horizontal overflow',g.evaluate('document.documentElement.scrollWidth<=innerWidth+1'))
  ok(tag+' workspace touch targets >=44px',g.locator('#fg-nav button').evaluate_all('(xs)=>xs.every(e=>{const r=e.getBoundingClientRect();return r.width>=44&&r.height>=44})'))
+ ok(tag+' primary labels stay on one readable line',g.locator('#fg-nav .fg-nav-label').evaluate_all('(xs)=>xs.every(e=>e.getBoundingClientRect().height<=parseFloat(getComputedStyle(e).lineHeight)+1)'))
  g.locator('#fg-nav button').first.focus();g.keyboard.press('End');ok(tag+' keyboard End reaches More',g.evaluate('document.activeElement.dataset.fgArea')=='more')
  g.keyboard.press('Home');ok(tag+' keyboard Home reaches Home',g.evaluate('document.activeElement.dataset.fgArea')=='home')
 
